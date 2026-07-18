@@ -61,6 +61,7 @@ export const leads = pgTable(
     languageHint: text("language_hint"),
     status: text("status").$type<"new" | "analyzed">().notNull().default("new"),
     score: integer("score"),
+    isDemo: boolean("is_demo").notNull().default(false),
     firstSeenAt: timestamp("first_seen_at").notNull().defaultNow(),
     lastRefreshedAt: timestamp("last_refreshed_at").notNull().defaultNow(),
   },

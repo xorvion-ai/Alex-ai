@@ -17,6 +17,12 @@ export async function POST(
     const lead = leadRows[0];
     if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
 
+    // The demo lead is deleted without polluting the real contacted history.
+    if (lead.isDemo) {
+      await d.delete(leads).where(eq(leads.id, leadId));
+      return NextResponse.json({ ok: true, demo: true });
+    }
+
     const analysisRows = await d
       .select()
       .from(analyses)

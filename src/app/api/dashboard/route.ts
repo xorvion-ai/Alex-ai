@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { activities, contactedArchive, db, leads, searches } from "@/lib/db";
 import { getQuotaSnapshot } from "@/lib/quota";
+import { ensureSeeded } from "@/lib/seed";
 import { jsonError } from "@/lib/api";
 
 export async function GET() {
   try {
+    await ensureSeeded();
     const d = db();
 
     const [counts] = await d

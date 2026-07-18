@@ -77,6 +77,7 @@ export type LeadDto = {
   languageHint: string | null;
   status: "new" | "analyzed";
   score: number | null;
+  isDemo: boolean;
   firstSeenAt: string;
   lastRefreshedAt: string;
 };

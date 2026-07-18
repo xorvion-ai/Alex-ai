@@ -553,6 +553,23 @@ function LeadsInner() {
                     >
                       {r.source === "google" ? "G" : "OSM"}
                     </span>
+                    {r.isDemo && (
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 8,
+                          fontWeight: 600,
+                          color: "var(--amber)",
+                          border: "1px solid #52452a",
+                          borderRadius: 3,
+                          padding: "1px 4px",
+                          verticalAlign: 2,
+                          marginLeft: 4,
+                        }}
+                      >
+                        DEMO
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 11, color: "var(--sec)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {[
@@ -604,6 +621,7 @@ function LeadsInner() {
                     LEAD_{String(L.id).padStart(4, "0")} · {L.status.toUpperCase()} · source:{" "}
                     {L.source === "google" ? "GOOGLE" : "OSM"} · refreshed {timeAgo(L.lastRefreshedAt)} ⟳
                     {L.verifiedNoWebsite ? " · VERIFIED_NO_WEBSITE ✓" : ""}
+                    {L.isDemo && <span style={{ color: "var(--amber)" }}> · DEMO_LEAD — archive me when done exploring</span>}
                   </div>
                   <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.3px" }}>{L.name}</div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>

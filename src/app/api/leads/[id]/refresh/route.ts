@@ -17,6 +17,12 @@ export async function POST(
     const rows = await d.select().from(leads).where(eq(leads.id, leadId));
     const lead = rows[0];
     if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
+    if (lead.isDemo) {
+      return NextResponse.json(
+        { error: "demo lead — refresh works on real leads only" },
+        { status: 400 },
+      );
+    }
 
     let fresh: NormalizedLead | null = null;
     if (lead.source === "google") {
