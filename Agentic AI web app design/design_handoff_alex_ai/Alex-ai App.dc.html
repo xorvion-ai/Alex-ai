@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0d0f}
+a{color:#7eb3ff}a:hover{color:#a9ccff}
+input::placeholder{color:#4b525b}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#23272d;border-radius:5px}::-webkit-scrollbar-track{background:transparent}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ping{0%{transform:scale(.4);opacity:1}70%,100%{transform:scale(2.4);opacity:0}}
+@keyframes pinbob{0%,100%{transform:rotate(45deg) translate(0,0)}50%{transform:rotate(45deg) translate(-4px,-4px)}}
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fadeout{to{opacity:0}}
+@keyframes feedin{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<!-- ============ INTRO (logo only, 3s) ============ -->
+<sc-if value="{{ isIntro }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Intro" style="height:100vh;display:grid;place-items:center;background:#0b0d0f;overflow:hidden">
+  <div style="display:flex;align-items:center;gap:26px;animation:fadeup .8s both,fadeout .5s 2.6s both">
+    <div style="position:relative;width:76px;height:84px;flex:none">
+      <div style="position:absolute;left:8px;top:3px;width:60px;height:60px;background:linear-gradient(135deg,#6ef0a0,#2fae5e);border-radius:50% 50% 50% 0;transform:rotate(45deg);animation:pinbob 2.6s ease-in-out infinite;box-shadow:0 0 44px rgba(74,222,128,.45)"></div>
+      <div style="position:absolute;left:30px;top:22px;width:17px;height:17px;border-radius:50%;background:#0b0d0f"></div>
+      <div style="position:absolute;left:19px;bottom:4px;width:38px;height:9px;border-radius:50%;background:rgba(74,222,128,.18)"></div>
+      <div style="position:absolute;left:11px;bottom:-4px;width:54px;height:22px;border-radius:50%;border:1px solid rgba(74,222,128,.4);animation:ping 2.2s infinite"></div>
+    </div>
+    <div>
+      <div style="font:800 46px 'Space Grotesk',sans-serif;letter-spacing:-2px;color:#e6e9ed;line-height:1">Alex<span style="background:linear-gradient(90deg,#6ef0a0,#2fae5e);-webkit-background-clip:text;background-clip:text;color:transparent">.ai</span></div>
+      <div style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:5px;color:#aeb6c0;margin-top:10px">A <span style="color:#4ade80">XORVION</span> PRODUCT</div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ LOGIN ============ -->
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Login" style="height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 42%,#12161a 0%,#0b0d0f 68%);font-family:'Space Grotesk',sans-serif">
+  <div style="width:380px;animation:fadeup .5s both">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:30px">
+      <div style="position:relative;width:54px;height:60px;flex:none">
+        <div style="position:absolute;left:5px;top:2px;width:44px;height:44px;background:linear-gradient(135deg,#6ef0a0,#2fae5e);border-radius:50% 50% 50% 0;transform:rotate(45deg);box-shadow:0 0 30px rgba(74,222,128,.4)"></div>
+        <div style="position:absolute;left:21px;top:16px;width:12px;height:12px;border-radius:50%;background:#0b0d0f"></div>
+      </div>
+      <div>
+        <div style="font:800 32px 'Space Grotesk',sans-serif;letter-spacing:-1px;color:#e6e9ed;line-height:1">Alex<span style="color:#4ade80">.ai</span></div>
+        <div style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:4px;color:#aeb6c0;margin-top:7px">A <span style="color:#4ade80">XORVION</span> PRODUCT</div>
+      </div>
+    </div>
+    <div style="background:#101214;border:1px solid #23272d;border-radius:10px;padding:22px">
+      <div style="font:600 10px 'JetBrains Mono',monospace;color:#5c646e;letter-spacing:1px;margin-bottom:8px">PASSWORD</div>
+      <input type="password" placeholder="••••••••••••" onKeyDown="{{ loginKey }}" style="width:100%;box-sizing:border-box;background:#16191d;border:1px solid #23272d;border-radius:6px;padding:11px 12px;font:500 14px 'JetBrains Mono',monospace;color:#e6e9ed;outline:none" style-focus="border-color:#274434">
+      <div onClick="{{ doLogin }}" style="margin-top:14px;text-align:center;background:#4ade80;color:#0b0d0f;border-radius:6px;padding:11px 0;font:700 13px 'JetBrains Mono',monospace;cursor:pointer;letter-spacing:1px" style-hover="background:#5ee890">UNLOCK →</div>
+      <div style="margin-top:14px;font:400 10.5px 'JetBrains Mono',monospace;color:#4b525b;text-align:center">single-user · signed session cookie · no third-party auth</div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ APP ============ -->
+<sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;height:100vh;background:#101214;font-family:'Space Grotesk',sans-serif;color:#e6e9ed;overflow:hidden">
+  <div style="width:204px;flex:none;display:flex;flex-direction:column;background:#0b0d0f;border-right:1px solid #23272d;padding:18px 0">
+    <div style="padding:0 16px 20px;display:flex;align-items:center;gap:11px">
+      <div style="position:relative;width:32px;height:36px;flex:none">
+        <div style="position:absolute;left:3px;top:1px;width:26px;height:26px;background:linear-gradient(135deg,#6ef0a0,#2fae5e);border-radius:50% 50% 50% 0;transform:rotate(45deg);box-shadow:0 0 18px rgba(74,222,128,.35)"></div>
+        <div style="position:absolute;left:12px;top:9px;width:8px;height:8px;border-radius:50%;background:#0b0d0f"></div>
+      </div>
+      <div>
+        <div style="font:800 17px 'Space Grotesk',sans-serif;letter-spacing:-.5px;line-height:1">Alex<span style="color:#4ade80">.ai</span></div>
+        <div style="font:600 6.5px 'JetBrains Mono',monospace;letter-spacing:2.2px;color:#aeb6c0;margin-top:3px">A <span style="color:#4ade80">XORVION</span> PRODUCT</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;font-size:13px">
+      <sc-for list="{{ navs }}" as="n" hint-placeholder-count="4">
+        <div onClick="{{ n.click }}" style="{{ n.style }}" style-hover="color:#e6e9ed">{{ n.label }}</div>
+      </sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <div onClick="{{ toggleQuota }}" style="margin:0 12px;background:#16191d;border:1px solid #23272d;border-radius:6px;padding:10px 12px;cursor:pointer" style-hover="border-color:#2f3640">
+      <div style="display:flex;font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e"><span>QUOTA GUARDIAN</span><span style="flex:1"></span><span>{{ quotaCaret }}</span></div>
+      <div style="height:4px;background:#23272d;border-radius:2px;margin-top:7px"><div style="width:41%;height:100%;background:#4ade80;border-radius:2px"></div></div>
+      <div style="font:500 10px 'JetBrains Mono',monospace;color:#5c646e;margin-top:4px">PLACES 412/1000</div>
+      <sc-if value="{{ quotaOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="height:4px;background:#23272d;border-radius:2px;margin-top:8px"><div style="width:23%;height:100%;background:#4ade80;border-radius:2px"></div></div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;color:#5c646e;margin-top:4px">GEMINI 231/1000·day</div>
+        <div style="height:4px;background:#23272d;border-radius:2px;margin-top:8px"><div style="width:12%;height:100%;background:#4ade80;border-radius:2px"></div></div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;color:#5c646e;margin-top:4px">BRAVE 246/2000</div>
+        <div style="font:500 9.5px 'JetBrains Mono',monospace;color:#d9a13c;margin-top:9px;line-height:1.5">⛨ hard-stop at 90% — a bill is impossible</div>
+      </sc-if>
+    </div>
+    <div onClick="{{ doLock }}" style="margin:10px 12px 0;padding:8px 12px;border:1px solid #23272d;border-radius:6px;font:600 10.5px 'JetBrains Mono',monospace;color:#5c646e;text-align:center;cursor:pointer" style-hover="color:#8a929e;border-color:#2f3640">⏻ LOCK</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="Dashboard" style="flex:1;overflow:auto;padding:26px 30px">
+    <div style="display:flex;align-items:baseline">
+      <div style="font:700 20px 'Space Grotesk',sans-serif;letter-spacing:-.3px">Dashboard</div>
+      <div style="flex:1"></div>
+      <div style="font:500 11px 'JetBrains Mono',monospace;color:#5c646e">SAT 18 JUL 2026 · month resets in 14 days</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px">
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+        <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e">LIVE LEADS</div>
+        <div style="font:700 34px 'JetBrains Mono',monospace;margin-top:6px">142</div>
+        <div style="font-size:11px;color:#8a929e;margin-top:4px">across 2 cities · 2 sources</div>
+      </div>
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+        <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e">ANALYZED</div>
+        <div style="font:700 34px 'JetBrains Mono',monospace;color:#4ade80;margin-top:6px">{{ analyzedCount }}</div>
+        <div style="font-size:11px;color:#8a929e;margin-top:4px">{{ newCount }} new awaiting analysis</div>
+      </div>
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+        <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e">CONTACTED → ARCHIVED</div>
+        <div style="font:700 34px 'JetBrains Mono',monospace;margin-top:6px">27</div>
+        <div style="font-size:11px;color:#8a929e;margin-top:4px">this month · <span style="color:#7eb3ff;cursor:pointer">history.csv ↓</span></div>
+      </div>
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+        <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e">MONTHLY COST</div>
+        <div style="font:700 34px 'JetBrains Mono',monospace;color:#4ade80;margin-top:6px">$0</div>
+        <div style="font-size:11px;color:#8a929e;margin-top:4px">guardian armed · caps active</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:14px;align-items:flex-start">
+      <div style="flex:1.4;display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+          <div style="padding:11px 15px;border-bottom:1px solid #23272d;font:600 10px 'JetBrains Mono',monospace;color:#8a929e">FOLLOW-UPS DUE TODAY · 3</div>
+          <sc-for list="{{ followUps }}" as="f" hint-placeholder-count="3">
+            <div onClick="{{ f.click }}" style="display:flex;align-items:center;gap:12px;padding:11px 15px;border-bottom:1px solid #1c2025;cursor:pointer" style-hover="background:#191d22">
+              <div style="font:700 12px 'JetBrains Mono',monospace;color:#d9a13c;width:44px;flex:none">{{ f.time }}</div>
+              <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">{{ f.name }}</div><div style="font-size:11px;color:#8a929e">{{ f.note }}</div></div>
+              <div style="font:500 10px 'JetBrains Mono',monospace;color:#5c646e">{{ f.kind }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+          <div style="padding:11px 15px;border-bottom:1px solid #23272d;font:600 10px 'JetBrains Mono',monospace;color:#8a929e">RECENT SWEEPS</div>
+          <div style="display:grid;grid-template-columns:1.6fr 1fr .6fr .6fr .7fr;gap:0 10px;padding:8px 15px 4px;font:600 9px 'JetBrains Mono',monospace;color:#4b525b">
+            <span>QUERY</span><span>WHEN</span><span>FOUND</span><span>NEW</span><span>REQUESTS</span>
+          </div>
+          <sc-for list="{{ sweeps }}" as="s" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:1.6fr 1fr .6fr .6fr .7fr;gap:0 10px;padding:9px 15px;border-top:1px solid #1c2025;font-size:12px;color:#c3c9d1;align-items:center">
+              <span style="font-weight:600">{{ s.q }}</span><span style="color:#8a929e;font-size:11px">{{ s.when }}</span><span style="font-family:'JetBrains Mono',monospace">{{ s.found }}</span><span style="font-family:'JetBrains Mono',monospace;color:#4ade80">{{ s.added }}</span><span style="font-family:'JetBrains Mono',monospace;color:#8a929e">{{ s.req }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div style="background:#16191d;border:1px solid #274434;border-radius:8px;padding:16px">
+          <div style="font:600 10px 'JetBrains Mono',monospace;color:#8a929e">AI BATCH ANALYSIS</div>
+          <div style="font-size:12.5px;color:#c3c9d1;margin-top:8px;line-height:1.5">{{ anaText }}</div>
+          <div style="height:5px;background:#23272d;border-radius:3px;margin-top:12px"><div style="width:{{ anaPct }};height:100%;background:#4ade80;border-radius:3px;transition:width .25s"></div></div>
+          <div onClick="{{ runBatch }}" style="margin-top:14px;text-align:center;background:{{ anaBtnBg }};color:{{ anaBtnFg }};border:1px solid #274434;border-radius:6px;padding:9px 0;font:700 11.5px 'JetBrains Mono',monospace;cursor:pointer;letter-spacing:.5px">{{ anaBtnLabel }}</div>
+          <div style="font:400 10px 'JetBrains Mono',monospace;color:#4b525b;margin-top:10px">rate-limited to gemini free tier · resumes if stopped</div>
+        </div>
+        <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+          <div style="font:600 10px 'JetBrains Mono',monospace;color:#8a929e;margin-bottom:12px">FREE QUOTA REMAINING</div>
+          <div style="display:flex;font:500 11px 'JetBrains Mono',monospace;color:#c3c9d1"><span>google places</span><span style="flex:1"></span><span style="color:#4ade80">588 left</span></div>
+          <div style="height:4px;background:#23272d;border-radius:2px;margin:6px 0 12px"><div style="width:41%;height:100%;background:#4ade80;border-radius:2px"></div></div>
+          <div style="display:flex;font:500 11px 'JetBrains Mono',monospace;color:#c3c9d1"><span>gemini flash-lite</span><span style="flex:1"></span><span style="color:#4ade80">769 left today</span></div>
+          <div style="height:4px;background:#23272d;border-radius:2px;margin:6px 0 12px"><div style="width:23%;height:100%;background:#4ade80;border-radius:2px"></div></div>
+          <div style="display:flex;font:500 11px 'JetBrains Mono',monospace;color:#c3c9d1"><span>brave search</span><span style="flex:1"></span><span style="color:#4ade80">1,754 left</span></div>
+          <div style="height:4px;background:#23272d;border-radius:2px;margin:6px 0 12px"><div style="width:12%;height:100%;background:#4ade80;border-radius:2px"></div></div>
+          <div style="display:flex;font:500 11px 'JetBrains Mono',monospace;color:#c3c9d1"><span>openstreetmap</span><span style="flex:1"></span><span style="color:#8a929e">unlimited · rate-limited</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- DISCOVER -->
+  <sc-if value="{{ isDiscover }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Discover" style="flex:1;display:flex;min-width:0">
+    <div style="width:400px;flex:none;border-right:1px solid #23272d;overflow:auto;padding:26px 22px;box-sizing:border-box">
+      <div style="font:700 20px 'Space Grotesk',sans-serif;letter-spacing:-.3px">Discover</div>
+      <div style="font-size:12px;color:#8a929e;margin-top:4px">Sweep any city on Earth for businesses with no website.</div>
+      <div style="margin-top:20px;position:relative">
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:5px">COUNTRY</div>
+        <div onClick="{{ toggleDdDiscover }}" style="display:flex;justify-content:space-between;background:#16191d;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font-size:13px;cursor:pointer" style-hover="border-color:#2f3640">{{ country }} <span style="color:#5c646e">{{ ddDiscoverCaret }}</span></div>
+        <sc-if value="{{ ddDiscoverOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#16191d;border:1px solid #2f3640;border-radius:6px;z-index:30;max-height:230px;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.55)">
+            <sc-for list="{{ countryOptsDiscover }}" as="o" hint-placeholder-count="6">
+              <div onClick="{{ o.click }}" style="{{ o.style }}" style-hover="background:#1d2126">{{ o.label }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:5px">CITY / AREA</div>
+        <input placeholder="e.g. Jaipur, Lagos, Berlin…" style="width:100%;box-sizing:border-box;background:#16191d;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font:400 13px 'Space Grotesk',sans-serif;color:#e6e9ed;outline:none">
+      </div>
+      <div style="margin-top:12px">
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:5px">KEYWORD <span style="color:#3d434b">(OPTIONAL)</span></div>
+        <input placeholder="e.g. vegetarian, 24h…" style="width:100%;box-sizing:border-box;background:#16191d;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font:400 13px 'Space Grotesk',sans-serif;color:#e6e9ed;outline:none">
+      </div>
+      <div style="margin-top:14px">
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:6px">BUSINESS TYPES</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;font:500 10.5px 'JetBrains Mono',monospace">
+          <sc-for list="{{ cats }}" as="c" hint-placeholder-count="8">
+            <span onClick="{{ c.click }}" style="{{ c.style }}">{{ c.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:6px">LEAD SOURCES</div>
+        <div style="display:flex;gap:5px;font:600 10.5px 'JetBrains Mono',monospace">
+          <sc-for list="{{ srcOpts }}" as="s" hint-placeholder-count="2">
+            <span onClick="{{ s.click }}" style="{{ s.style }}">{{ s.label }}</span>
+          </sc-for>
+        </div>
+        <div style="font:400 10px 'JetBrains Mono',monospace;color:#4b525b;margin-top:6px">google = best data, quota-limited · osm = free &amp; unlimited</div>
+      </div>
+      <div onClick="{{ toggleSweep }}" style="margin-top:22px;text-align:center;background:{{ sweepBtnBg }};color:{{ sweepBtnFg }};border:1px solid #274434;border-radius:6px;padding:12px 0;font:700 13px 'JetBrains Mono',monospace;cursor:pointer;letter-spacing:1px;box-shadow:0 0 24px rgba(74,222,128,.12)">{{ sweepBtnLabel }}</div>
+      <div style="font:400 10.5px 'JetBrains Mono',monospace;color:#4b525b;margin-top:10px;text-align:center">estimate: ~12 queries · ~48 enterprise requests</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+      <div style="padding:16px 22px;border-bottom:1px solid #23272d;background:#0e1013">
+        <div style="display:flex;font:500 11px 'JetBrains Mono',monospace;color:#8a929e;gap:22px">
+          <span>query <span style="color:#e6e9ed">{{ swQ }}/12</span></span>
+          <span>requests <span style="color:#e6e9ed">{{ swReq }}</span></span>
+          <span>scanned <span style="color:#e6e9ed">{{ swFound }}</span></span>
+          <span>no-website <span style="color:#4ade80">{{ swNew }}</span></span>
+          <span style="flex:1"></span>
+          <span style="color:{{ swStateColor }}">{{ swState }}</span>
+        </div>
+        <div style="height:4px;background:#23272d;border-radius:2px;margin-top:10px"><div style="width:{{ swPct }};height:100%;background:#4ade80;border-radius:2px;transition:width .4s"></div></div>
+      </div>
+      <div style="flex:1;overflow:auto">
+        <sc-if value="{{ feedEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="height:100%;display:grid;place-items:center">
+            <div style="text-align:center">
+              <div style="position:relative;width:90px;height:90px;margin:0 auto">
+                <div style="position:absolute;inset:0;border:1.5px solid #23272d;border-radius:50%"></div>
+                <div style="position:absolute;inset:18px;border:1px solid #1c2025;border-radius:50%"></div>
+                <div style="position:absolute;inset:2px;border-radius:50%;background:conic-gradient(rgba(74,222,128,.3),transparent 70deg,transparent);animation:spin 3s linear infinite"></div>
+              </div>
+              <div style="font:500 12px 'JetBrains Mono',monospace;color:#5c646e;margin-top:18px">radar idle — configure a sweep and hit START</div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-for list="{{ feed }}" as="f" hint-placeholder-count="0">
+          <div style="display:flex;gap:12px;align-items:center;padding:12px 22px;border-bottom:1px solid #1c2025;animation:feedin .35s both">
+            <div style="width:7px;height:7px;border-radius:50%;background:#4ade80;flex:none;box-shadow:0 0 8px rgba(74,222,128,.6)"></div>
+            <div style="flex:1;min-width:0"><span style="font-weight:600;font-size:13.5px">{{ f.name }}</span> <span style="font:600 8px 'JetBrains Mono',monospace;color:{{ f.srcFg }};border:1px solid {{ f.srcBd }};border-radius:3px;padding:1px 4px;vertical-align:2px">{{ f.src }}</span><div style="font-size:11px;color:#8a929e">{{ f.meta }}</div></div>
+            <div style="font:500 9px 'JetBrains Mono',monospace;color:{{ f.tagFg }}">{{ f.tag }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- LEADS -->
+  <sc-if value="{{ isLeads }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Leads" style="flex:1;display:flex;min-width:0">
+    <div style="width:400px;flex:none;display:flex;flex-direction:column;border-right:1px solid #23272d">
+      <div style="padding:14px 16px 12px;border-bottom:1px solid #23272d">
+        <div style="display:flex;gap:8px">
+          <input placeholder="/ search leads" style="flex:1;min-width:0;background:#16191d;border:1px solid #23272d;border-radius:6px;padding:8px 10px;font:400 12.5px 'JetBrains Mono',monospace;color:#e6e9ed;outline:none">
+          <div onClick="{{ toggleFilters }}" style="background:#1d2b22;border:1px solid #274434;border-radius:6px;padding:8px 12px;font:600 11px 'JetBrains Mono',monospace;color:#4ade80;cursor:pointer">FILTERS {{ filterCaret }}</div>
+        </div>
+        <sc-if value="{{ filtersOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:10px;background:#16191d;border:1px solid #23272d;border-radius:8px;padding:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="position:relative">
+              <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:4px">COUNTRY</div>
+              <div onClick="{{ toggleDdLeads }}" style="display:flex;justify-content:space-between;background:#101214;border:1px solid #23272d;border-radius:5px;padding:7px 9px;font-size:12px;cursor:pointer" style-hover="border-color:#2f3640">{{ country }} <span style="color:#5c646e">{{ ddLeadsCaret }}</span></div>
+              <sc-if value="{{ ddLeadsOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#16191d;border:1px solid #2f3640;border-radius:6px;z-index:30;max-height:200px;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.55)">
+                  <sc-for list="{{ countryOptsLeads }}" as="o" hint-placeholder-count="6">
+                    <div onClick="{{ o.click }}" style="{{ o.style }}" style-hover="background:#1d2126">{{ o.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            <div>
+              <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:4px">CITY / AREA</div>
+              <div style="display:flex;justify-content:space-between;background:#101214;border:1px solid #23272d;border-radius:5px;padding:7px 9px;font-size:12px;cursor:pointer">Jaipur <span style="color:#5c646e">▾</span></div>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:5px">BUSINESS TYPE</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;font:500 10px 'JetBrains Mono',monospace">
+              <span style="padding:4px 9px;border-radius:4px;background:#101214;color:#8a929e;border:1px solid #23272d">any</span>
+              <span style="padding:4px 9px;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">restaurant ×</span>
+              <span style="padding:4px 9px;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">salon ×</span>
+              <span style="padding:4px 9px;border-radius:4px;background:#101214;color:#8a929e;border:1px solid #23272d">plumber</span>
+              <span style="padding:4px 9px;border-radius:4px;background:#101214;color:#8a929e;border:1px solid #23272d">tailor</span>
+              <span style="padding:4px 9px;border-radius:4px;color:#5c646e;cursor:pointer">+ 19 more</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <div>
+              <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:5px">SOURCE</div>
+              <div style="display:flex;gap:4px;font:600 10px 'JetBrains Mono',monospace">
+                <span style="flex:1;text-align:center;padding:5px 0;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">ALL</span>
+                <span style="flex:1;text-align:center;padding:5px 0;border-radius:4px;background:#101214;color:#8a929e;border:1px solid #23272d">GOOGLE</span>
+                <span style="flex:1;text-align:center;padding:5px 0;border-radius:4px;background:#101214;color:#8a929e;border:1px solid #23272d">OSM</span>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:5px">WEBSITE STATUS</div>
+              <div style="display:flex;gap:4px;font:600 10px 'JetBrains Mono',monospace">
+                <span style="flex:1;text-align:center;padding:5px 0;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">NONE</span>
+                <span style="flex:1;text-align:center;padding:5px 0;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">SOCIAL</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:12px;font:500 10.5px 'JetBrains Mono',monospace;color:#8a929e">
+            <span>SCORE ≥ <span style="color:#e6e9ed">70</span></span>
+            <div style="flex:1;height:3px;background:#23272d;border-radius:2px;position:relative"><div style="width:70%;height:100%;background:#4ade80;border-radius:2px"></div><div style="position:absolute;left:70%;top:-4px;width:11px;height:11px;border-radius:50%;background:#e6e9ed;margin-left:-5px"></div></div>
+            <span style="display:flex;align-items:center;gap:5px;cursor:pointer"><span style="width:24px;height:13px;border-radius:7px;background:#274434;position:relative;display:inline-block"><span style="position:absolute;right:1px;top:1px;width:11px;height:11px;border-radius:50%;background:#4ade80"></span></span>VERIFIED ✓</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <div style="flex:1;text-align:center;background:#4ade80;color:#0b0d0f;border-radius:5px;padding:7px 0;font:700 11px 'JetBrains Mono',monospace;cursor:pointer">APPLY — 9 MATCH</div>
+            <div style="border:1px solid #23272d;border-radius:5px;padding:7px 12px;font:600 11px 'JetBrains Mono',monospace;color:#8a929e;cursor:pointer">RESET</div>
+            <div style="border:1px solid #23272d;border-radius:5px;padding:7px 12px;font:600 11px 'JetBrains Mono',monospace;color:#8a929e;cursor:pointer">CSV ↓</div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      <div style="flex:1;overflow:auto">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="9">
+          <div onClick="{{ r.click }}" style="{{ r.style }}" style-hover="background:#14171a">
+            <div style="font:700 14px 'JetBrains Mono',monospace;color:{{ r.scoreColor }};width:30px;flex:none">{{ r.score }}</div>
+            <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }} <span style="font:600 8px 'JetBrains Mono',monospace;color:{{ r.srcFg }};border:1px solid {{ r.srcBd }};border-radius:3px;padding:1px 4px;vertical-align:2px">{{ r.src }}</span></div><div style="font-size:11px;color:#8a929e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</div></div>
+            <div style="font:500 9px 'JetBrains Mono',monospace;color:{{ r.tagFg }};flex:none">{{ r.tag }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="flex:1;overflow:auto;min-width:0">
+      <div style="padding:20px 24px 0">
+        <div style="display:flex;align-items:flex-start;gap:18px">
+          <div style="flex:1;min-width:0">
+            <div style="font:500 10px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:6px">{{ selHeadline }}</div>
+            <div style="font-size:24px;font-weight:700;letter-spacing:-.3px">{{ selName }}</div>
+            <div style="font-size:12.5px;color:#8a929e;margin-top:4px">{{ selSub }} · <span style="color:#7eb3ff;cursor:pointer">maps ↗</span></div>
+          </div>
+          <div style="flex:none;text-align:center;background:#16191d;border:1px solid #274434;border-radius:8px;padding:10px 18px">
+            <div style="font:700 34px 'JetBrains Mono',monospace;color:{{ selScoreColor }};line-height:1">{{ selScore }}</div>
+            <div style="font:600 9px 'JetBrains Mono',monospace;color:#8a929e;margin-top:2px">{{ selScoreLabel }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <div style="background:#4ade80;color:#0b0d0f;border-radius:6px;padding:8px 16px;font:600 12px 'Space Grotesk',sans-serif;cursor:pointer" style-hover="background:#5ee890">CALL {{ selPhone }}</div>
+          <div style="border:1px solid #2f3640;border-radius:6px;padding:8px 16px;font:600 12px 'Space Grotesk',sans-serif;cursor:pointer" style-hover="border-color:#4ade80">WHATSAPP</div>
+          <div style="border:1px solid #2f3640;border-radius:6px;padding:8px 16px;font:600 12px 'Space Grotesk',sans-serif;color:#8a929e;cursor:pointer">VERIFY ON WEB ⌕</div>
+          <div style="border:1px solid #2f3640;border-radius:6px;padding:8px 16px;font:600 12px 'Space Grotesk',sans-serif;color:#8a929e;cursor:pointer">⟳ REFRESH</div>
+          <div style="flex:1"></div>
+          <div style="border:1px solid #2f3640;border-radius:6px;padding:8px 16px;font-size:12px;color:#8a929e;cursor:pointer" style-hover="color:#d9a13c;border-color:#d9a13c">✓ CONTACTED → ARCHIVE</div>
+        </div>
+        <div style="display:flex;margin-top:18px;border-bottom:1px solid #23272d;font:600 11px 'JetBrains Mono',monospace">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+            <div onClick="{{ t.click }}" style="{{ t.style }}" style-hover="color:#e6e9ed">{{ t.label }}</div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ tabAnalysis }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:14px;padding:16px 24px 22px;align-items:flex-start">
+        <div style="flex:1.2;display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+            <div style="padding:9px 13px;border-bottom:1px solid #23272d;font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">LEAD_SCORE — WHY {{ selScore }}</div>
+            <div style="padding:13px;font-size:12.5px;line-height:1.6;color:#c3c9d1">{{ selReasoning }} <span style="color:#5c646e">— gemini-flash-lite · 2d ago</span></div>
+          </div>
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+            <div style="padding:9px 13px;border-bottom:1px solid #23272d;font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">BUSINESS_PROFILE</div>
+            <div style="padding:13px;font-size:12.5px;line-height:1.6;color:#c3c9d1">{{ selProfile }}</div>
+          </div>
+        </div>
+        <div style="width:250px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:12px 13px">
+            <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:7px">SIGNALS</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font:500 11px 'JetBrains Mono',monospace;color:#a9b0ba">
+              <div>rating <span style="color:#4ade80">{{ selRating }} ★</span></div>
+              <div>reviews <span style="color:#4ade80">{{ selRc }}</span></div>
+              <div>website <span style="color:#d9a13c">{{ selWs }}</span></div>
+              <div>verified <span style="color:{{ selVerColor }}">{{ selVerified }}</span></div>
+            </div>
+          </div>
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:12px 13px">
+            <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:7px">BEST_CALL_WINDOW</div>
+            <div style="font:500 12px 'JetBrains Mono',monospace;color:#e6e9ed">{{ selWindow }}</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ tabData }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 24px 22px">
+        <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;overflow:hidden">
+          <div style="display:flex;padding:9px 13px;border-bottom:1px solid #23272d;align-items:center"><span style="font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">RAW LEAD DATA</span><div style="flex:1"></div><span style="font:500 9.5px 'JetBrains Mono',monospace;color:#d9a13c">google cache rule: refresh if &gt; 30d</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr">
+            <sc-for list="{{ dataPairs }}" as="d" hint-placeholder-count="12">
+              <div style="display:flex;gap:10px;padding:10px 13px;border-bottom:1px solid #1c2025;font-size:12px"><span style="font:600 10px 'JetBrains Mono',monospace;color:#5c646e;width:120px;flex:none;padding-top:1px">{{ d.k }}</span><span style="color:#c3c9d1;font-family:'JetBrains Mono',monospace;font-size:11.5px;word-break:break-word">{{ d.v }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ tabPlan }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:14px;padding:16px 24px 22px;align-items:flex-start">
+        <div style="flex:1.2;display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+            <div style="padding:9px 13px;border-bottom:1px solid #23272d;font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">CONTENT ANGLE</div>
+            <div style="padding:13px;font-size:12.5px;line-height:1.6;color:#c3c9d1">{{ planAngle }}</div>
+          </div>
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+            <div style="padding:9px 13px;border-bottom:1px solid #23272d;font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">SELLING POINTS</div>
+            <div style="padding:13px;display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ planPoints }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;gap:9px;font-size:12.5px;line-height:1.5;color:#c3c9d1"><span style="color:#4ade80">▸</span><span>{{ p.t }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="width:250px;flex:none;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:12px 13px">
+            <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:8px">SUGGESTED PAGES</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;font:500 10.5px 'JetBrains Mono',monospace">
+              <sc-for list="{{ planPages }}" as="p" hint-placeholder-count="5">
+                <span style="padding:4px 9px;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">{{ p.t }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div onClick="{{ copyPlan }}" style="text-align:center;background:#4ade80;color:#0b0d0f;border-radius:6px;padding:10px 0;font:700 11.5px 'JetBrains Mono',monospace;cursor:pointer" style-hover="background:#5ee890">{{ copyPlanLabel }}</div>
+          <div style="font:400 10px 'JetBrains Mono',monospace;color:#4b525b;text-align:center;line-height:1.5">paste into Claude to build their website</div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ tabLog }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 24px 22px">
+        <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;overflow:hidden">
+          <div style="padding:9px 13px;border-bottom:1px solid #23272d;font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">ACTIVITY LOG</div>
+          <sc-for list="{{ acts }}" as="a" hint-placeholder-count="3">
+            <div style="display:flex;gap:12px;padding:11px 13px;border-bottom:1px solid #1c2025;align-items:baseline">
+              <span style="font:600 10px 'JetBrains Mono',monospace;color:#4ade80;width:64px;flex:none">{{ a.kind }}</span>
+              <span style="flex:1;font-size:12.5px;color:#c3c9d1;line-height:1.5">{{ a.text }}</span>
+              <span style="font:500 10px 'JetBrains Mono',monospace;color:#5c646e;flex:none">{{ a.when }}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex;gap:8px;padding:12px 13px">
+            <input placeholder="add note… (e.g. owner busy, call back Tue)" value="{{ noteText }}" onChange="{{ onNote }}" onKeyDown="{{ noteKey }}" style="flex:1;background:#101214;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font:400 12.5px 'Space Grotesk',sans-serif;color:#e6e9ed;outline:none">
+            <div onClick="{{ addNote }}" style="background:#1d2b22;border:1px solid #274434;border-radius:6px;padding:9px 16px;font:700 11px 'JetBrains Mono',monospace;color:#4ade80;cursor:pointer">ADD</div>
+            <div style="border:1px solid #23272d;border-radius:6px;padding:9px 12px;font:600 11px 'JetBrains Mono',monospace;color:#d9a13c;cursor:pointer">⏰ FOLLOW-UP</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ tabOutreach }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:14px;padding:16px 24px 22px;align-items:flex-start">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+            <div style="display:flex;padding:9px 13px;border-bottom:1px solid #23272d"><span style="font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">WHATSAPP · ENGLISH</span><div style="flex:1"></div><span onClick="{{ copyEn }}" style="font:600 10px 'JetBrains Mono',monospace;color:#4ade80;cursor:pointer">{{ copyEnLabel }}</span></div>
+            <div style="padding:13px;font-size:12.5px;line-height:1.6;color:#c3c9d1">{{ draftEn }}</div>
+          </div>
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+            <div style="display:flex;padding:9px 13px;border-bottom:1px solid #23272d"><span style="font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">WHATSAPP · {{ localLangLabel }}</span><div style="flex:1"></div><span onClick="{{ copyLocal }}" style="font:600 10px 'JetBrains Mono',monospace;color:#4ade80;cursor:pointer">{{ copyLocalLabel }}</span></div>
+            <div style="padding:13px;font-size:12.5px;line-height:1.6;color:#c3c9d1">{{ draftLocal }}</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px">
+            <div style="padding:9px 13px;border-bottom:1px solid #23272d;font:600 9.5px 'JetBrains Mono',monospace;color:#8a929e">PHONE CALL SCRIPT</div>
+            <div style="padding:13px;display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ callScript }}" as="c" hint-placeholder-count="4">
+                <div style="display:flex;gap:9px;font-size:12.5px;line-height:1.5;color:#c3c9d1"><span style="font:600 10px 'JetBrains Mono',monospace;color:#5c646e;flex:none;padding-top:2px">{{ c.n }}</span><span>{{ c.t }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:12px 13px">
+            <div style="font:600 9.5px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:7px">BEST_CALL_WINDOW</div>
+            <div style="font:500 12px 'JetBrains Mono',monospace;color:#e6e9ed">{{ selWindow }}</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- SETTINGS -->
+  <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Settings" style="flex:1;overflow:auto;padding:26px 30px">
+    <div style="font:700 20px 'Space Grotesk',sans-serif;letter-spacing:-.3px">Settings</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;max-width:980px">
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+        <div style="font:600 10px 'JetBrains Mono',monospace;color:#8a929e;margin-bottom:12px">API KEYS</div>
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:4px">GOOGLE PLACES (NEW)</div>
+        <input type="password" value="AIzaSyB………………………………K4w" style="width:100%;box-sizing:border-box;background:#101214;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font:500 12px 'JetBrains Mono',monospace;color:#8a929e;outline:none">
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin:10px 0 4px">GOOGLE AI STUDIO (GEMINI)</div>
+        <input type="password" value="AIzaSyD………………………………9mQ" style="width:100%;box-sizing:border-box;background:#101214;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font:500 12px 'JetBrains Mono',monospace;color:#8a929e;outline:none">
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin:10px 0 4px">BRAVE SEARCH</div>
+        <input type="password" value="BSA…………………………………x2f" style="width:100%;box-sizing:border-box;background:#101214;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font:500 12px 'JetBrains Mono',monospace;color:#8a929e;outline:none">
+        <div style="font:400 10px 'JetBrains Mono',monospace;color:#4b525b;margin-top:10px;line-height:1.5">keys live in env vars — never in the database</div>
+      </div>
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+        <div style="font:600 10px 'JetBrains Mono',monospace;color:#8a929e;margin-bottom:12px">QUOTA GUARDIAN</div>
+        <div style="display:flex;font:500 11.5px 'JetBrains Mono',monospace;color:#c3c9d1"><span>hard-stop threshold</span><span style="flex:1"></span><span style="color:#4ade80">90%</span></div>
+        <div style="height:4px;background:#23272d;border-radius:2px;margin-top:8px;position:relative"><div style="width:90%;height:100%;background:#4ade80;border-radius:2px"></div><div style="position:absolute;left:90%;top:-4px;width:12px;height:12px;border-radius:50%;background:#e6e9ed;margin-left:-6px;cursor:grab"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;font:500 11px 'JetBrains Mono',monospace;color:#a9b0ba">
+          <div style="display:flex"><span>google places cap</span><span style="flex:1"></span><span style="color:#e6e9ed">1,000 / month</span></div>
+          <div style="display:flex"><span>gemini cap</span><span style="flex:1"></span><span style="color:#e6e9ed">1,000 / day</span></div>
+          <div style="display:flex"><span>brave cap</span><span style="flex:1"></span><span style="color:#e6e9ed">2,000 / month</span></div>
+          <div style="display:flex"><span>osm</span><span style="flex:1"></span><span style="color:#8a929e">polite rate-limit only</span></div>
+        </div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;color:#d9a13c;margin-top:12px;line-height:1.5">⛨ also set console-side caps + $1 budget alert (see setup docs)</div>
+      </div>
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px">
+        <div style="font:600 10px 'JetBrains Mono',monospace;color:#8a929e;margin-bottom:12px">DISCOVERY DEFAULTS</div>
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:4px">DEFAULT COUNTRY</div>
+        <div style="position:relative">
+          <div onClick="{{ toggleDdSettings }}" style="display:flex;justify-content:space-between;background:#101214;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font-size:12.5px;cursor:pointer" style-hover="border-color:#2f3640">{{ country }} <span style="color:#5c646e">{{ ddSettingsCaret }}</span></div>
+          <sc-if value="{{ ddSettingsOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#16191d;border:1px solid #2f3640;border-radius:6px;z-index:30;max-height:200px;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.55)">
+              <sc-for list="{{ countryOptsSettings }}" as="o" hint-placeholder-count="6">
+                <div onClick="{{ o.click }}" style="{{ o.style }}" style-hover="background:#1d2126">{{ o.label }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin:12px 0 6px">DEFAULT CATEGORIES</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;font:500 10px 'JetBrains Mono',monospace">
+          <span style="padding:4px 9px;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">restaurant</span>
+          <span style="padding:4px 9px;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">salon</span>
+          <span style="padding:4px 9px;border-radius:4px;background:#1d2b22;color:#4ade80;border:1px solid #274434">tailor</span>
+          <span style="padding:4px 9px;border-radius:4px;background:#101214;color:#8a929e;border:1px solid #23272d">+ edit</span>
+        </div>
+      </div>
+      <div style="background:#16191d;border:1px solid #23272d;border-radius:8px;padding:16px;display:flex;flex-direction:column">
+        <div style="font:600 10px 'JetBrains Mono',monospace;color:#8a929e;margin-bottom:12px">OUTREACH</div>
+        <div style="font:600 9px 'JetBrains Mono',monospace;color:#5c646e;margin-bottom:4px">SECOND LANGUAGE (auto-detected per lead, this is the fallback)</div>
+        <div style="display:flex;justify-content:space-between;background:#101214;border:1px solid #23272d;border-radius:6px;padding:9px 11px;font-size:12.5px;cursor:pointer">{{ localLangLabel }} <span style="color:#5c646e">▾</span></div>
+        <div style="font:400 10px 'JetBrains Mono',monospace;color:#4b525b;margin-top:10px;line-height:1.5">drafts are always generated in english + the lead's local language</div>
+        <div style="flex:1"></div>
+        <div onClick="{{ saveSettings }}" style="margin-top:16px;text-align:center;background:#4ade80;color:#0b0d0f;border-radius:6px;padding:10px 0;font:700 12px 'JetBrains Mono',monospace;cursor:pointer;letter-spacing:.5px" style-hover="background:#5ee890">SAVE SETTINGS</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;right:22px;bottom:22px;background:#1d2b22;border:1px solid #274434;color:#4ade80;border-radius:8px;padding:11px 18px;font:600 12px 'JetBrains Mono',monospace;animation:fadeup .3s both;box-shadow:0 6px 24px rgba(0,0,0,.4);z-index:50">{{ toast }}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;skipIntro&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;outreachLanguage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Hindi&quot;,&quot;Spanish&quot;,&quot;Portuguese&quot;,&quot;French&quot;,&quot;German&quot;],&quot;default&quot;:&quot;Hindi&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Outreach&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: "intro", quotaOpen: false, filtersOpen: false, tab: "analysis", sel: 0,
+    running: false, feed: [], swQ: 0, swReq: 0, swFound: 0, swNew: 0, swDone: false,
+    anaRunning: false, anaN: 0, noteText: "", copied: "", toast: "",
+    catSel: { restaurant: 1, salon: 1 }, srcSel: { GOOGLE: 1, OSM: 1 },
+    country: "🇮🇳 India", dd: "",
+    notes: [
+      { kind: "WHATSAPP", text: "Sent intro message with demo offer", when: "2d ago" },
+      { kind: "CALL", text: "Owner busy during lunch rush — asked to call after 3pm", when: "3d ago" },
+      { kind: "NOTE", text: "Found via Jaipur restaurant sweep #12", when: "5d ago" },
+    ],
+  };
+  componentDidMount() {
+    if (!(this.props.skipIntro ?? false)) {
+      this._intro = setTimeout(() => this.setState(s => (s.screen === "intro" ? { screen: "login" } : null)), 3100);
+    }
+  }
+  componentWillUnmount() { clearTimeout(this._intro); clearInterval(this._sw); clearInterval(this._an); clearTimeout(this._tt); clearTimeout(this._ct); }
+  leads() {
+    return [
+      { name: "Annapurna Bhojanalay", cat: "restaurant", area: "C-Scheme", addr: "14 MI Road, C-Scheme, Jaipur 302001", phone: "+91 141 237 8842", rating: "4.6", rc: 312, score: 91, ws: "social_only", src: "G", ver: true, hours: "Tue–Sun 11:00–23:00", win: "Tue–Sun 15:30–17:30 (between lunch & dinner)", price: "₹₹", hook: "people love your dal baati churma" },
+      { name: "Sharma Tailors & Fabrics", cat: "tailor", area: "Bapu Bazaar", addr: "Shop 41, Bapu Bazaar, Jaipur 302003", phone: "+91 141 256 1120", rating: "4.8", rc: 97, score: 88, ws: "none", src: "G", ver: true, hours: "Mon–Sat 10:00–20:30", win: "Mon–Sat 11:00–13:00 (before afternoon rush)", price: "₹", hook: "customers praise your perfect fitting and fast delivery" },
+      { name: "Royal Beauty Salon", cat: "salon", area: "Vaishali Nagar", addr: "D-84 Amrapali Marg, Vaishali Nagar, Jaipur", phone: "+91 141 402 9911", rating: "4.5", rc: 204, score: 84, ws: "social_only", src: "G", ver: true, hours: "Daily 09:30–20:00", win: "Tue–Fri 14:00–16:00 (slow hours)", price: "₹₹", hook: "clients rave about your bridal makeup packages" },
+      { name: "Gupta Auto Garage", cat: "garage", area: "Jhotwara", addr: "Plot 12, Jhotwara Industrial Area, Jaipur", phone: "+91 141 234 5566", rating: "4.7", rc: 156, score: 82, ws: "none", src: "OSM", ver: false, hours: "Mon–Sat 09:00–19:00", win: "Mon–Sat 13:00–15:00 (lunch lull)", price: "₹₹", hook: "reviews mention honest pricing and quick turnaround" },
+      { name: "Shree Ganesh Sweets", cat: "sweet shop", area: "Johari Bazaar", addr: "88 Johari Bazaar Rd, Jaipur 302003", phone: "+91 141 257 8899", rating: "4.4", rc: 521, score: 79, ws: "none", src: "G", ver: true, hours: "Daily 08:00–22:00", win: "Daily 15:00–17:00 (between meal rushes)", price: "₹", hook: "521 reviews and your ghewar is famous city-wide" },
+      { name: "Dr. Meena Dental Clinic", cat: "clinic", area: "Malviya Nagar", addr: "A-7 Girdhar Marg, Malviya Nagar, Jaipur", phone: "+91 141 401 2233", rating: "4.9", rc: 68, score: 76, ws: "social_only", src: "OSM", ver: false, hours: "Mon–Sat 10:00–14:00, 17:00–20:00", win: "Mon–Sat 14:00–17:00 (clinic break)", price: "₹₹", hook: "patients call you the gentlest dentist in Malviya Nagar" },
+      { name: "Krishna Plumbing Works", cat: "plumber", area: "Sanganer", addr: "Ward 9, Sanganer, Jaipur 302029", phone: "+91 98290 44521", rating: "4.2", rc: 43, score: 71, ws: "none", src: "OSM", ver: false, hours: "Daily 08:00–20:00", win: "Daily 12:00–14:00", price: "₹", hook: "reviews mention you show up on time — rare and valuable" },
+      { name: "New Style Barber Shop", cat: "barber", area: "Raja Park", addr: "31 Govind Marg, Raja Park, Jaipur", phone: "+91 141 262 7788", rating: "4.3", rc: 88, score: 64, ws: "none", src: "G", ver: false, hours: "Tue–Sun 09:00–21:00", win: "Tue–Fri 12:00–15:00", price: "₹", hook: "regulars mention your classic razor fades" },
+      { name: "Om Tyre Puncture", cat: "repair", area: "Tonk Road", addr: "NH-52, Tonk Road, Jaipur", phone: "+91 98281 10305", rating: "3.9", rc: 29, score: 48, ws: "none", src: "OSM", ver: false, hours: "Daily 07:00–23:00", win: "Daily 11:00–13:00", price: "₹", hook: "drivers appreciate your late hours" },
+    ];
+  }
+  go(screen) { this.setState({ screen }); }
+  flash(toast) { clearTimeout(this._tt); this.setState({ toast }); this._tt = setTimeout(() => this.setState({ toast: "" }), 1800); }
+  copy(key, text) { try { navigator.clipboard && navigator.clipboard.writeText(text); } catch (e) {} clearTimeout(this._ct); this.setState({ copied: key }); this._ct = setTimeout(() => this.setState({ copied: "" }), 1500); }
+  renderVals() {
+    const S = this.state, P = this.props;
+    const skipIntro = P.skipIntro ?? false;
+    const screen = skipIntro && (S.screen === "intro" || S.screen === "login") ? "dashboard" : S.screen;
+    const leads = this.leads();
+    const L = leads[S.sel];
+    const scoreColor = s => s >= 80 ? "#4ade80" : s >= 60 ? "#d9d9a0" : "#7a828c";
+    const navDefs = [["dashboard", "◳ Dashboard"], ["discover", "◎ Discover"], ["leads", "☰ Leads"], ["settings", "⚙ Settings"]];
+    const navs = navDefs.map(([k, label]) => ({
+      label: k === "leads" ? label + "  ·  142" : label,
+      click: () => this.go(k),
+      style: "padding:9px 18px;cursor:pointer;" + (screen === k ? "background:#16191d;color:#e6e9ed;border-left:2px solid #4ade80;font-weight:600" : "color:#8a929e;border-left:2px solid transparent"),
+    }));
+    const rows = leads.map((r, i) => ({
+      name: r.name, score: r.score, scoreColor: scoreColor(r.score),
+      meta: r.cat + " · ★" + r.rating + "·" + r.rc + " · " + r.area + (r.ver ? " · verified ✓" : ""),
+      tag: r.ws === "social_only" ? "SOCIAL" : "NO_SITE",
+      tagFg: r.ws === "social_only" ? "#d9a13c" : "#4b525b",
+      src: r.src, srcFg: r.src === "G" ? "#7eb3ff" : "#c9a2e8", srcBd: r.src === "G" ? "#2a3a52" : "#3d2f52",
+      click: () => this.setState({ sel: i, tab: "analysis" }),
+      style: "display:flex;gap:10px;align-items:center;padding:11px 16px;border-bottom:1px solid #1c2025;cursor:pointer;" + (S.sel === i ? "background:#16191d;border-left:2px solid #4ade80" : "border-left:2px solid transparent"),
+    }));
+    const tabDefs = [["analysis", "ANALYSIS"], ["data", "DATA"], ["plan", "SITE_PLAN"], ["log", "LOG·" + S.notes.length], ["outreach", "OUTREACH"]];
+    const tabs = tabDefs.map(([k, label]) => ({
+      label, click: () => this.setState({ tab: k }),
+      style: "padding:8px 13px;cursor:pointer;" + (S.tab === k ? "border-bottom:2px solid #4ade80;color:#e6e9ed" : "color:#5c646e"),
+    }));
+    const wsLabel = L.ws === "social_only" ? "social_only" : "none";
+    const reasoning = L.score >= 80
+      ? "High rating (" + L.rating + ") with strong review volume and consistent activity. " + (L.ws === "social_only" ? "Zero web presence beyond social pages" : "No web presence at all") + (L.ver ? " — web-verified via Brave." : " (not yet web-verified).") + " " + L.hook.charAt(0).toUpperCase() + L.hook.slice(1) + " — a clear, sellable need."
+      : L.score >= 60
+        ? "Decent rating (" + L.rating + ") but moderate review volume. " + L.hook.charAt(0).toUpperCase() + L.hook.slice(1) + ". Worth contacting after higher-scoring leads."
+        : "Low review volume and rating (" + L.rating + ") suggest limited activity. Keep for a slow week; lead may not see value in a website yet.";
+    const profile = "A " + L.cat + " in " + L.area + ", Jaipur with " + L.rc + " Google reviews averaging " + L.rating + "★. Customers say: " + L.hook + ". Open " + L.hours.toLowerCase() + ", price level " + L.price + ". No real website — customers rely on Google Maps and word of mouth.";
+    const dataPairs = [
+      { k: "source", v: L.src === "G" ? "google_places" : "openstreetmap" },
+      { k: "source_id", v: L.src === "G" ? "ChIJ" + (1000 + S.sel) + "xQ9…rNw" : "node/98" + (7000 + S.sel * 13) },
+      { k: "category", v: L.cat }, { k: "price_level", v: L.price },
+      { k: "address", v: L.addr }, { k: "phone", v: L.phone },
+      { k: "rating", v: L.rating + " ★" }, { k: "reviews", v: String(L.rc) },
+      { k: "website_status", v: wsLabel }, { k: "verified_no_site", v: L.ver ? "true · 3d ago" : "null — not checked" },
+      { k: "hours", v: L.hours }, { k: "language_hint", v: "hi-IN" },
+      { k: "first_seen", v: "2026-07-06" }, { k: "last_refreshed", v: "2026-07-16 (2d ago)" },
+    ];
+    const planPagesArr = L.cat === "restaurant" || L.cat === "sweet shop" ? ["Home", "Menu", "Gallery", "Reviews", "Contact & Directions"] : ["Home", "Services & Prices", "Gallery", "Reviews", "Contact & Booking"];
+    const planAngle = "Lead with what customers already love — " + L.hook + ". One-page-feel site, mobile-first (their customers find them on phones via Maps), with a sticky call/WhatsApp button, " + (L.cat === "restaurant" || L.cat === "sweet shop" ? "a photo-forward menu" : "a clear service & price list") + ", embedded Google reviews, and an 'open now' hours widget. Hindi + English toggle.";
+    const planPoints = [
+      { t: L.rc + " reviews at " + L.rating + "★ and no website — customers literally ask for one." },
+      { t: "Competitors in " + L.area + " with websites appear above them in searches." },
+      { t: "A ₹6–10k one-time site pays for itself with 2–3 new customers." },
+    ];
+    const langs = { Hindi: ["हिन्दी", "नमस्ते! मैंने Google Maps पर " + L.name + " देखा — " + L.rc + " रिव्यू, " + L.rating + "★ रेटिंग। लेकिन आपकी कोई वेबसाइट नहीं है, इसलिए नए ग्राहक आपको ऑनलाइन नहीं ढूँढ पाते। मैं छोटे व्यवसायों के लिए सरल वेबसाइट बनाता हूँ। क्या मैं इस हफ़्ते एक फ्री डेमो दिखा सकता हूँ?"], Spanish: ["ESPAÑOL", "¡Hola! Encontré " + L.name + " en Google Maps — " + L.rc + " reseñas y " + L.rating + "★. Pero no tienen sitio web, así que los clientes nuevos no los encuentran online. Hago sitios web sencillos para negocios como el suyo. ¿Puedo mostrarle una demo gratis esta semana?"], Portuguese: ["PORTUGUÊS", "Olá! Encontrei " + L.name + " no Google Maps — " + L.rc + " avaliações e " + L.rating + "★. Mas vocês não têm site, então novos clientes não os encontram online. Eu crio sites simples para negócios como o seu. Posso mostrar uma demo grátis esta semana?"], French: ["FRANÇAIS", "Bonjour ! J'ai trouvé " + L.name + " sur Google Maps — " + L.rc + " avis et " + L.rating + "★. Mais vous n'avez pas de site web, donc les nouveaux clients ne vous trouvent pas en ligne. Je crée des sites simples pour des commerces comme le vôtre. Puis-je vous montrer une démo gratuite cette semaine ?"], German: ["DEUTSCH", "Hallo! Ich habe " + L.name + " auf Google Maps gefunden — " + L.rc + " Bewertungen und " + L.rating + "★. Aber Sie haben keine Website, daher finden neue Kunden Sie online nicht. Ich baue einfache Websites für Geschäfte wie Ihres. Darf ich Ihnen diese Woche eine kostenlose Demo zeigen?"] };
+    const lang = langs[P.outreachLanguage ?? "Hindi"] || langs.Hindi;
+    const draftEn = "Hi! I found " + L.name + " on Google Maps — " + L.rc + " reviews and " + L.hook + ". But you have no website, so new customers can't find you online. I build simple, affordable websites for businesses like yours. Can I show you a free demo this week?";
+    const callScript = [
+      { n: "01", t: "Namaste, am I speaking with the owner of " + L.name + "? I'll take just one minute." },
+      { n: "02", t: "I found you on Google Maps — " + L.rc + " reviews, " + L.rating + " stars. Honestly impressive, and " + L.hook + "." },
+      { n: "03", t: "One thing I noticed: you have no website, so people searching online find your competitors first." },
+      { n: "04", t: "I build simple websites for local businesses — menu, photos, reviews, one-tap call button. Can I WhatsApp you a free demo made for " + L.name + "?" },
+      { n: "05", t: "If yes → send demo + fix a follow-up. If busy → ask for a better time, log it." },
+    ];
+    const followUps = [
+      { time: "11:00", name: "Royal Beauty Salon", note: "Owner asked for demo link on WhatsApp", kind: "WHATSAPP", click: () => this.setState({ screen: "leads", sel: 2 }) },
+      { time: "16:00", name: "Annapurna Bhojanalay", note: "Call back after lunch rush — spoke to son on Tue", kind: "CALL", click: () => this.setState({ screen: "leads", sel: 0 }) },
+      { time: "18:30", name: "Gupta Auto Garage", note: "Visit in person — 5 min from Jhotwara metro", kind: "VISIT", click: () => this.setState({ screen: "leads", sel: 3 }) },
+    ];
+    const sweeps = [
+      { q: "restaurants · Jaipur", when: "today 09:12", found: 118, added: 34, req: 41 },
+      { q: "salons · Vaishali Nagar", when: "yesterday", found: 64, added: 19, req: 22 },
+      { q: "tailors · Bapu Bazaar (OSM)", when: "2d ago", found: 87, added: 28, req: 0 },
+    ];
+    const catNames = ["any", "restaurant", "salon", "plumber", "tailor", "garage", "clinic", "barber", "sweet shop"];
+    const cats = catNames.map(c => ({
+      label: c,
+      click: () => this.setState(s => {
+        if (c === "any") return { catSel: { any: 1 } };
+        const next = { ...s.catSel, [c]: s.catSel[c] ? 0 : 1 };
+        delete next.any;
+        return { catSel: next };
+      }),
+      style: "padding:5px 10px;border-radius:4px;cursor:pointer;" + (S.catSel[c] ? "background:#1d2b22;color:#4ade80;border:1px solid #274434" : "background:#16191d;color:#8a929e;border:1px solid #23272d"),
+    }));
+    const countries = ["🌍 Global", "🇮🇳 India", "🇺🇸 United States", "🇬🇧 United Kingdom", "🇩🇪 Germany", "🇫🇷 France", "🇪🇸 Spain", "🇧🇷 Brazil", "🇲🇽 Mexico", "🇳🇬 Nigeria", "🇦🇪 UAE", "🇮🇩 Indonesia"];
+    const mkDd = key => ({
+      open: S.dd === key,
+      caret: S.dd === key ? "▴" : "▾",
+      toggle: () => this.setState(s => ({ dd: s.dd === key ? "" : key })),
+      opts: countries.map(c => ({
+        label: c,
+        click: () => this.setState({ country: c, dd: "" }),
+        style: "padding:8px 11px;font-size:12.5px;cursor:pointer;" + (c === S.country ? "color:#4ade80;background:#1d2b22" : "color:#c3c9d1"),
+      })),
+    });
+    const ddD = mkDd("discover"), ddL = mkDd("leads"), ddS = mkDd("settings");
+    const srcOpts = ["GOOGLE", "OSM"].map(k => ({
+      label: k === "GOOGLE" ? "GOOGLE PLACES" : "OPENSTREETMAP", click: () => this.setState(s => ({ srcSel: { ...s.srcSel, [k]: s.srcSel[k] ? 0 : 1 } })),
+      style: "flex:1;text-align:center;padding:7px 0;border-radius:4px;cursor:pointer;" + (S.srcSel[k] ? "background:#1d2b22;color:#4ade80;border:1px solid #274434" : "background:#16191d;color:#8a929e;border:1px solid #23272d"),
+    }));
+    const q = ["Laxmi Misthan Bhandar", "Verma Cycle Repair", "Chandra Beauty Parlour", "Jain Opticals", "Raju Tea Stall", "Modern Furniture House", "Shakti Gym", "Prakash Dry Cleaners", "Heena Mehendi Art"];
+    return {
+      isIntro: screen === "intro", isLogin: screen === "login",
+      isApp: ["dashboard", "discover", "leads", "settings"].includes(screen),
+      isDashboard: screen === "dashboard", isDiscover: screen === "discover", isLeads: screen === "leads", isSettings: screen === "settings",
+      goLogin: () => this.go("login"),
+      doLogin: () => this.go("dashboard"),
+      loginKey: e => { if (e.key === "Enter") this.go("dashboard"); },
+      doLock: () => this.go("login"),
+      navs, quotaOpen: S.quotaOpen, quotaCaret: S.quotaOpen ? "▾" : "▸",
+      toggleQuota: () => this.setState(s => ({ quotaOpen: !s.quotaOpen })),
+      analyzedCount: 118 + S.anaN, newCount: 24 - S.anaN,
+      anaText: S.anaRunning ? "Analyzing lead " + (S.anaN + 1) + " of 24 — scoring, profiling, drafting outreach…" : S.anaN >= 24 ? "Batch complete — 24 leads analyzed, 0 remaining." : "24 new leads are waiting for deep analysis (score, profile, site plan, outreach drafts).",
+      anaPct: Math.round(S.anaN / 24 * 100) + "%",
+      anaBtnLabel: S.anaRunning ? "■ PAUSE" : S.anaN >= 24 ? "DONE ✓" : S.anaN > 0 ? "▶ RESUME (" + (24 - S.anaN) + " LEFT)" : "▶ ANALYZE 24 NEW LEADS",
+      anaBtnBg: S.anaRunning ? "#16191d" : "#1d2b22", anaBtnFg: "#4ade80",
+      runBatch: () => {
+        if (S.anaRunning) { clearInterval(this._an); this.setState({ anaRunning: false }); return; }
+        if (S.anaN >= 24) return;
+        this.setState({ anaRunning: true });
+        this._an = setInterval(() => this.setState(s => {
+          if (s.anaN + 1 >= 24) { clearInterval(this._an); return { anaN: 24, anaRunning: false }; }
+          return { anaN: s.anaN + 1 };
+        }), 350);
+      },
+      followUps, sweeps,
+      cats, srcOpts, country: S.country,
+      ddDiscoverOpen: ddD.open, ddDiscoverCaret: ddD.caret, toggleDdDiscover: ddD.toggle, countryOptsDiscover: ddD.opts,
+      ddLeadsOpen: ddL.open, ddLeadsCaret: ddL.caret, toggleDdLeads: ddL.toggle, countryOptsLeads: ddL.opts,
+      ddSettingsOpen: ddS.open, ddSettingsCaret: ddS.caret, toggleDdSettings: ddS.toggle, countryOptsSettings: ddS.opts,
+      sweepBtnLabel: S.running ? "■ STOP SWEEP" : S.swDone ? "▶ START NEW SWEEP" : "▶ START SWEEP",
+      sweepBtnBg: S.running ? "#16191d" : "#4ade80", sweepBtnFg: S.running ? "#4ade80" : "#0b0d0f",
+      toggleSweep: () => {
+        if (S.running) { clearInterval(this._sw); this.setState({ running: false }); return; }
+        this.setState({ running: true, swDone: false, feed: [], swQ: 0, swReq: 0, swFound: 0, swNew: 0 });
+        let i = 0;
+        this._sw = setInterval(() => {
+          i++;
+          this.setState(s => {
+            if (i > q.length) { clearInterval(this._sw); return { running: false, swDone: true, swQ: 12 }; }
+            const src = i % 3 === 0 ? "OSM" : "G";
+            const item = {
+              name: q[i - 1], src, srcFg: src === "G" ? "#7eb3ff" : "#c9a2e8", srcBd: src === "G" ? "#2a3a52" : "#3d2f52",
+              meta: ["sweet shop", "repair", "salon", "optician", "cafe", "furniture", "gym", "laundry", "artist"][i - 1] + " · " + ["Johari Bazaar", "Raja Park", "Mansarovar", "MI Road", "C-Scheme", "Tonk Road", "Malviya Nagar", "Vaishali Nagar", "Bapu Bazaar"][i - 1] + " · Jaipur",
+              tag: i % 4 === 0 ? "SOCIAL" : "NO_SITE", tagFg: i % 4 === 0 ? "#d9a13c" : "#4b525b",
+            };
+            return { feed: [item, ...s.feed], swQ: Math.min(12, Math.ceil(i * 1.3)), swReq: s.swReq + (src === "G" ? 4 : 0), swFound: s.swFound + 9 + (i % 5), swNew: s.swNew + 1 };
+          });
+        }, 700);
+      },
+      swQ: S.swQ, swReq: S.swReq, swFound: S.swFound, swNew: S.swNew,
+      swPct: Math.round(S.swQ / 12 * 100) + "%",
+      swState: S.running ? "● SWEEPING" : S.swDone ? "✓ COMPLETE — " + S.swNew + " NEW LEADS" : "IDLE",
+      swStateColor: S.running ? "#4ade80" : S.swDone ? "#4ade80" : "#5c646e",
+      feed: S.feed, feedEmpty: S.feed.length === 0,
+      filtersOpen: S.filtersOpen, filterCaret: S.filtersOpen ? "▴" : "▾",
+      toggleFilters: () => this.setState(s => ({ filtersOpen: !s.filtersOpen })),
+      rows, tabs,
+      tabAnalysis: S.tab === "analysis", tabData: S.tab === "data", tabPlan: S.tab === "plan", tabLog: S.tab === "log", tabOutreach: S.tab === "outreach",
+      selHeadline: "LEAD_" + String(42 + S.sel).padStart(4, "0") + " · " + (L.score ? "ANALYZED" : "NEW") + " · source: " + (L.src === "G" ? "GOOGLE" : "OSM") + " · refreshed 2d ago ⟳" + (L.ver ? " · VERIFIED_NO_WEBSITE ✓" : ""),
+      selName: L.name,
+      selSub: L.cat + " · " + L.addr + " · ★ " + L.rating + " (" + L.rc + ") · " + L.price,
+      selScore: L.score, selScoreColor: scoreColor(L.score),
+      selScoreLabel: L.score >= 80 ? "STRONG" : L.score >= 60 ? "MEDIUM" : "WEAK",
+      selPhone: L.phone, selRating: L.rating, selRc: L.rc, selWs: wsLabel,
+      selVerified: L.ver ? "no_website ✓" : "not checked", selVerColor: L.ver ? "#4ade80" : "#8a929e",
+      selWindow: L.win, selReasoning: reasoning, selProfile: profile,
+      dataPairs, planAngle, planPoints, planPages: planPagesArr.map(t => ({ t })),
+      copyPlan: () => this.copy("plan", planAngle + "\n\nPages: " + planPagesArr.join(", ")),
+      copyPlanLabel: S.copied === "plan" ? "COPIED ✓" : "COPY PLAN FOR CLAUDE",
+      acts: S.notes, noteText: S.noteText,
+      onNote: e => this.setState({ noteText: e.target.value }),
+      noteKey: e => { if (e.key === "Enter") this.addNoteNow(); },
+      addNote: () => this.addNoteNow(),
+      draftEn, draftLocal: lang[1], localLangLabel: lang[0],
+      copyEn: () => this.copy("en", draftEn), copyEnLabel: S.copied === "en" ? "COPIED ✓" : "COPY",
+      copyLocal: () => this.copy("lo", lang[1]), copyLocalLabel: S.copied === "lo" ? "COPIED ✓" : "COPY",
+      callScript,
+      saveSettings: () => this.flash("Settings saved ✓"),
+      hasToast: !!S.toast, toast: S.toast,
+    };
+  }
+  addNoteNow() {
+    const t = this.state.noteText.trim();
+    if (!t) return;
+    this.setState(s => ({ notes: [{ kind: "NOTE", text: t, when: "now" }, ...s.notes], noteText: "" }));
+    this.flash("Note added ✓");
+  }
+}
+</script>
+</body>
+</html>

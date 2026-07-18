@@ -1,0 +1,340 @@
+/* Alex.ai — dark "operator console" theme. Tokens from design handoff. */
+
+:root {
+  --bg: #101214;
+  --deep: #0b0d0f;
+  --panel: #16191d;
+  --field: #101214;
+  --border: #23272d;
+  --hairline: #1c2025;
+  --border-hover: #2f3640;
+  --text: #e6e9ed;
+  --body: #c3c9d1;
+  --sec: #8a929e;
+  --muted: #5c646e;
+  --faint: #4b525b;
+  --green: #4ade80;
+  --green-hover: #5ee890;
+  --green-bg: #1d2b22;
+  --green-border: #274434;
+  --amber: #d9a13c;
+  --google: #7eb3ff;
+  --google-bd: #2a3a52;
+  --osm: #c9a2e8;
+  --osm-bd: #3d2f52;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--deep);
+  color: var(--text);
+  font-family: var(--font-sg), "Space Grotesk", sans-serif;
+}
+
+a {
+  color: var(--google);
+  text-decoration: none;
+}
+a:hover {
+  color: #a9ccff;
+}
+
+input::placeholder {
+  color: var(--faint);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mono {
+  font-family: var(--font-jbm), "JetBrains Mono", monospace;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.card-head {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-jbm), monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--sec);
+}
+
+.input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 11px;
+  font-family: var(--font-sg), sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  outline: none;
+}
+.input:focus {
+  border-color: var(--green-border);
+}
+.input.in-panel {
+  background: var(--field);
+}
+
+.btn-green {
+  text-align: center;
+  background: var(--green);
+  color: var(--deep);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-jbm), monospace;
+  font-weight: 700;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn-green:hover {
+  background: var(--green-hover);
+}
+
+.btn-green-tint {
+  text-align: center;
+  background: var(--green-bg);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-jbm), monospace;
+  font-weight: 700;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.btn-outline {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-jbm), monospace;
+  font-weight: 600;
+  color: var(--sec);
+  text-align: center;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn-outline:hover {
+  border-color: var(--border-hover);
+}
+
+.chip {
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--panel);
+  color: var(--sec);
+  border: 1px solid var(--border);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.chip.in-panel {
+  background: var(--field);
+  padding: 4px 9px;
+}
+.chip.on {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: var(--green-border);
+}
+
+.bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+}
+
+.lbl {
+  font-family: var(--font-jbm), monospace;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hover-row:hover {
+  background: #191d22;
+}
+.hover-row-light:hover {
+  background: #14171a;
+}
+
+.dd-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border-hover);
+  border-radius: 6px;
+  z-index: 30;
+  max-height: 230px;
+  overflow: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.dd-opt {
+  padding: 8px 11px;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: var(--body);
+}
+.dd-opt:hover {
+  background: #1d2126;
+}
+.dd-opt.on {
+  color: var(--green);
+  background: var(--green-bg);
+}
+
+.tab {
+  padding: 8px 13px;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  font-family: var(--font-jbm), monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.on {
+  border-bottom-color: var(--green);
+  color: var(--text);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ping {
+  0% {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  70%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@keyframes pinbob {
+  0%,
+  100% {
+    transform: rotate(45deg) translate(0, 0);
+  }
+  50% {
+    transform: rotate(45deg) translate(-4px, -4px);
+  }
+}
+@keyframes fadeup {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fadeout {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes feedin {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fadeup {
+  animation: fadeup 0.5s both;
+}
+.feedin {
+  animation: feedin 0.35s both;
+}
+
+.toast {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  background: var(--green-bg);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-family: var(--font-jbm), monospace;
+  font-size: 12px;
+  font-weight: 600;
+  animation: fadeup 0.3s both;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+}
+
+/* sliders (score filter, quota threshold) */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: grab;
+  border: none;
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: grab;
+  border: none;
+}
