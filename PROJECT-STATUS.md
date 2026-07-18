@@ -60,7 +60,7 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 
 ## 9. Repos & deployment
 
-- GitHub: `sumitkr28/Alex-ai` (personal-branded README) and `xorvion-ai/Alex-ai` (Xorvion-branded README on branch `xorvion-main` pushed as its main). Same code otherwise.
+- GitHub targets: `Sumitkr28/Alex-ai` (personal-branded README, local branch `main`) and `xorvion-ai/Alex-ai` (Xorvion-branded README, local branch `xorvion-main` — push it as that repo's `main`). Remotes `sumit` and `xorvion` are configured; repos must exist on GitHub first (the provided PATs cannot create repos).
 - Deploy target: **Vercel Hobby via the sumitkr28 account** — import repo at vercel.com/new, add all `.env` vars, deploy. Not yet deployed.
 - Local `.env` exists with Sumit's chosen login password and a random SESSION_SECRET (never committed — `.env` is git-ignored); all API keys still empty.
 
