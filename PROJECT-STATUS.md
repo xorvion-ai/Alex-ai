@@ -2,7 +2,7 @@
 
 > **Purpose of this file:** complete project context in one place. If you are Claude (or any developer) starting fresh on this repo — read this file first; it tells you what the product is, what's built, how it works, what's decided, and what's left.
 
-Last updated: **2026-07-19 (evening)** · Status: **v1 complete + card-free mode — built, linted, auth smoke-tested, pushed to both GitHub accounts**
+Last updated: **2026-07-19 (night)** · Status: **v1 FULLY VERIFIED END-TO-END with live APIs — production-ready, pending only Vercel import**
 
 > **Standing rules from Sumit:** (1) keep THIS file updated after every working session; (2) **never add a Claude co-author line to commits** (history was rewritten once to remove them).
 
@@ -54,11 +54,18 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 
 `DATABASE_URL` (Neon) · `ALEX_PASSWORD` · `SESSION_SECRET` · `GOOGLE_PLACES_API_KEY` · `GOOGLE_GENERATIVE_AI_API_KEY` (Gemini) · `BRAVE_SEARCH_API_KEY` · optional `GEMINI_MODEL`. Setup walkthrough with the Google-console safety steps (quota caps + $1 budget alert): **SETUP.md**.
 
-## 8. Verification done / how to verify
+## 8. Verification — COMPLETE (2026-07-19, live APIs)
 
 - `npm run build` ✓ (Next 16, all 20 routes) · `npm run lint` ✓
-- Auth smoke-tested end-to-end with curl: `/` → 307 `/login`; wrong password → 401; correct → HttpOnly signed cookie; API without cookie → 401; authed `/` renders Dashboard + Quota Guardian sidebar.
-- NOT yet verified (needs Sumit's API keys): live Google sweep, OSM sweep, Gemini analysis, Brave verify, Neon db:push. Follow `ALEX-AI-PLAN.md` §Verification once keys exist.
+- Auth: `/` → 307 `/login`; wrong password → 401; correct → HttpOnly signed cookie; API without cookie → 401 ✓
+- Neon: connected, `db:push` created all 7 tables ✓
+- Demo seed: first dashboard load created exactly 1 DEMO lead (Annapurna Bhojanalay, score 91, full analysis) ✓
+- **Live sweep** (Jaipur, tailor, google+osm): 3 Google requests → 60 scanned → 48 no-website leads; OSM step → 2 more; cross-source dedup ran; total 50 real leads ✓
+- **Live Gemini analysis** on a real lead: `gemini-3.1-flash-lite`, score 92, reasoning cites the lead's real 738 reviews/4.9★, WhatsApp drafts EN + हिन्दी, site plan pages, call window ✓
+- Archive flow: ✓ CONTACTED on a real lead → row appears in history CSV, lead 404s in app ✓
+- Quota Guardian logged real usage exactly: google_places 4/1000 (month), gemini 1/1000 (day) ✓
+- Still untested: Brave verify (no key — card-free mode), Vercel deployment.
+- Note: the 49 remaining Jaipur tailor leads from verification are REAL leads left in the DB for Sumit to use or archive.
 
 ## 9. Repos & deployment
 
@@ -68,12 +75,12 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 
 ## 10. Open TODOs (state on 2026-07-19 evening)
 
-1. **Neon DATABASE_URL is wrong** — the password read from a screenshot failed auth (`password authentication failed for user 'neondb_owner'`). Sumit must copy the EXACT connection string from Neon console ("Copy snippet") or reset the role password, put it in `.env`, then run `npm run db:push` (tables not created yet).
-2. ✅ Gemini key: set in `.env` and validated live (HTTP 200). Model `gemini-3.1-flash-lite` confirmed to exist via the models API — no override needed.
-3. Card-free mode: Google Places + Brave keys intentionally skipped (need a card). Add later only if Sumit chooses.
-4. After DB works: verify end-to-end — demo lead seeds on first dashboard load, OSM sweep on a small city, batch analysis on real leads, archive flow.
-5. Vercel deploy (sumitkr28 account): import `Sumitkr28/Alex-ai` at vercel.com/new + add env vars from `.env`.
-6. Sumit: **rotate the two GitHub PATs** shared in chat (they were used for pushes; treat as exposed).
+1. ✅ Neon: connected (screenshot had hidden a '5' in the password), tables created, everything verified.
+2. ✅ Gemini key: validated live; model `gemini-3.1-flash-lite` confirmed — no override needed.
+3. ✅ Google Places API (New): billing verified via **UPI (no card!)** — trial mode (auto-charge impossible). Key validated with real searches. Sumit still to do in console: quota caps (Places API (New) → Quotas → 35/day) + restrict key to Places API (New). **Never click "Activate full account"** — trial mode is the safety net; when the 90-day trial ends, the app auto-falls back to card-free OSM mode.
+4. Brave: skipped (card-only) — VERIFY ON WEB button errors politely until a key exists.
+5. **Vercel deploy (sumitkr28 account) — last step:** import `Sumitkr28/Alex-ai` at vercel.com/new + add all env vars from `.env`.
+6. Sumit: **rotate the two GitHub PATs** shared in chat (used for pushes; treat as exposed). The Google/Gemini keys also appeared in chat screenshots — key restriction (3.) mitigates; can regenerate anytime.
 7. Future ideas (out of scope for v1): demo-site generator per lead, paid email enrichment, multi-user.
 
 ## 11. Key documents
