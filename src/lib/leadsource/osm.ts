@@ -82,17 +82,25 @@ export async function overpassById(sourceId: string): Promise<OsmElement | null>
   const [type, id] = sourceId.split("/");
   if (!type || !id) return null;
   const body = `[out:json][timeout:30];${type}(${id});out center tags;`;
-  const res = await fetch(OVERPASS, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": USER_AGENT,
-    },
-    body: `data=${encodeURIComponent(body)}`,
-  });
-  if (!res.ok) return null;
-  const json = await res.json();
-  return json.elements?.[0] ?? null;
+  for (const server of OVERPASS_SERVERS) {
+    try {
+      const res = await fetch(server, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": USER_AGENT,
+        },
+        body: `data=${encodeURIComponent(body)}`,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.elements?.[0] ?? null;
+      }
+    } catch {
+      // try the next mirror
+    }
+  }
+  return null;
 }
 
 export function normalizeOsmElement(
