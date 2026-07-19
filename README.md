@@ -2,7 +2,9 @@
 
 **A free tool that finds small businesses with no website — anywhere on Earth — so you can build them one and sell it.**
 
-Alex.ai sweeps Google Maps *and* OpenStreetMap for shops, restaurants, salons, garages… that have **zero web presence**, deep-analyzes each one with AI, and hands you everything you need to close them: a lead score, a website plan, and ready-to-send outreach in their own language. Total running cost: **$0/month**.
+## 🔗 Live: [**alex-ai-xorvion.vercel.app**](https://alex-ai-xorvion.vercel.app)
+
+Alex.ai sweeps Google Maps, OpenStreetMap *and* TomTom for shops, restaurants, salons, garages… that have **zero web presence**, deep-analyzes each one with AI, and hands you everything you need to close them: a lead score, a website plan, and ready-to-send outreach in their own language. Total running cost: **$0/month**. (Single-operator tool — the live app is password-protected.)
 
 ## What it does
 
