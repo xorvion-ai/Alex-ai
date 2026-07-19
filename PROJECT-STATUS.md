@@ -65,7 +65,7 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 - Archive flow: ✓ CONTACTED on a real lead → row appears in history CSV, lead 404s in app ✓
 - Quota Guardian logged real usage exactly: google_places 4/1000 (month), gemini 1/1000 (day) ✓
 - **2026-07-20 additions (all live):** TomTom-only sweep (7 Jaipur barbers, TT badges) ✓ · triple-source Noida salon sweep: Google 20 + TomTom 99 = 119 leads in one run ✓ · OSM Overpass 504 handled gracefully mid-sweep, then fallback-mirror retry added and verified (39 OSM Noida leads via mirrors) ✓ · Gemini analysis #2 (score 92) ✓ · TomTom lead refresh via Place-by-ID ✓ · verify without Tavily key → polite `.env.example` pointer ✓ · filtered CSV export ✓ · Quota Guardian shows all 4 providers, matching real usage (places 8, gemini 2, tomtom 3, tavily 0) ✓
-- Still untested: Tavily verification (key pending from Sumit — screenshot showed it truncated, must be pasted as text), Vercel deployment.
+- **Tavily verified live (2026-07-20):** real lead verify → harvested 6 FB/IG links; after expanding DIRECTORY_HOSTS (magicpin.in etc.) it correctly discovered the lead's hidden real website → verified_no_website=false. Feature working as designed. Only Vercel deployment remains untested.
 - Note: ~215 REAL leads (Jaipur tailors/barbers + Noida salons) live in the DB for Sumit to use or archive; SETUP.md was deleted at Sumit's request — key docs now live inline in `.env.example`.
 
 ## 9. Repos & deployment
