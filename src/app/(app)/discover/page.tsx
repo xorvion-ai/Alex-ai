@@ -42,16 +42,25 @@ export default function DiscoverPage() {
   const [doneState, setDoneState] = useState<"idle" | "done" | "stopped">("idle");
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [prog, setProg] = useState<Progress | null>(null);
+  const [googleAvailable, setGoogleAvailable] = useState(true);
   const runningRef = useRef(false);
   const searchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    api<{ settings: { defaultCountry: string; defaultCategories: string[] } }>("/api/settings")
+    api<{
+      settings: { defaultCountry: string; defaultCategories: string[] };
+      keys: { googlePlaces: string | null };
+    }>("/api/settings")
       .then((r) => {
         setCountry(r.settings.defaultCountry);
         const sel: Record<string, boolean> = {};
         for (const c of r.settings.defaultCategories) sel[c] = true;
         if (Object.keys(sel).length) setCatSel(sel);
+        // Card-free mode: no Google key → OSM-only sweeps (still fully functional)
+        if (!r.keys.googlePlaces) {
+          setGoogleAvailable(false);
+          setSrcSel({ google: false, osm: true });
+        }
       })
       .catch(() => {});
     return () => {
@@ -213,15 +222,32 @@ export default function DiscoverPage() {
               <span
                 key={k}
                 className={`chip${srcSel[k] ? " on" : ""}`}
-                style={{ flex: 1, textAlign: "center", padding: "7px 0" }}
-                onClick={() => setSrcSel((s) => ({ ...s, [k]: !s[k] }))}
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  padding: "7px 0",
+                  opacity: k === "google" && !googleAvailable ? 0.55 : 1,
+                }}
+                onClick={() => {
+                  if (k === "google" && !googleAvailable) {
+                    flash("google needs an API key (card required) — OSM is 100% card-free");
+                    return;
+                  }
+                  setSrcSel((s) => ({ ...s, [k]: !s[k] }));
+                }}
               >
-                {k === "google" ? "GOOGLE PLACES" : "OPENSTREETMAP"}
+                {k === "google"
+                  ? googleAvailable
+                    ? "GOOGLE PLACES"
+                    : "GOOGLE · NO KEY"
+                  : "OPENSTREETMAP"}
               </span>
             ))}
           </div>
           <div className="mono" style={{ fontSize: 10, color: "var(--faint)", marginTop: 6 }}>
-            google = best data, quota-limited · osm = free &amp; unlimited
+            {googleAvailable
+              ? "google = best data, quota-limited · osm = free & unlimited"
+              : "card-free mode: osm = free & unlimited · add a google key later for richer data"}
           </div>
         </div>
 

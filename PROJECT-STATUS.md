@@ -2,7 +2,9 @@
 
 > **Purpose of this file:** complete project context in one place. If you are Claude (or any developer) starting fresh on this repo — read this file first; it tells you what the product is, what's built, how it works, what's decided, and what's left.
 
-Last updated: **2026-07-19** · Status: **v1 complete — built, type-checked, linted, auth smoke-tested**
+Last updated: **2026-07-19 (evening)** · Status: **v1 complete + card-free mode — built, linted, auth smoke-tested, pushed to both GitHub accounts**
+
+> **Standing rules from Sumit:** (1) keep THIS file updated after every working session; (2) **never add a Claude co-author line to commits** (history was rewritten once to remove them).
 
 ---
 
@@ -14,7 +16,7 @@ A **single-user agentic web app** owned by Sumit Kumar (Xorvion). It finds small
 
 ## 2. Hard constraints (decided by Sumit — do not change without asking)
 
-1. **$0/month forever.** Free tiers only. The in-app **Quota Guardian** hard-stops every provider at 90% of its free limit (configurable in Settings) — a bill must be impossible.
+1. **$0/month forever — and CARD-FREE.** Sumit will not put a card on file anywhere. Default mode: OpenStreetMap discovery (no key) + Gemini free tier (no card). Google Places and Brave are OPTIONAL (both require a card even for free tiers); the app detects missing keys — Discover shows "GOOGLE · NO KEY" and defaults to OSM-only. The Quota Guardian still hard-stops every keyed provider at 90% of its free limit.
 2. **Official APIs only, no scraping.** Phone numbers yes; emails are NOT available (no free source) — outreach is call/WhatsApp/visit.
 3. **Global** — any city, any country, any language.
 4. **Lead-gen only** — no website-builder inside the app (sites are built separately with Claude via the "COPY PLAN FOR CLAUDE" button).
@@ -64,12 +66,15 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 - Deploy target: **Vercel Hobby via the sumitkr28 account** — import repo at vercel.com/new, add all `.env` vars, deploy. Not yet deployed.
 - Local `.env` exists with Sumit's chosen login password and a random SESSION_SECRET (never committed — `.env` is git-ignored); all API keys still empty.
 
-## 10. Open TODOs (state on 2026-07-19)
+## 10. Open TODOs (state on 2026-07-19 evening)
 
-1. Sumit: create Neon DB + 3 API keys per SETUP.md, fill `.env`, run `npm run db:push`, then `npm run dev` and run the full verification (sweep a small city, batch-analyze, verify, archive).
-2. Sumit: import repo into Vercel (sumitkr28 account) + add env vars.
-3. Sumit: **rotate the two GitHub PATs** that were shared in chat during setup.
-4. Possible future ideas (explicitly out of scope for v1): demo-site generator per lead, paid email enrichment, multi-user.
+1. **Neon DATABASE_URL is wrong** — the password read from a screenshot failed auth (`password authentication failed for user 'neondb_owner'`). Sumit must copy the EXACT connection string from Neon console ("Copy snippet") or reset the role password, put it in `.env`, then run `npm run db:push` (tables not created yet).
+2. ✅ Gemini key: set in `.env` and validated live (HTTP 200). Model `gemini-3.1-flash-lite` confirmed to exist via the models API — no override needed.
+3. Card-free mode: Google Places + Brave keys intentionally skipped (need a card). Add later only if Sumit chooses.
+4. After DB works: verify end-to-end — demo lead seeds on first dashboard load, OSM sweep on a small city, batch analysis on real leads, archive flow.
+5. Vercel deploy (sumitkr28 account): import `Sumitkr28/Alex-ai` at vercel.com/new + add env vars from `.env`.
+6. Sumit: **rotate the two GitHub PATs** shared in chat (they were used for pushes; treat as exposed).
+7. Future ideas (out of scope for v1): demo-site generator per lead, paid email enrichment, multi-user.
 
 ## 11. Key documents
 
