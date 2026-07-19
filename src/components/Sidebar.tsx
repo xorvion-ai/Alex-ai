@@ -30,8 +30,6 @@ export default function Sidebar() {
 
   const q = (provider: string) => quota.find((x) => x.provider === provider);
   const places = q("google_places");
-  const gemini = q("gemini");
-  const brave = q("brave");
   const pct = (x?: { used: number; limit: number }) =>
     x ? Math.min(100, Math.round((x.used / x.limit) * 100)) : 0;
 
@@ -105,18 +103,19 @@ export default function Sidebar() {
         </div>
         {quotaOpen && (
           <>
-            <div className="bar" style={{ marginTop: 8 }}>
-              <i style={{ width: `${pct(gemini)}%` }} />
-            </div>
-            <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", marginTop: 4 }}>
-              GEMINI {gemini ? `${gemini.used}/${gemini.limit}·day` : "—"}
-            </div>
-            <div className="bar" style={{ marginTop: 8 }}>
-              <i style={{ width: `${pct(brave)}%` }} />
-            </div>
-            <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", marginTop: 4 }}>
-              BRAVE {brave ? `${brave.used}/${brave.limit}` : "—"}
-            </div>
+            {quota
+              .filter((x) => x.provider !== "google_places")
+              .map((x) => (
+                <div key={x.provider}>
+                  <div className="bar" style={{ marginTop: 8 }}>
+                    <i style={{ width: `${pct(x)}%` }} />
+                  </div>
+                  <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", marginTop: 4 }}>
+                    {x.label} {x.used}/{x.limit}
+                    {x.period === "day" ? "·day" : ""}
+                  </div>
+                </div>
+              ))}
             <div
               className="mono"
               style={{ fontSize: 9.5, fontWeight: 500, color: "var(--amber)", marginTop: 9, lineHeight: 1.5 }}

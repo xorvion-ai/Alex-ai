@@ -52,7 +52,7 @@ export function timeAgo(iso: string | null | undefined): string {
 
 export type LeadDto = {
   id: number;
-  source: "google" | "osm";
+  source: "google" | "osm" | "tomtom";
   sourceId: string;
   name: string;
   category: string | null;

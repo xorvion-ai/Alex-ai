@@ -6,7 +6,12 @@ import { Category } from "@/lib/categories";
 import { classifyWebsite, digitsPhone, NormalizedLead } from "./types";
 
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
-const OVERPASS = "https://overpass-api.de/api/interpreter";
+// Public Overpass servers get busy — try each in turn per query.
+const OVERPASS_SERVERS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+];
 const USER_AGENT = "Alex.ai-lead-finder/1.0 (single-user personal tool)";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -44,24 +49,32 @@ export async function overpassSearch(
   category: Category,
   bbox: BBox,
 ): Promise<OsmElement[]> {
-  const body = `[out:json][timeout:60];(${category.osm
+  const body = `[out:json][timeout:45];(${category.osm
     .map((s) => selectorToQl(s, bbox))
     .join("")});out center tags ${OSM_MAX_ELEMENTS};`;
-  const res = await fetch(OVERPASS, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": USER_AGENT,
-    },
-    body: `data=${encodeURIComponent(body)}`,
-  });
-  await sleep(1000); // be polite to the public Overpass server
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Overpass query failed (${res.status}): ${text.slice(0, 200)}`);
+
+  let lastError = "";
+  for (const server of OVERPASS_SERVERS) {
+    try {
+      const res = await fetch(server, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": USER_AGENT,
+        },
+        body: `data=${encodeURIComponent(body)}`,
+      });
+      await sleep(1000); // be polite to the public servers
+      if (res.ok) {
+        const json = await res.json();
+        return json.elements ?? [];
+      }
+      lastError = `${res.status} from ${new URL(server).hostname}`;
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+    }
   }
-  const json = await res.json();
-  return json.elements ?? [];
+  throw new Error(`all Overpass servers busy (${lastError}) — retry this sweep in a minute`);
 }
 
 export async function overpassById(sourceId: string): Promise<OsmElement | null> {

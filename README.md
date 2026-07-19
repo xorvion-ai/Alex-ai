@@ -16,8 +16,8 @@ Pick any city — Jaipur, Lagos, Berlin, São Paulo — and hit **START SWEEP**.
 
 Most lead-gen tools stop at "here's a list." Alex.ai runs the whole hunt:
 
-- Searches **two independent map sources** (Google Places API + OpenStreetMap) and de-duplicates across them
-- **Verifies across the entire web** (Brave Search) that the business truly has no website anywhere
+- Searches **three independent map sources** (Google Places API + OpenStreetMap + TomTom) and de-duplicates across them
+- **Verifies across the entire web** (Tavily) that the business truly has no website anywhere
 - **Reads their Google reviews** and scores how likely they are to buy a website (0–100)
 - Writes a **website plan** you can paste straight into Claude to build their site
 - Drafts **WhatsApp messages + a phone call script** — in English *and* the lead's local language
@@ -41,8 +41,8 @@ Most lead-gen tools stop at "here's a list." Alex.ai runs the whole hunt:
 | Frontend + API | Next.js 16 (App Router) · TypeScript · React 19 |
 | Database | Neon Postgres (free tier) · Drizzle ORM |
 | AI | Vercel AI SDK · Gemini Flash Lite (free tier) — structured output |
-| Lead sources | Google Places API (New) · OpenStreetMap Overpass + Nominatim |
-| Web verification | Brave Search API (free tier) |
+| Lead sources | Google Places API (New) · OpenStreetMap Overpass + Nominatim · TomTom Search |
+| Web verification | Tavily (free tier, no card) |
 | Hosting | Vercel Hobby — 100% free tier |
 
 ## Architecture
@@ -50,7 +50,7 @@ Most lead-gen tools stop at "here's a list." Alex.ai runs the whole hunt:
 ```text
 ┌─────────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
 │  Next.js UI     │ ──► │  Sweep engine        │ ──► │  Google Places (New) │
-│  (Vercel)       │     │  chunked, resumable  │     │  OSM Overpass        │
+│  (Vercel)       │     │  chunked, resumable  │     │  OSM · TomTom        │
 └─────────────────┘     └──────────┬───────────┘     └──────────────────────┘
         │                          ▼
         │               ┌──────────────────────┐     ┌──────────────────────┐
@@ -64,10 +64,10 @@ Leads live in your own Neon Postgres. No tracking, no third parties, no cost.
 
 ## Get started
 
-Full walkthrough (≈20 min, all free tiers): **[SETUP.md](./SETUP.md)** · Product spec: [ALEX-AI-PLAN.md](./ALEX-AI-PLAN.md)
+Product spec: [ALEX-AI-PLAN.md](./ALEX-AI-PLAN.md) · every key you need (and where to get it, all free/no-card) is documented inline in [.env.example](./.env.example)
 
 ```bash
-cp .env.example .env   # fill in keys per SETUP.md
+cp .env.example .env   # fill in keys — each line says where to get it
 npm install
 npm run db:push
 npm run dev            # → http://localhost:3000

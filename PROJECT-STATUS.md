@@ -2,7 +2,7 @@
 
 > **Purpose of this file:** complete project context in one place. If you are Claude (or any developer) starting fresh on this repo — read this file first; it tells you what the product is, what's built, how it works, what's decided, and what's left.
 
-Last updated: **2026-07-19 (night)** · Status: **v1 FULLY VERIFIED END-TO-END with live APIs — production-ready, pending only Vercel import**
+Last updated: **2026-07-20** · Status: **v1.1 — THREE lead sources (Google + OSM + TomTom) + Tavily verification, fully E2E-verified with live APIs — production-ready, pending Tavily key + Vercel import**
 
 > **Standing rules from Sumit:** (1) keep THIS file updated after every working session; (2) **never add a Claude co-author line to commits** (history was rewritten once to remove them).
 
@@ -16,7 +16,7 @@ A **single-user agentic web app** owned by Sumit Kumar (Xorvion). It finds small
 
 ## 2. Hard constraints (decided by Sumit — do not change without asking)
 
-1. **$0/month forever — and CARD-FREE.** Sumit will not put a card on file anywhere. Default mode: OpenStreetMap discovery (no key) + Gemini free tier (no card). Google Places and Brave are OPTIONAL (both require a card even for free tiers); the app detects missing keys — Discover shows "GOOGLE · NO KEY" and defaults to OSM-only. The Quota Guardian still hard-stops every keyed provider at 90% of its free limit.
+1. **$0/month forever — and CARD-FREE.** Sumit will not put a card on file anywhere. Card-free stack: OpenStreetMap (no key) + **TomTom Search (2,500/day free, no card)** for discovery, Gemini free tier for AI, **Tavily (1,000/mo free, no card)** for web verification. Google Places is the only card-adjacent provider (Sumit verified via UPI — trial mode, unbillable; after the 90-day trial it pauses and the other sources continue). Brave was evaluated and REJECTED (2026: card required, auto-bills past $5 credit). The app detects missing keys per source — chips show "· NO KEY". The Quota Guardian hard-stops every keyed provider at 90% of its free limit (tomtom 2,250/day, tavily 900/mo).
 2. **Official APIs only, no scraping.** Phone numbers yes; emails are NOT available (no free source) — outreach is call/WhatsApp/visit.
 3. **Global** — any city, any country, any language.
 4. **Lead-gen only** — no website-builder inside the app (sites are built separately with Claude via the "COPY PLAN FOR CLAUDE" button).
@@ -32,10 +32,10 @@ Next.js 16 (App Router, TS, Turbopack) · React 19 · Neon Postgres + Drizzle OR
 ## 4. How the system works
 
 - **Discovery** (`src/lib/sweep.ts`): a sweep = country + city + categories + sources. Builds one query unit per category×source. The client polls `POST /api/sweep/step` — each step processes ONE unit (Google: up to 3 pages of Text Search; OSM: one Overpass query) and returns new leads for the live feed. Resumable, stoppable, quota-guarded.
-- **Lead sources** (`src/lib/leadsource/`): `google.ts` (Places API (New) with Enterprise field mask incl. `websiteUri`, `googleMapsUri`, phones), `osm.ts` (Nominatim geocode → Overpass by category tag selectors; free/unlimited, polite 1 req/s). Both normalize to one shape (`types.ts`). A business whose "website" is Facebook/Instagram/WhatsApp/linktree/directory page = `social_only` (still a lead, often the best kind). Real website = skipped.
+- **Lead sources** (`src/lib/leadsource/`): `google.ts` (Places API (New) with Enterprise field mask incl. `websiteUri`, `googleMapsUri`, phones), `osm.ts` (Nominatim geocode → Overpass by category tag selectors; free/unlimited, polite 1 req/s), `tomtom.ts` (poiSearch by category text around the Nominatim bbox center, 1 request/category, up to 100 POIs; `poi.url` absent → lead). All normalize to one shape (`types.ts`). A business whose "website" is Facebook/Instagram/WhatsApp/linktree/directory page = `social_only` (still a lead, often the best kind). Real website = skipped.
 - **Dedup** (`src/lib/dedupe.ts` + `insertLead` in sweep.ts): unique per (source, source_id); cross-source = similar normalized name within ~150 m.
 - **AI analysis** (`src/lib/analyze.ts`): one `generateObject` call per lead → score 0-100 + reasoning, business profile, site plan (content angle, selling points, suggested pages), outreach (WhatsApp EN + local language, 5-step call script, best call window). Google leads also pull up to 5 reviews first (only while Places usage < 70%). Batch mode = client loop on `POST /api/analyze/step` (one lead per call, 5 s apart for the free-tier rate limit, pause/resume).
-- **Web verification** (`src/lib/verify.ts`): Brave Search "name + city" → confirms no real website exists anywhere (sets `verified_no_website`), harvests FB/IG/WhatsApp links into `socials`.
+- **Web verification** (`src/lib/verify.ts`): Tavily search "name + city" → confirms no real website exists anywhere (sets `verified_no_website`), harvests FB/IG/WhatsApp links into `socials`.
 - **Quota Guardian** (`src/lib/quota.ts`): every Google/Gemini/Brave call goes through `guard()` (throws `QuotaExceededError` → HTTP 429 → UI toast) and `spend()` (logs to `quota_usage`). Limits in `src/lib/config.ts`: google_places 1,000/mo (all SKUs pooled, conservative), gemini 1,000/day, brave 2,000/mo.
 
 ## 5. Database (Drizzle schema: `src/lib/db/schema.ts`)
@@ -52,7 +52,7 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 
 ## 7. Environment (`.env`, template in `.env.example`)
 
-`DATABASE_URL` (Neon) · `ALEX_PASSWORD` · `SESSION_SECRET` · `GOOGLE_PLACES_API_KEY` · `GOOGLE_GENERATIVE_AI_API_KEY` (Gemini) · `BRAVE_SEARCH_API_KEY` · optional `GEMINI_MODEL`. Setup walkthrough with the Google-console safety steps (quota caps + $1 budget alert): **SETUP.md**.
+`DATABASE_URL` (Neon) · `ALEX_PASSWORD` · `SESSION_SECRET` · `GOOGLE_GENERATIVE_AI_API_KEY` (Gemini) · `TOMTOM_API_KEY` · `TAVILY_API_KEY` · optional `GOOGLE_PLACES_API_KEY` · optional `GEMINI_MODEL`. Key sources are documented inline in `.env.example`.
 
 ## 8. Verification — COMPLETE (2026-07-19, live APIs)
 
@@ -64,8 +64,9 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 - **Live Gemini analysis** on a real lead: `gemini-3.1-flash-lite`, score 92, reasoning cites the lead's real 738 reviews/4.9★, WhatsApp drafts EN + हिन्दी, site plan pages, call window ✓
 - Archive flow: ✓ CONTACTED on a real lead → row appears in history CSV, lead 404s in app ✓
 - Quota Guardian logged real usage exactly: google_places 4/1000 (month), gemini 1/1000 (day) ✓
-- Still untested: Brave verify (no key — card-free mode), Vercel deployment.
-- Note: the 49 remaining Jaipur tailor leads from verification are REAL leads left in the DB for Sumit to use or archive.
+- **2026-07-20 additions (all live):** TomTom-only sweep (7 Jaipur barbers, TT badges) ✓ · triple-source Noida salon sweep: Google 20 + TomTom 99 = 119 leads in one run ✓ · OSM Overpass 504 handled gracefully mid-sweep, then fallback-mirror retry added and verified (39 OSM Noida leads via mirrors) ✓ · Gemini analysis #2 (score 92) ✓ · TomTom lead refresh via Place-by-ID ✓ · verify without Tavily key → polite `.env.example` pointer ✓ · filtered CSV export ✓ · Quota Guardian shows all 4 providers, matching real usage (places 8, gemini 2, tomtom 3, tavily 0) ✓
+- Still untested: Tavily verification (key pending from Sumit — screenshot showed it truncated, must be pasted as text), Vercel deployment.
+- Note: ~215 REAL leads (Jaipur tailors/barbers + Noida salons) live in the DB for Sumit to use or archive; SETUP.md was deleted at Sumit's request — key docs now live inline in `.env.example`.
 
 ## 9. Repos & deployment
 
@@ -78,7 +79,7 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 1. ✅ Neon: connected (screenshot had hidden a '5' in the password), tables created, everything verified.
 2. ✅ Gemini key: validated live; model `gemini-3.1-flash-lite` confirmed — no override needed.
 3. ✅ Google Places API (New): billing verified via **UPI (no card!)** — trial mode (auto-charge impossible). Key validated with real searches. **Quota caps are NOT adjustable on trial accounts** ("Adjust: No" in console) — and not needed: trial mode can't bill, and the in-app Guardian (verified accurate against Google's own meter) enforces 900/month. If Sumit EVER activates the account, set 35/day caps on SearchTextRequest + GetPlaceRequest FIRST. Still to do (optional): restrict key to Places API (New) in Keys & Credentials; optional usage alert at 30/day. **Never click "Activate full account"** — when the 90-day trial ends, the app auto-falls back to card-free OSM mode.
-4. Brave: **permanently skipped by decision (2026-07-19)** — Brave killed its free tier in early 2026 (card required, $5/month credit ≈ 1,000 queries, overage auto-bills). Guardian cap lowered to 1,000/mo in `config.ts` in case a key is ever added. VERIFY ON WEB button errors politely until then.
+4. ✅ NEW (2026-07-20): **TomTom** added as third lead source (key set, live-tested: 100 tailor POIs in Jaipur) and **Tavily** replaces Brave for verification (Tavily account created, Researcher plan 1,000/mo, pay-as-you-go OFF — key pending from Sumit, arrives truncated in screenshots so must be pasted as text). Brave permanently rejected (card required, auto-bills past $5 credit).
 5. **Vercel deploy — last step (Sumit's choice: deploy via the XORVION-AI GitHub account):** import `xorvion-ai/Alex-ai` at vercel.com/new + add all env vars from `.env`. Note: that repo's main gets force-pushed on updates (rebased branch) — Vercel handles this fine, auto-redeploys on every push.
 6. Sumit: **rotate the two GitHub PATs** shared in chat (used for pushes; treat as exposed). The Google/Gemini keys also appeared in chat screenshots — key restriction (3.) mitigates; can regenerate anytime.
 7. Future ideas (out of scope for v1): demo-site generator per lead, paid email enrichment, multi-user.
@@ -87,4 +88,4 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 
 - `ALEX-AI-PLAN.md` — approved product plan (source of truth for behavior)
 - `Agentic AI web app design/design_handoff_alex_ai/README.md` — design tokens & screen specs (source of truth for looks)
-- `SETUP.md` — free-tier setup guide · `README.md` — public repo readme
+- `.env.example` — free-tier setup guide · `README.md` — public repo readme

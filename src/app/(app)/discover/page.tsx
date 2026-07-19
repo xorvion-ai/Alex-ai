@@ -11,7 +11,7 @@ import { GOOGLE_MAX_PAGES } from "@/lib/config";
 
 type FeedItem = {
   name: string;
-  src: "G" | "OSM";
+  src: "G" | "OSM" | "TT";
   meta: string;
   tag: "NO_SITE" | "SOCIAL";
 };
@@ -35,32 +35,31 @@ export default function DiscoverPage() {
   const [city, setCity] = useState("");
   const [keyword, setKeyword] = useState("");
   const [catSel, setCatSel] = useState<Record<string, boolean>>({ restaurant: true, salon: true });
-  const [srcSel, setSrcSel] = useState<Record<string, boolean>>({ google: true, osm: true });
+  const [srcSel, setSrcSel] = useState<Record<string, boolean>>({ google: true, osm: true, tomtom: true });
+  const [keyAvail, setKeyAvail] = useState<Record<string, boolean>>({ google: true, tomtom: true });
   const [moreCats, setMoreCats] = useState(false);
 
   const [running, setRunning] = useState(false);
   const [doneState, setDoneState] = useState<"idle" | "done" | "stopped">("idle");
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [prog, setProg] = useState<Progress | null>(null);
-  const [googleAvailable, setGoogleAvailable] = useState(true);
   const runningRef = useRef(false);
   const searchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     api<{
       settings: { defaultCountry: string; defaultCategories: string[] };
-      keys: { googlePlaces: string | null };
+      keys: { googlePlaces: string | null; tomtom: string | null };
     }>("/api/settings")
       .then((r) => {
         setCountry(r.settings.defaultCountry);
         const sel: Record<string, boolean> = {};
         for (const c of r.settings.defaultCategories) sel[c] = true;
         if (Object.keys(sel).length) setCatSel(sel);
-        // Card-free mode: no Google key → OSM-only sweeps (still fully functional)
-        if (!r.keys.googlePlaces) {
-          setGoogleAvailable(false);
-          setSrcSel({ google: false, osm: true });
-        }
+        // Card-free mode: sources without a key get disabled (OSM never needs one)
+        const avail = { google: !!r.keys.googlePlaces, tomtom: !!r.keys.tomtom };
+        setKeyAvail(avail);
+        setSrcSel({ google: avail.google, osm: true, tomtom: avail.tomtom });
       })
       .catch(() => {});
     return () => {
@@ -81,7 +80,9 @@ export default function DiscoverPage() {
   const cats = Object.keys(catSel).filter((k) => catSel[k]);
   const sources = Object.keys(srcSel).filter((k) => srcSel[k]);
   const estQueries = cats.length * sources.length;
-  const estRequests = srcSel.google ? cats.length * GOOGLE_MAX_PAGES : 0;
+  const estRequests =
+    (srcSel.google ? cats.length * GOOGLE_MAX_PAGES : 0) +
+    (srcSel.tomtom ? cats.length : 0);
 
   async function toggleSweep() {
     if (running) {
@@ -218,36 +219,41 @@ export default function DiscoverPage() {
         <div style={{ marginTop: 14 }}>
           <div className="lbl" style={{ fontSize: 9, marginBottom: 6 }}>LEAD SOURCES</div>
           <div className="mono" style={{ display: "flex", gap: 5, fontSize: 10.5, fontWeight: 600 }}>
-            {(["google", "osm"] as const).map((k) => (
-              <span
-                key={k}
-                className={`chip${srcSel[k] ? " on" : ""}`}
-                style={{
-                  flex: 1,
-                  textAlign: "center",
-                  padding: "7px 0",
-                  opacity: k === "google" && !googleAvailable ? 0.55 : 1,
-                }}
-                onClick={() => {
-                  if (k === "google" && !googleAvailable) {
-                    flash("google needs an API key (card required) — OSM is 100% card-free");
-                    return;
-                  }
-                  setSrcSel((s) => ({ ...s, [k]: !s[k] }));
-                }}
-              >
-                {k === "google"
-                  ? googleAvailable
-                    ? "GOOGLE PLACES"
-                    : "GOOGLE · NO KEY"
-                  : "OPENSTREETMAP"}
-              </span>
-            ))}
+            {(["google", "osm", "tomtom"] as const).map((k) => {
+              const noKey = k !== "osm" && !keyAvail[k];
+              return (
+                <span
+                  key={k}
+                  className={`chip${srcSel[k] ? " on" : ""}`}
+                  style={{
+                    flex: 1,
+                    textAlign: "center",
+                    padding: "7px 0",
+                    opacity: noKey ? 0.55 : 1,
+                  }}
+                  onClick={() => {
+                    if (noKey) {
+                      flash(`${k} needs an API key — add it to .env (see .env.example)`);
+                      return;
+                    }
+                    setSrcSel((s) => ({ ...s, [k]: !s[k] }));
+                  }}
+                >
+                  {k === "google"
+                    ? noKey
+                      ? "GOOGLE · NO KEY"
+                      : "GOOGLE"
+                    : k === "osm"
+                      ? "OSM"
+                      : noKey
+                        ? "TOMTOM · NO KEY"
+                        : "TOMTOM"}
+                </span>
+              );
+            })}
           </div>
           <div className="mono" style={{ fontSize: 10, color: "var(--faint)", marginTop: 6 }}>
-            {googleAvailable
-              ? "google = best data, quota-limited · osm = free & unlimited"
-              : "card-free mode: osm = free & unlimited · add a google key later for richer data"}
+            google = richest data, quota-limited · osm &amp; tomtom = card-free, huge limits
           </div>
         </div>
 
@@ -351,8 +357,8 @@ export default function DiscoverPage() {
                     style={{
                       fontSize: 8,
                       fontWeight: 600,
-                      color: f.src === "G" ? "var(--google)" : "var(--osm)",
-                      border: `1px solid ${f.src === "G" ? "var(--google-bd)" : "var(--osm-bd)"}`,
+                      color: f.src === "G" ? "var(--google)" : f.src === "OSM" ? "var(--osm)" : "var(--tomtom)",
+                      border: `1px solid ${f.src === "G" ? "var(--google-bd)" : f.src === "OSM" ? "var(--osm-bd)" : "var(--tomtom-bd)"}`,
                       borderRadius: 3,
                       padding: "1px 4px",
                       verticalAlign: 2,

@@ -11,12 +11,13 @@ import {
   normalizeGooglePlace,
 } from "@/lib/leadsource/google";
 import { geocodeCity, normalizeOsmElement, overpassSearch } from "@/lib/leadsource/osm";
+import { normalizeTomtomPoi, tomtomPoiSearch } from "@/lib/leadsource/tomtom";
 import { NormalizedLead } from "@/lib/leadsource/types";
 import { QuotaExceededError } from "@/lib/quota";
 
 export type FeedItem = {
   name: string;
-  src: "G" | "OSM";
+  src: "G" | "OSM" | "TT";
   meta: string;
   tag: "NO_SITE" | "SOCIAL";
 };
@@ -38,7 +39,7 @@ export async function createSweep(input: {
   city: string;
   keyword?: string;
   categories: string[];
-  sources: ("google" | "osm")[];
+  sources: ("google" | "osm" | "tomtom")[];
 }): Promise<{ id: number; total: number; estRequests: number; warning?: string }> {
   const city = input.city.trim();
   if (!city) throw new Error("City / area is required");
@@ -48,14 +49,15 @@ export async function createSweep(input: {
   const cname = countryName(input.country);
   let warning: string | undefined;
 
+  // OSM and TomTom both need a bounding box (from free Nominatim geocoding)
   let bbox: [number, number, number, number] | null = null;
   let sources = input.sources;
-  if (sources.includes("osm")) {
+  if (sources.includes("osm") || sources.includes("tomtom")) {
     bbox = await geocodeCity(city, cname || null);
     if (!bbox) {
-      sources = sources.filter((s) => s !== "osm");
-      warning = "OpenStreetMap couldn't locate this city — sweeping Google only";
-      if (!sources.length) throw new Error("OpenStreetMap couldn't locate this city");
+      sources = sources.filter((s) => s !== "osm" && s !== "tomtom");
+      warning = "couldn't locate this city on the map — sweeping Google only";
+      if (!sources.length) throw new Error("couldn't locate this city on the map");
     }
   }
 
@@ -64,9 +66,9 @@ export async function createSweep(input: {
     for (const categoryId of input.categories) {
       const cat = getCategory(categoryId);
       queries.push({
-        source: source as "google" | "osm",
+        source: source as "google" | "osm" | "tomtom",
         categoryId,
-        label: `${cat.label} · ${city}${source === "osm" ? " (OSM)" : ""}`,
+        label: `${cat.label} · ${city}${source === "osm" ? " (OSM)" : source === "tomtom" ? " (TomTom)" : ""}`,
       });
     }
   }
@@ -87,10 +89,11 @@ export async function createSweep(input: {
     .returning({ id: searches.id });
 
   const googleQueries = queries.filter((q) => q.source === "google").length;
+  const tomtomQueries = queries.filter((q) => q.source === "tomtom").length;
   return {
     id: rows[0].id,
     total: queries.length,
-    estRequests: googleQueries * GOOGLE_MAX_PAGES,
+    estRequests: googleQueries * GOOGLE_MAX_PAGES + tomtomQueries,
     warning,
   };
 }
@@ -202,7 +205,7 @@ export async function stepSweep(
   const pushFeed = (lead: NormalizedLead) => {
     feed.push({
       name: lead.name,
-      src: lead.source === "google" ? "G" : "OSM",
+      src: lead.source === "google" ? "G" : lead.source === "osm" ? "OSM" : "TT",
       meta: `${lead.category ?? lead.types[0] ?? "business"} · ${lead.area ?? s.city}`,
       tag: lead.websiteStatus === "social_only" ? "SOCIAL" : "NO_SITE",
     });
@@ -231,8 +234,26 @@ export async function stepSweep(
         pageToken = res.nextPageToken;
         if (!pageToken) break;
       }
+    } else if (q.source === "tomtom") {
+      if (!s.bbox) throw new Error("Missing map bounding box");
+      const queryText =
+        q.categoryId === "any"
+          ? s.keyword || "shop"
+          : `${cat.label}${s.keyword ? ` ${s.keyword}` : ""}`;
+      const results = await tomtomPoiSearch(queryText, s.bbox);
+      requests++;
+      for (const r of results) {
+        const cand = normalizeTomtomPoi(r, q.categoryId);
+        if (!cand) continue;
+        scanned++;
+        const outcome = await insertLead(cand, ctx);
+        if (outcome === "added") {
+          added++;
+          pushFeed(cand);
+        }
+      }
     } else {
-      if (!s.bbox) throw new Error("Missing OSM bounding box");
+      if (!s.bbox) throw new Error("Missing map bounding box");
       const elements = await overpassSearch(cat, s.bbox);
       for (const el of elements) {
         const cand = normalizeOsmElement(el, q.categoryId);

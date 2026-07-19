@@ -1,7 +1,7 @@
 // One normalized shape every lead source produces — pluggable per ALEX-AI-PLAN.md.
 
 export type NormalizedLead = {
-  source: "google" | "osm";
+  source: "google" | "osm" | "tomtom";
   sourceId: string;
   name: string;
   category: string | null;

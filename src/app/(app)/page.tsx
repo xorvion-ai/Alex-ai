@@ -341,7 +341,8 @@ export default function Dashboard() {
             </div>
             {quotaRow("google_places", "google places")}
             {quotaRow("gemini", "gemini flash-lite", " today")}
-            {quotaRow("brave", "brave search")}
+            {quotaRow("tomtom", "tomtom", " today")}
+            {quotaRow("tavily", "tavily verify")}
             <div className="mono" style={{ display: "flex", fontSize: 11, fontWeight: 500, color: "var(--body)" }}>
               <span>openstreetmap</span>
               <span style={{ flex: 1 }} />

@@ -68,7 +68,7 @@ function LeadsInner() {
   const [country, setCountry] = useState("🌍 Global");
   const [cityF, setCityF] = useState("");
   const [cats, setCats] = useState<string[]>(["any"]);
-  const [source, setSource] = useState<"all" | "google" | "osm">("all");
+  const [source, setSource] = useState<"all" | "google" | "osm" | "tomtom">("all");
   const [ws, setWs] = useState({ none: true, social_only: true });
   const [minScore, setMinScore] = useState(0);
   const [verified, setVerified] = useState(false);
@@ -401,9 +401,9 @@ function LeadsInner() {
                 <div>
                   <div className="lbl" style={{ fontSize: 9, marginBottom: 5 }}>SOURCE</div>
                   <div className="mono" style={{ display: "flex", gap: 4, fontSize: 10, fontWeight: 600 }}>
-                    {(["all", "google", "osm"] as const).map((k) => (
+                    {(["all", "google", "osm", "tomtom"] as const).map((k) => (
                       <span key={k} style={segBtn(source === k)} onClick={() => setSource(k)}>
-                        {k.toUpperCase()}
+                        {k === "tomtom" ? "TT" : k.toUpperCase()}
                       </span>
                     ))}
                   </div>
@@ -544,14 +544,14 @@ function LeadsInner() {
                       style={{
                         fontSize: 8,
                         fontWeight: 600,
-                        color: r.source === "google" ? "var(--google)" : "var(--osm)",
-                        border: `1px solid ${r.source === "google" ? "var(--google-bd)" : "var(--osm-bd)"}`,
+                        color: r.source === "google" ? "var(--google)" : r.source === "osm" ? "var(--osm)" : "var(--tomtom)",
+                        border: `1px solid ${r.source === "google" ? "var(--google-bd)" : r.source === "osm" ? "var(--osm-bd)" : "var(--tomtom-bd)"}`,
                         borderRadius: 3,
                         padding: "1px 4px",
                         verticalAlign: 2,
                       }}
                     >
-                      {r.source === "google" ? "G" : "OSM"}
+                      {r.source === "google" ? "G" : r.source === "osm" ? "OSM" : "TT"}
                     </span>
                     {r.isDemo && (
                       <span
@@ -619,7 +619,7 @@ function LeadsInner() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
                     LEAD_{String(L.id).padStart(4, "0")} · {L.status.toUpperCase()} · source:{" "}
-                    {L.source === "google" ? "GOOGLE" : "OSM"} · refreshed {timeAgo(L.lastRefreshedAt)} ⟳
+                    {L.source === "google" ? "GOOGLE" : L.source === "osm" ? "OSM" : "TOMTOM"} · refreshed {timeAgo(L.lastRefreshedAt)} ⟳
                     {L.verifiedNoWebsite ? " · VERIFIED_NO_WEBSITE ✓" : ""}
                     {L.isDemo && <span style={{ color: "var(--amber)" }}> · DEMO_LEAD — archive me when done exploring</span>}
                   </div>

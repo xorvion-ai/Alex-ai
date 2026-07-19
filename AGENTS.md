@@ -8,6 +8,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 **Read `PROJECT-STATUS.md` first** — it holds the complete project context: what the product is, hard constraints (must stay $0/month, Quota Guardian, no scraping, delete-on-contact, fixed design), architecture, DB schema, API map, verification state, and open TODOs.
 
-- Product behavior spec: `ALEX-AI-PLAN.md` · Design spec: `Agentic AI web app design/design_handoff_alex_ai/README.md` · Setup: `SETUP.md`
+- Product behavior spec: `ALEX-AI-PLAN.md` · Design spec: `Agentic AI web app design/design_handoff_alex_ai/README.md` · Keys/setup: `.env.example` (inline docs)
 - Commands: `npm run dev` · `npm run build` · `npm run lint` · `npm run db:push` (needs `.env`)
 - Never introduce paid API usage; every external call must go through `guard()`/`spend()` in `src/lib/quota.ts`.

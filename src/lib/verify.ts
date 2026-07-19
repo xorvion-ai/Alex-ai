@@ -1,5 +1,6 @@
-// Web verification via Brave Search (free tier): confirm a lead truly has no
-// website anywhere online, and harvest social links as extra contact channels.
+// Web verification via Tavily (free plan: 1,000 searches/month, no card):
+// confirm a lead truly has no website anywhere online, and harvest social
+// links as extra contact channels.
 
 import { eq } from "drizzle-orm";
 import { SOCIAL_HOSTS, VERIFY_IGNORE_HOSTS } from "@/lib/config";
@@ -7,24 +8,33 @@ import { db, leads } from "@/lib/db";
 import { normName } from "@/lib/dedupe";
 import { guard, spend } from "@/lib/quota";
 
-type BraveResult = { url: string; title: string };
+type SearchResult = { url: string; title: string };
 
-async function braveSearch(q: string): Promise<BraveResult[]> {
-  const key = process.env.BRAVE_SEARCH_API_KEY;
-  if (!key) throw new Error("BRAVE_SEARCH_API_KEY is not set — see README setup");
-  await guard("brave");
-  const res = await fetch(
-    `https://api.search.brave.com/res/v1/web/search?count=10&q=${encodeURIComponent(q)}`,
-    { headers: { Accept: "application/json", "X-Subscription-Token": key } },
-  );
-  await spend("brave");
+async function tavilySearch(q: string): Promise<SearchResult[]> {
+  const key = process.env.TAVILY_API_KEY;
+  if (!key) throw new Error("TAVILY_API_KEY is not set — see .env.example");
+  await guard("tavily");
+  const res = await fetch("https://api.tavily.com/search", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      query: q,
+      max_results: 10,
+      search_depth: "basic",
+      include_answer: false,
+    }),
+  });
+  await spend("tavily");
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Brave search failed (${res.status}): ${body.slice(0, 200)}`);
+    throw new Error(`Tavily search failed (${res.status}): ${body.slice(0, 200)}`);
   }
   const json = await res.json();
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  return (json.web?.results ?? []).map((r: any) => ({
+  return (json.results ?? []).map((r: any) => ({
     url: r.url ?? "",
     title: r.title ?? "",
   }));
@@ -59,7 +69,7 @@ export async function verifyLead(leadId: number): Promise<{
   if (!lead) throw new Error("Lead not found");
 
   const q = `"${lead.name}" ${lead.city ?? ""} ${lead.country ?? ""}`.trim();
-  const results = await braveSearch(q);
+  const results = await tavilySearch(q);
 
   const tokens = significantTokens(lead.name);
   const nameNorm = normName(lead.name);

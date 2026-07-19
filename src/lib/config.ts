@@ -4,19 +4,20 @@
 // Override with GEMINI_MODEL env var if the ID ever changes.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 
-export type Provider = "google_places" | "gemini" | "brave";
+export type Provider = "google_places" | "gemini" | "tomtom" | "tavily";
 
 // Free-tier caps. Conservative: all Google Places SKUs share one monthly pool
-// so the guardian can never be tricked by SKU mix.
+// so the guardian can never be tricked by SKU mix. TomTom free tier is 2,500
+// non-tile requests/day (no card); Tavily free plan is 1,000 searches/month
+// (no card) — both capped below their limits.
 export const QUOTA_LIMITS: Record<
   Provider,
   { limit: number; period: "month" | "day"; label: string }
 > = {
   google_places: { limit: 1000, period: "month", label: "PLACES" },
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
-  // Brave's 2026 pricing: no free tier, only a $5 monthly credit (~1,000
-  // queries) on a card that bills past it — cap well inside the credit.
-  brave: { limit: 1000, period: "month", label: "BRAVE" },
+  tomtom: { limit: 2500, period: "day", label: "TOMTOM" },
+  tavily: { limit: 1000, period: "month", label: "TAVILY" },
 };
 
 export const DEFAULT_HARD_STOP = 0.9; // stop at 90% of free tier

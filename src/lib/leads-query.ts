@@ -7,7 +7,7 @@ export type LeadFilters = {
   country?: string;
   city?: string;
   category?: string[];
-  source?: "google" | "osm";
+  source?: "google" | "osm" | "tomtom";
   ws?: ("none" | "social_only")[];
   minScore?: number;
   verifiedOnly?: boolean;
@@ -27,7 +27,7 @@ export function parseFilters(params: URLSearchParams): LeadFilters {
     if (list.length) f.category = list;
   }
   const src = g("source");
-  if (src === "google" || src === "osm") f.source = src;
+  if (src === "google" || src === "osm" || src === "tomtom") f.source = src;
   const ws = g("ws");
   if (ws) {
     const list = ws.split(",").filter((w): w is "none" | "social_only" =>

@@ -67,7 +67,7 @@ export async function analyzeLead(leadId: number): Promise<{ score: number }> {
     "You are the analysis engine of Alex.ai, a tool that finds small businesses with no website so the operator (a solo web developer) can sell them a simple, affordable website.",
     "Analyze this business and produce the structured result.",
     "",
-    "Scoring guide: high rating + many reviews + no web presence = strong (80-100). Decent but moderate signals = 60-79. Weak activity, low rating, or unlikely to see value = below 60. OSM leads without ratings: judge from category, address completeness, phone presence; cap at 75 unless other signals are strong.",
+    "Scoring guide: high rating + many reviews + no web presence = strong (80-100). Decent but moderate signals = 60-79. Weak activity, low rating, or unlikely to see value = below 60. OSM/TomTom leads without ratings: judge from category, address completeness, phone presence; cap at 75 unless other signals are strong.",
     "Outreach rules: mention concrete details (review count, rating, what customers praise) when available; never invent numbers that are not in the data. Friendly, zero pressure, offer a free demo. The local language: infer from the country/address" + (lead.languageHint ? ` (hint: ${lead.languageHint})` : "") + `; if truly ambiguous use ${s.fallbackLanguage}.`,
     "Best call window: infer from opening hours (avoid rush hours for restaurants, mid-morning for services); if hours unknown, suggest a sensible default for the category.",
     "",

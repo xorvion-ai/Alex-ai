@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, leads } from "@/lib/db";
 import { googlePlaceDetails, normalizeGooglePlace } from "@/lib/leadsource/google";
 import { normalizeOsmElement, overpassById } from "@/lib/leadsource/osm";
+import { normalizeTomtomPoi, tomtomPlaceById } from "@/lib/leadsource/tomtom";
 import { NormalizedLead } from "@/lib/leadsource/types";
 import { jsonError } from "@/lib/api";
 
@@ -28,6 +29,9 @@ export async function POST(
     if (lead.source === "google") {
       const place = await googlePlaceDetails(lead.sourceId);
       fresh = normalizeGooglePlace(place, lead.category);
+    } else if (lead.source === "tomtom") {
+      const poi = await tomtomPlaceById(lead.sourceId);
+      fresh = poi ? normalizeTomtomPoi(poi, lead.category) : null;
     } else {
       const el = await overpassById(lead.sourceId);
       fresh = el ? normalizeOsmElement(el, lead.category) : null;

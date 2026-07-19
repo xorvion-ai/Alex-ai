@@ -25,7 +25,7 @@ export type Outreach = {
 };
 
 export type SweepQuery = {
-  source: "google" | "osm";
+  source: "google" | "osm" | "tomtom";
   categoryId: string;
   label: string;
 };
@@ -34,7 +34,7 @@ export const leads = pgTable(
   "leads",
   {
     id: serial("id").primaryKey(),
-    source: text("source").$type<"google" | "osm">().notNull(),
+    source: text("source").$type<"google" | "osm" | "tomtom">().notNull(),
     sourceId: text("source_id").notNull(),
     name: text("name").notNull(),
     category: text("category"),

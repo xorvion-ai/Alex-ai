@@ -16,7 +16,8 @@ export async function GET() {
       keys: {
         googlePlaces: maskKey(process.env.GOOGLE_PLACES_API_KEY),
         gemini: maskKey(process.env.GOOGLE_GENERATIVE_AI_API_KEY),
-        brave: maskKey(process.env.BRAVE_SEARCH_API_KEY),
+        tomtom: maskKey(process.env.TOMTOM_API_KEY),
+        tavily: maskKey(process.env.TAVILY_API_KEY),
       },
     });
   } catch (e) {

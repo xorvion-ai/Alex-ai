@@ -17,11 +17,12 @@ export default function SettingsPage() {
   const [defaultCountry, setDefaultCountry] = useState("🌍 Global");
   const [defaultCategories, setDefaultCategories] = useState<string[]>([]);
   const [fallbackLanguage, setFallbackLanguage] = useState("Hindi");
-  const [keys, setKeys] = useState<{ googlePlaces: string | null; gemini: string | null; brave: string | null }>({
-    googlePlaces: null,
-    gemini: null,
-    brave: null,
-  });
+  const [keys, setKeys] = useState<{
+    googlePlaces: string | null;
+    gemini: string | null;
+    tomtom: string | null;
+    tavily: string | null;
+  }>({ googlePlaces: null, gemini: null, tomtom: null, tavily: null });
   const [langOpen, setLangOpen] = useState(false);
   const [moreCats, setMoreCats] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,7 @@ export default function SettingsPage() {
   useEffect(() => {
     api<{
       settings: { hardStop: number; defaultCountry: string; defaultCategories: string[]; fallbackLanguage: string };
-      keys: { googlePlaces: string | null; gemini: string | null; brave: string | null };
+      keys: { googlePlaces: string | null; gemini: string | null; tomtom: string | null; tavily: string | null };
     }>("/api/settings")
       .then((r) => {
         setHardStop(Math.round(r.settings.hardStop * 100));
@@ -107,7 +108,8 @@ export default function SettingsPage() {
           <div className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)", marginBottom: 12 }}>API KEYS</div>
           {keyInput("GOOGLE PLACES (NEW)", keys.googlePlaces)}
           {keyInput("GOOGLE AI STUDIO (GEMINI)", keys.gemini)}
-          {keyInput("BRAVE SEARCH", keys.brave)}
+          {keyInput("TOMTOM SEARCH", keys.tomtom)}
+          {keyInput("TAVILY (WEB VERIFY)", keys.tavily)}
           <div className="mono" style={{ fontSize: 10, color: "var(--faint)", marginTop: 10, lineHeight: 1.5 }}>
             keys live in env vars — never in the database
           </div>
@@ -133,7 +135,8 @@ export default function SettingsPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
             {capRow("google places cap", "1,000 / month")}
             {capRow("gemini cap", "1,000 / day")}
-            {capRow("brave cap", "2,000 / month")}
+            {capRow("tomtom cap", "2,500 / day")}
+            {capRow("tavily cap", "1,000 / month")}
             {capRow("osm", "polite rate-limit only", true)}
           </div>
           <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--amber)", marginTop: 12, lineHeight: 1.5 }}>
