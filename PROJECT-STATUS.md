@@ -78,7 +78,7 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 1. ✅ Neon: connected (screenshot had hidden a '5' in the password), tables created, everything verified.
 2. ✅ Gemini key: validated live; model `gemini-3.1-flash-lite` confirmed — no override needed.
 3. ✅ Google Places API (New): billing verified via **UPI (no card!)** — trial mode (auto-charge impossible). Key validated with real searches. Sumit still to do in console: quota caps (Places API (New) → Quotas → 35/day) + restrict key to Places API (New). **Never click "Activate full account"** — trial mode is the safety net; when the 90-day trial ends, the app auto-falls back to card-free OSM mode.
-4. Brave: skipped (card-only) — VERIFY ON WEB button errors politely until a key exists.
+4. Brave: **permanently skipped by decision (2026-07-19)** — Brave killed its free tier in early 2026 (card required, $5/month credit ≈ 1,000 queries, overage auto-bills). Guardian cap lowered to 1,000/mo in `config.ts` in case a key is ever added. VERIFY ON WEB button errors politely until then.
 5. **Vercel deploy (sumitkr28 account) — last step:** import `Sumitkr28/Alex-ai` at vercel.com/new + add all env vars from `.env`.
 6. Sumit: **rotate the two GitHub PATs** shared in chat (used for pushes; treat as exposed). The Google/Gemini keys also appeared in chat screenshots — key restriction (3.) mitigates; can regenerate anytime.
 7. Future ideas (out of scope for v1): demo-site generator per lead, paid email enrichment, multi-user.

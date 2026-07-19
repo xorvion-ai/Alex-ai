@@ -14,7 +14,9 @@ export const QUOTA_LIMITS: Record<
 > = {
   google_places: { limit: 1000, period: "month", label: "PLACES" },
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
-  brave: { limit: 2000, period: "month", label: "BRAVE" },
+  // Brave's 2026 pricing: no free tier, only a $5 monthly credit (~1,000
+  // queries) on a card that bills past it — cap well inside the credit.
+  brave: { limit: 1000, period: "month", label: "BRAVE" },
 };
 
 export const DEFAULT_HARD_STOP = 0.9; // stop at 90% of free tier

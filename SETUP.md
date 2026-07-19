@@ -28,12 +28,11 @@ Adds Google Maps data: ratings, review counts, review text for the AI, opening h
    - **Budget alert**: Billing → Budgets & alerts → create a **$1** budget with email alerts.
 4. Create an API key (Credentials → Create credentials → API key), restrict it to Places API (New), put it in `.env` as `GOOGLE_PLACES_API_KEY`.
 
-## 4. OPTIONAL — Brave Search API · web verification, asks for a card
+## 4. OPTIONAL — Brave Search API · web verification · ⚠️ NOT recommended anymore
 
-Powers the "VERIFY ON WEB" button (confirms a lead has no website anywhere + finds their socials). Brave's free plan (2,000 queries/month) asks for a card at signup — skip if card-free.
+Powers the "VERIFY ON WEB" button (confirms a lead has no website anywhere + finds their socials). **As of 2026 Brave has no true free tier**: signup requires a card, you get a $5/month credit (~1,000 queries), and usage past the credit **auto-bills the card**. If staying card-free / risk-free, skip this — Alex.ai works fully without it (the verify button simply reports the key is missing).
 
-1. Go to [api-dashboard.search.brave.com](https://api-dashboard.search.brave.com) → sign up → choose the **Free** plan.
-2. Put the key in `.env` as `BRAVE_SEARCH_API_KEY`.
+If you ever accept the risk: sign up at [api-dashboard.search.brave.com](https://api-dashboard.search.brave.com), put the key in `.env` as `BRAVE_SEARCH_API_KEY` — the in-app guardian caps usage at 90% of 1,000/month to stay inside the credit.
 
 ## 5. App secrets + database tables
 
@@ -52,8 +51,8 @@ Log in with your `ALEX_PASSWORD`.
 | --- | --- | --- | --- |
 | OpenStreetMap / Nominatim | no | unlimited | polite 1 req/s rate limit |
 | Gemini Flash Lite | no | ~1,000 / day | 900 |
-| Google Places (optional, all calls pooled) | yes | 1,000 / month | 900 |
-| Brave Search (optional) | yes | 2,000 / month | 1,800 |
+| Google Places (optional, all calls pooled) | yes (UPI works in India) | 1,000 / month | 900 |
+| Brave Search (optional, ⚠️ bills past $5 credit) | yes | ~1,000 / month credit | 900 |
 
 ## Deploy (Vercel Hobby, free)
 
