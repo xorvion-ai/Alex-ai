@@ -1,87 +1,72 @@
-# Alex.ai
+# Alex.ai — your autonomous lead-hunting machine
 
-**A free tool that finds small businesses with no website — anywhere on Earth — so you can build them one and sell it.**
+**Alex.ai** is a full-stack, agentic lead-generation system by **Xorvion**. It sweeps three independent map worlds — Google Maps, OpenStreetMap, and TomTom — for small businesses with **no website**, anywhere on Earth, verifies them across the open web, deep-analyzes each one with AI, and manages the whole pipeline until the lead is contacted. Built to run at **$0/month**, forever, with a quota guardian that makes a bill impossible.
 
-## 🔗 Live: [**alex-ai-xorvion.vercel.app**](https://alex-ai-xorvion.vercel.app)
+Sign in, point it at any city, and watch qualified leads stream in — each with a score, a website plan, and outreach drafts in the lead's own language.
 
-Alex.ai sweeps Google Maps, OpenStreetMap *and* TomTom for shops, restaurants, salons, garages… that have **zero web presence**, deep-analyzes each one with AI, and hands you everything you need to close them: a lead score, a website plan, and ready-to-send outreach in their own language. Total running cost: **$0/month**. (Single-operator tool — the live app is password-protected.)
+## 🔗 [**Live Demo — alex-ai-xorvion.vercel.app**](https://alex-ai-xorvion.vercel.app)
 
-## What it does
+## ✨ Features
 
-Pick any city — Jaipur, Lagos, Berlin, São Paulo — and hit **START SWEEP**. Every business found gets tagged:
+- **Triple-source discovery** — Google Places API (New) + OpenStreetMap Overpass + TomTom Search sweep the same city and de-duplicate against each other; a Facebook-page-only "website" is detected and tagged `SOCIAL` (often the best leads).
+- **Web-wide verification** — Tavily confirms a lead truly has no website anywhere online and harvests their social links as extra contact channels.
+- **AI deep analysis** — Gemini Flash Lite scores every lead 0–100 with explainable reasoning, writes a business profile from real Google reviews, a website plan (**COPY PLAN FOR CLAUDE** → paste into Claude to build the actual site), and outreach drafts: WhatsApp messages in English *and* the lead's local language plus a 5-step call script with the best time to call.
+- **CRM-lite pipeline** — filters, live search, CSV export, activity log, follow-up reminders with a due-today dashboard, one-tap CALL / WhatsApp.
+- **Delete-on-contact** — ✓ CONTACTED archives a full snapshot to a downloadable history CSV and removes the lead; the pipeline only ever contains live prospects.
+- **Quota Guardian** — every Google/Gemini/TomTom/Tavily call is metered; jobs hard-stop at 90% of each free tier. $0/month is a guarantee, not a hope.
+- **Card-free first** — OSM and TomTom discovery, Gemini analysis, and Tavily verification all run on free tiers that require **no payment method at all**; Vercel Hobby + Neon Postgres host it for free.
 
-🟢 NO_SITE · 🟡 SOCIAL-ONLY (Facebook/Instagram page pretending to be a website — often the *best* leads)
+## 🧭 How it works
 
-…then the AI brain tells you exactly **who to call first and what to say**.
+1. **Sweep** — pick country (🌍 Global works), city, business types, sources → the engine runs one quota-guarded query chunk at a time (resumable, stoppable, with Overpass mirror fallback) and streams no-website businesses into a live feed.
+2. **Analyze** — one click batch-runs the AI brain over every new lead, rate-limited to the Gemini free tier, pause/resume anytime.
+3. **Close** — open a lead: signals, raw data, site plan, log, outreach. Call or WhatsApp the owner, log the outcome, set a follow-up — then archive on contact.
 
-## Why it's different
-
-Most lead-gen tools stop at "here's a list." Alex.ai runs the whole hunt:
-
-- Searches **three independent map sources** (Google Places API + OpenStreetMap + TomTom) and de-duplicates across them
-- **Verifies across the entire web** (Tavily) that the business truly has no website anywhere
-- **Reads their Google reviews** and scores how likely they are to buy a website (0–100)
-- Writes a **website plan** you can paste straight into Claude to build their site
-- Drafts **WhatsApp messages + a phone call script** — in English *and* the lead's local language
-- Deletes leads automatically once contacted (archived to CSV first) — your pipeline stays clean
-- A built-in **Quota Guardian** hard-stops every provider at 90% of its free tier — a bill is impossible
-
-## Features
-
-- ⚡ Live sweep feed — leads stream in as the radar finds them
-- 🌍 Global — works for any city, in any country, in any language
-- 🧠 Explainable lead scores — see exactly *why* a lead scored 91
-- 📞 One-tap CALL / WhatsApp buttons on every lead
-- 📋 CSV export of any filtered list + contacted-history archive
-- 🗓 Follow-up reminders with a due-today dashboard
-- 🔒 Single-password login, your data in your own free Postgres
-
-## Tech behind it
-
-| Layer | Stack |
-| --- | --- |
-| Frontend + API | Next.js 16 (App Router) · TypeScript · React 19 |
-| Database | Neon Postgres (free tier) · Drizzle ORM |
-| AI | Vercel AI SDK · Gemini Flash Lite (free tier) — structured output |
-| Lead sources | Google Places API (New) · OpenStreetMap Overpass + Nominatim · TomTom Search |
-| Web verification | Tavily (free tier, no card) |
-| Hosting | Vercel Hobby — 100% free tier |
-
-## Architecture
+## 📦 Project structure
 
 ```text
-┌─────────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
-│  Next.js UI     │ ──► │  Sweep engine        │ ──► │  Google Places (New) │
-│  (Vercel)       │     │  chunked, resumable  │     │  OSM · TomTom        │
-└─────────────────┘     └──────────┬───────────┘     └──────────────────────┘
-        │                          ▼
-        │               ┌──────────────────────┐     ┌──────────────────────┐
-        │               │  Quota Guardian      │     │  Gemini Flash Lite   │
-        └─────────────► │  hard-stop @ 90%     │ ──► │  score · site plan   │
-                        │  of every free tier  │     │  outreach drafts     │
-                        └──────────────────────┘     └──────────────────────┘
+src/
+  proxy.ts               # auth gate (signed session cookie)
+  app/
+    login/               # intro splash + password login
+    (app)/               # Dashboard · Discover · Leads · Settings
+    api/                 # sweep, analyze, verify, leads CRUD, quota, archive
+  lib/
+    sweep.ts             # discovery engine (chunked, resumable)
+    leadsource/          # google.ts · osm.ts · tomtom.ts · normalized types
+    analyze.ts           # Gemini structured analysis
+    verify.ts            # Tavily web verification
+    quota.ts             # Quota Guardian (guard/spend per provider)
+    db/schema.ts         # Drizzle: leads, analyses, searches, activities,
+                         #          quota_usage, contacted_archive, settings
+ALEX-AI-PLAN.md          # product spec · PROJECT-STATUS.md — full context
+.env.example             # every key documented inline (all free / no-card)
 ```
 
-Leads live in your own Neon Postgres. No tracking, no third parties, no cost.
-
-## Get started
-
-Product spec: [ALEX-AI-PLAN.md](./ALEX-AI-PLAN.md) · every key you need (and where to get it, all free/no-card) is documented inline in [.env.example](./.env.example)
+## 🚀 Run it locally
 
 ```bash
 cp .env.example .env   # fill in keys — each line says where to get it
 npm install
-npm run db:push
+npm run db:push        # create tables in Neon
 npm run dev            # → http://localhost:3000
 ```
 
-## 👋 About the creator
+Deploy: import the repo at [vercel.com/new](https://vercel.com/new) (Hobby plan), add the same env vars, done.
 
-Hi, I'm **Sumit Kumar** — an AI/ML Engineer based in Noida, India. I design, build, and ship production-grade AI products end-to-end, and I built Alex.ai across every layer: the multi-source discovery engine, the quota-guarded free-tier architecture, the AI analysis pipeline, and the Next.js interface.
+## 🏢 About Xorvion
 
-I'm always open to connecting with recruiters, founders, and fellow builders — if you like what you see here, let's talk.
+**Xorvion** is an independent AI studio created by **Sumit Kumar**, based in Noida, India. Xorvion designs, builds, and ships AI products end-to-end — from multi-agent orchestration and free-tier-first architecture to auth, persistence, and the design system. Alex.ai is one of its flagship builds.
 
-- 🌐 Portfolio: [sumitkr28.vercel.app](https://sumitkr28.vercel.app)
+- 🌐 Website: [xorvion-ai.vercel.app](https://xorvion-ai.vercel.app)
+- 🔗 LinkedIn: [linkedin.com/company/xorvion](https://linkedin.com/company/xorvion)
+- 🐙 GitHub: [github.com/xorvion-ai](https://github.com/xorvion-ai)
+- 📨 Email: [xorvion.ai@gmail.com](mailto:xorvion.ai@gmail.com)
+
+## 👤 Creator — Sumit Kumar
+
+AI Engineer based in Noida, India, who takes AI products from idea to production.
+
 - 💼 LinkedIn: [linkedin.com/in/sumit-kumar2812](https://linkedin.com/in/sumit-kumar2812)
+- 🌐 Portfolio: [sumitkr28.vercel.app](https://sumitkr28.vercel.app)
 - 🐙 GitHub: [github.com/Sumitkr28](https://github.com/Sumitkr28)
-- 🚀 AI Studio: **Xorvion**
