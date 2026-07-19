@@ -4,7 +4,7 @@
 
 Last updated: **2026-07-20** · Status: **v1.1 — THREE lead sources (Google + OSM + TomTom) + Tavily verification, fully E2E-verified with live APIs — production-ready, pending Tavily key + Vercel import**
 
-> **Standing rules from Sumit:** (1) keep THIS file updated after every working session; (2) **never add a Claude co-author line to commits** (history was rewritten once to remove them).
+> **Standing rules from Sumit:** (1) keep THIS file updated after every working session; (2) **never add a Claude co-author line to commits**; (3) **per-repo commit identity**: commits on `main` are authored `Sumitkr28 <Sumitkr28@users.noreply.github.com>` (repo-local git config is set), and the `xorvion-main` branch must contain ONLY `xorvion-ai <xorvion-ai@users.noreply.github.com>` commits — to sync it: `git checkout -B xorvion-main main` → restore its README (`git checkout <old-tip> -- README.md` + commit) → `git filter-branch -f --env-filter '<export xorvion-ai identity>' -- xorvion-main` → force-push to xorvion remote.
 
 ---
 
@@ -80,7 +80,7 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
 2. ✅ Gemini key: validated live; model `gemini-3.1-flash-lite` confirmed — no override needed.
 3. ✅ Google Places API (New): billing verified via **UPI (no card!)** — trial mode (auto-charge impossible). Key validated with real searches. **Quota caps are NOT adjustable on trial accounts** ("Adjust: No" in console) — and not needed: trial mode can't bill, and the in-app Guardian (verified accurate against Google's own meter) enforces 900/month. If Sumit EVER activates the account, set 35/day caps on SearchTextRequest + GetPlaceRequest FIRST. Still to do (optional): restrict key to Places API (New) in Keys & Credentials; optional usage alert at 30/day. **Never click "Activate full account"** — when the 90-day trial ends, the app auto-falls back to card-free OSM mode.
 4. ✅ NEW (2026-07-20): **TomTom** added as third lead source (key set, live-tested: 100 tailor POIs in Jaipur) and **Tavily** replaces Brave for verification (Tavily account created, Researcher plan 1,000/mo, pay-as-you-go OFF — key pending from Sumit, arrives truncated in screenshots so must be pasted as text). Brave permanently rejected (card required, auto-bills past $5 credit).
-5. **Vercel deploy — last step (Sumit's choice: deploy via the XORVION-AI GitHub account):** import `xorvion-ai/Alex-ai` at vercel.com/new + add all env vars from `.env`. Note: that repo's main gets force-pushed on updates (rebased branch) — Vercel handles this fine, auto-redeploys on every push.
+5. ✅ **DEPLOYED (2026-07-20):** live at **[alex-ai-xorvion.vercel.app](https://alex-ai-xorvion.vercel.app)** via the xorvion-ai Vercel account (imported xorvion-ai/Alex-ai, env vars added, build Ready). The repo's main gets force-pushed on updates — Vercel auto-redeploys on every push.
 6. Sumit: **rotate the two GitHub PATs** shared in chat (used for pushes; treat as exposed). The Google/Gemini keys also appeared in chat screenshots — key restriction (3.) mitigates; can regenerate anytime.
 7. Future ideas (out of scope for v1): demo-site generator per lead, paid email enrichment, multi-user.
 
