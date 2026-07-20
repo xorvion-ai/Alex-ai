@@ -4,7 +4,7 @@
 
 Sign in, point it at any city, and watch qualified leads stream in — each with a score, a website plan, and outreach drafts in the lead's own language.
 
-## 🔗 [**Live Demo — alex-ai-xorvion.vercel.app**](https://alex-ai-xorvion.vercel.app)
+[![Live App](https://img.shields.io/badge/●_LIVE-OPEN_APP-0D1117?style=for-the-badge&labelColor=166534)](https://alex-ai-xorvion.vercel.app)
 
 ## ✨ Features
 
@@ -56,7 +56,7 @@ Deploy: import the repo at [vercel.com/new](https://vercel.com/new) (Hobby plan)
 
 ## 🏢 About Xorvion
 
-**Xorvion** is an independent AI studio created by **Sumit Kumar**, based in Noida, India. Xorvion designs, builds, and ships AI products end-to-end — from multi-agent orchestration and free-tier-first architecture to auth, persistence, and the design system. Alex.ai is one of its flagship builds.
+**Xorvion** is an independent AI studio created by **Sumit Kumar**. Xorvion designs, builds, and ships AI products end-to-end — from multi-agent orchestration and free-tier-first architecture to auth, persistence, and the design system. Alex.ai is one of its flagship builds.
 
 - 🌐 Website: [xorvion-ai.vercel.app](https://xorvion-ai.vercel.app)
 - 🔗 LinkedIn: [linkedin.com/company/xorvion](https://linkedin.com/company/xorvion)
@@ -65,7 +65,7 @@ Deploy: import the repo at [vercel.com/new](https://vercel.com/new) (Hobby plan)
 
 ## 👤 Creator — Sumit Kumar
 
-AI Engineer based in Noida, India, who takes AI products from idea to production.
+AI Engineer who takes AI products from idea to production.
 
 - 💼 LinkedIn: [linkedin.com/in/sumit-kumar2812](https://linkedin.com/in/sumit-kumar2812)
 - 🌐 Portfolio: [sumitkr28.vercel.app](https://sumitkr28.vercel.app)
