@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, or, sql, SQL } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, isNull, or, sql, SQL } from "drizzle-orm";
 import { countryName } from "@/lib/config";
 import { db, leads } from "@/lib/db";
 
@@ -11,6 +11,7 @@ export type LeadFilters = {
   ws?: ("none" | "social_only")[];
   minScore?: number;
   verifiedOnly?: boolean;
+  hasSite?: boolean;
   status?: "new" | "analyzed";
 };
 
@@ -38,6 +39,7 @@ export function parseFilters(params: URLSearchParams): LeadFilters {
   const minScore = g("minScore");
   if (minScore && Number(minScore) > 0) f.minScore = Number(minScore);
   if (g("verified") === "1") f.verifiedOnly = true;
+  if (g("hasSite") === "1") f.hasSite = true;
   const status = g("status");
   if (status === "new" || status === "analyzed") f.status = status;
   return f;
@@ -62,7 +64,17 @@ export function filterConditions(f: LeadFilters): SQL[] {
   if (f.source) conds.push(eq(leads.source, f.source) as SQL);
   if (f.ws) conds.push(eq(leads.websiteStatus, f.ws[0]) as SQL);
   if (f.minScore) conds.push(gte(leads.score, f.minScore) as SQL);
-  if (f.verifiedOnly) conds.push(eq(leads.verifiedNoWebsite, true) as SQL);
+  if (f.verifiedOnly) {
+    conds.push(eq(leads.verifiedNoWebsite, true) as SQL);
+  } else if (f.hasSite) {
+    // The "dropped" bucket: businesses the web check found DO have a website.
+    conds.push(eq(leads.verifiedNoWebsite, false) as SQL);
+  } else {
+    // Default view hides leads confirmed to have a website.
+    conds.push(
+      or(isNull(leads.verifiedNoWebsite), eq(leads.verifiedNoWebsite, true))! as SQL,
+    );
+  }
   if (f.status) conds.push(eq(leads.status, f.status) as SQL);
   return conds;
 }

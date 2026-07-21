@@ -76,7 +76,7 @@ export default function Dashboard() {
     while (runningRef.current) {
       try {
         const r = await api<{
-          analyzed: { id: number; name: string; score: number } | null;
+          analyzed: { id: number; name: string; score: number; dropped?: boolean; foundSite?: string } | null;
           remaining: number;
         }>("/api/analyze/step", { method: "POST" });
         if (!r.analyzed) {
@@ -86,15 +86,20 @@ export default function Dashboard() {
           reload();
           break;
         }
+        const dropped = !!r.analyzed.dropped;
         setBatchDone((d) => d + 1);
-        setBatchMsg(`${r.analyzed.name} → ${r.analyzed.score}`);
+        setBatchMsg(
+          dropped
+            ? `${r.analyzed.name} → has a website, removed`
+            : `${r.analyzed.name} → ${r.analyzed.score}`,
+        );
         setDash((prev) =>
           prev
             ? {
                 ...prev,
                 stats: {
                   ...prev.stats,
-                  analyzed: prev.stats.analyzed + 1,
+                  analyzed: prev.stats.analyzed + (dropped ? 0 : 1),
                   newCount: Math.max(0, prev.stats.newCount - 1),
                 },
               }

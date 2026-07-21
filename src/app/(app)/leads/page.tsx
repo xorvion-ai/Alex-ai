@@ -180,14 +180,22 @@ function LeadsInner() {
   const A = detail?.analysis ?? null;
 
   const analyzeAction = () =>
-    act(
-      "analyze",
-      async () => {
-        await api(`/api/leads/${selId}/analyze`, { method: "POST" });
-        await refreshDetail();
-      },
-      "Analysis complete ✓",
-    );
+    act("analyze", async () => {
+      const r = await api<{ score: number; dropped?: boolean; foundSite?: string }>(
+        `/api/leads/${selId}/analyze`,
+        { method: "POST" },
+      );
+      if (r.dropped) {
+        // The auto web check found a real website — this is no longer a lead.
+        setRows((rs) => rs.filter((x) => x.id !== selId));
+        setDetail(null);
+        setSelId(null);
+        flash(`Has a website (${r.foundSite}) — removed from leads`);
+        return;
+      }
+      await refreshDetail();
+      flash("Analysis complete ✓");
+    });
 
   const verifyAction = () =>
     act(

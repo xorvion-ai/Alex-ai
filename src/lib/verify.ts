@@ -58,6 +58,22 @@ function significantTokens(name: string): string[] {
     .filter((t) => t.length > 3 && !GENERIC.has(t));
 }
 
+// A domain "belongs to" the business only when the business name — or at least
+// two of its significant tokens — is baked into the hostname. That is the
+// reliable signal a small business owns a site. Matching on the page *title*
+// alone is far too loose: a business named for a place ("Arizona Shower Door")
+// otherwise matches unrelated pages like a tourism site titled "Arizona".
+function looksLikeOwnSite(h: string, nameNorm: string, tokens: string[]): boolean {
+  const flatHost = h.replace(/[^a-z0-9]/g, "");
+  const flatName = nameNorm.replace(/[^a-z0-9]/g, "");
+  if (flatName.length >= 5 && flatHost.includes(flatName)) return true;
+  if (tokens.length) {
+    const hits = tokens.filter((t) => flatHost.includes(t)).length;
+    if (hits >= Math.min(2, tokens.length)) return true;
+  }
+  return false;
+}
+
 export async function verifyLead(leadId: number): Promise<{
   verifiedNoWebsite: boolean;
   foundSite: string | null;
@@ -80,17 +96,27 @@ export async function verifyLead(leadId: number): Promise<{
     const h = host(r.url);
     if (!h) continue;
     const titleNorm = normName(r.title);
-    const matchesName =
-      titleNorm.includes(nameNorm) || tokens.some((t) => h.includes(t) || titleNorm.includes(t));
-    if (!matchesName) continue;
-
     const isSocial = SOCIAL_HOSTS.some((s) => h === s || h.endsWith("." + s));
+
     if (isSocial) {
-      socials.add(r.url);
+      // Harvest social pages that plausibly belong to this business. A loose
+      // match is acceptable here — socials are supplementary contact channels,
+      // not the "has a real website" decision.
+      const related =
+        titleNorm.includes(nameNorm) ||
+        tokens.filter((t) => titleNorm.includes(t) || r.url.toLowerCase().includes(t)).length >=
+          Math.min(2, tokens.length || 1);
+      if (related) socials.add(r.url);
       continue;
     }
+
     const ignored = VERIFY_IGNORE_HOSTS.some((s) => h === s || h.endsWith("." + s));
-    if (!ignored && !foundSite) foundSite = r.url;
+    if (ignored) continue;
+
+    // Count a result as "their real website" only when the domain itself is
+    // name-derived — this is what prevents a false positive from dropping a
+    // genuine no-website lead.
+    if (!foundSite && looksLikeOwnSite(h, nameNorm, tokens)) foundSite = r.url;
   }
 
   const verifiedNoWebsite = !foundSite;

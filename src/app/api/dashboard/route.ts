@@ -12,9 +12,9 @@ export async function GET() {
 
     const [counts] = await d
       .select({
-        live: sql<number>`count(*)::int`,
-        analyzed: sql<number>`count(*) filter (where ${leads.status} = 'analyzed')::int`,
-        fresh: sql<number>`count(*) filter (where ${leads.status} = 'new')::int`,
+        live: sql<number>`count(*) filter (where ${leads.verifiedNoWebsite} is distinct from false)::int`,
+        analyzed: sql<number>`count(*) filter (where ${leads.status} = 'analyzed' and ${leads.verifiedNoWebsite} is distinct from false)::int`,
+        fresh: sql<number>`count(*) filter (where ${leads.status} = 'new' and ${leads.verifiedNoWebsite} is distinct from false)::int`,
         cities: sql<number>`count(distinct ${leads.city})::int`,
         sources: sql<number>`count(distinct ${leads.source})::int`,
       })

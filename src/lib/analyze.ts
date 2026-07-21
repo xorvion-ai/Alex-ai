@@ -2,13 +2,14 @@
 
 import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { GEMINI_MODEL, QUOTA_LIMITS } from "@/lib/config";
 import { analyses, db, leads } from "@/lib/db";
 import { canSpend, getUsage, guard, spend } from "@/lib/quota";
 import { getSettings } from "@/lib/settings";
 import { googlePlaceReviews, GoogleReview } from "@/lib/leadsource/google";
+import { verifyLead } from "@/lib/verify";
 
 // Reviews are a nice-to-have: only spend Places quota on them while usage is
 // comfortably low, so sweeps always keep priority on the free tier.
@@ -44,11 +45,40 @@ const AnalysisSchema = z.object({
 
 export type AnalysisResult = z.infer<typeof AnalysisSchema>;
 
-export async function analyzeLead(leadId: number): Promise<{ score: number }> {
+export type AnalyzeOutcome = { score: number; dropped?: boolean; foundSite?: string };
+
+export async function analyzeLead(leadId: number): Promise<AnalyzeOutcome> {
   const d = db();
   const rows = await d.select().from(leads).where(eq(leads.id, leadId));
-  const lead = rows[0];
+  let lead = rows[0];
   if (!lead) throw new Error("Lead not found");
+
+  // Auto web-verification, folded into analysis so the operator never has to
+  // click "Verify on web" per lead. Runs only the first time (verifiedNoWebsite
+  // still null), only with a Tavily key, and only while Tavily's monthly free
+  // budget is comfortable. Best-effort: a verify failure never blocks analysis.
+  let foundSite: string | null = null;
+  if (
+    lead.verifiedNoWebsite == null &&
+    process.env.TAVILY_API_KEY &&
+    (await canSpend("tavily"))
+  ) {
+    try {
+      const v = await verifyLead(leadId);
+      foundSite = v.foundSite;
+      lead = { ...lead, verifiedNoWebsite: v.verifiedNoWebsite, socials: v.socials };
+    } catch {
+      // verification is best-effort — proceed to analysis regardless
+    }
+  }
+
+  // If the web check proved the business actually HAS a real website, it is not
+  // a lead worth pitching: skip the Gemini spend and report it as dropped. The
+  // row stays in the DB (verifyLead set verified_no_website = false) but is
+  // hidden from the leads list — recoverable via the "has site" filter.
+  if (foundSite) {
+    return { score: lead.score ?? 0, dropped: true, foundSite };
+  }
 
   await guard("gemini");
 
@@ -124,27 +154,38 @@ export async function analyzeLead(leadId: number): Promise<{ score: number }> {
 
 /** Analyze the oldest un-analyzed lead. Returns remaining count. */
 export async function analyzeNextNew(): Promise<{
-  analyzed: { id: number; name: string; score: number } | null;
+  analyzed: { id: number; name: string; score: number; dropped?: boolean; foundSite?: string } | null;
   remaining: number;
 }> {
   const d = db();
+  // Skip leads the web check already proved to have a website (verified false).
+  const wanted = and(
+    eq(leads.status, "new"),
+    or(isNull(leads.verifiedNoWebsite), eq(leads.verifiedNoWebsite, true)),
+  );
   const next = await d
     .select({ id: leads.id, name: leads.name })
     .from(leads)
-    .where(eq(leads.status, "new"))
+    .where(wanted)
     .orderBy(sql`${leads.firstSeenAt} asc`)
     .limit(1);
 
   if (!next.length) return { analyzed: null, remaining: 0 };
 
-  const { score } = await analyzeLead(next[0].id);
+  const out = await analyzeLead(next[0].id);
   const remainingRows = await d
     .select({ n: sql<number>`count(*)::int` })
     .from(leads)
-    .where(eq(leads.status, "new"));
+    .where(wanted);
 
   return {
-    analyzed: { id: next[0].id, name: next[0].name, score },
+    analyzed: {
+      id: next[0].id,
+      name: next[0].name,
+      score: out.score,
+      dropped: out.dropped,
+      foundSite: out.foundSite,
+    },
     remaining: remainingRows[0]?.n ?? 0,
   };
 }
