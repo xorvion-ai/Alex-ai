@@ -12,6 +12,7 @@ import {
   api,
   ApiError,
   LeadDto,
+  mapsHref,
   scoreColor,
   scoreLabel,
   timeAgo,
@@ -302,7 +303,7 @@ function LeadsInner() {
         ["first_seen", L.firstSeenAt?.slice(0, 10) ?? "—"],
         ["last_refreshed", `${L.lastRefreshedAt?.slice(0, 10)} (${timeAgo(L.lastRefreshedAt)})`],
         ["socials", (L.socials ?? []).join(" · ") || "—"],
-        ["map", L.mapsUri ?? "—"],
+        ["map", mapsHref(L) ?? "—"],
       ]
     : [];
 
@@ -636,10 +637,10 @@ function LeadsInner() {
                     {[L.category ?? L.types?.[0], L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
                       .filter(Boolean)
                       .join(" · ")}
-                    {L.mapsUri && (
+                    {mapsHref(L) && (
                       <>
                         {" · "}
-                        <a href={L.mapsUri} target="_blank" rel="noreferrer">
+                        <a href={mapsHref(L)!} target="_blank" rel="noreferrer">
                           maps ↗
                         </a>
                       </>

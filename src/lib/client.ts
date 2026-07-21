@@ -36,6 +36,35 @@ export function scoreLabel(s: number | null | undefined): string {
   return s >= 80 ? "STRONG" : s >= 60 ? "MEDIUM" : "WEAK";
 }
 
+/**
+ * Best Google Maps link for a lead. Google-sourced leads carry Google's own
+ * place URL (opens the exact business card). For OSM/TomTom leads we search by
+ * name + address instead of a bare `lat,lng` query — a coordinate-only query
+ * just drops an empty pin with no business info, which is confusing. A name
+ * search surfaces the real listing when Google has it, or clearly shows it
+ * doesn't (which for a lead is a good sign — no Google presence).
+ */
+export function mapsHref(l: {
+  source: string;
+  mapsUri: string | null;
+  name: string;
+  address: string | null;
+  area: string | null;
+  city: string | null;
+  country: string | null;
+  lat: number | null;
+  lng: number | null;
+}): string | null {
+  if (l.source === "google" && l.mapsUri) return l.mapsUri;
+  const where = l.address || [l.area, l.city, l.country].filter(Boolean).join(", ");
+  const q = [l.name, where].filter(Boolean).join(", ").trim();
+  if (q) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+  if (l.lat != null && l.lng != null) {
+    return `https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}`;
+  }
+  return l.mapsUri;
+}
+
 export function timeAgo(iso: string | null | undefined): string {
   if (!iso) return "—";
   const ms = Date.now() - new Date(iso).getTime();
