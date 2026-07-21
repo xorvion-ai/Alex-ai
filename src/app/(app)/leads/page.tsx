@@ -199,21 +199,31 @@ function LeadsInner() {
     });
 
   const verifyAction = () =>
-    act(
-      "verify",
-      async () => {
-        const r = await api<{ verifiedNoWebsite: boolean; foundSite: string | null }>(
-          `/api/leads/${selId}/verify`,
-          { method: "POST" },
+    act("verify", async () => {
+      const r = await api<{ verifiedNoWebsite: boolean; foundSite: string | null }>(
+        `/api/leads/${selId}/verify`,
+        { method: "POST" },
+      );
+      if (r.foundSite) {
+        // Don't remove it silently — let the operator decide.
+        const del = window.confirm(
+          `This business appears to already have a website:\n\n${r.foundSite}\n\nDelete this lead?\n\nOK = delete permanently\nCancel = keep it in your leads`,
         );
+        if (del) {
+          await api(`/api/leads/${selId}`, { method: "DELETE" });
+          setRows((rs) => rs.filter((x) => x.id !== selId));
+          setDetail(null);
+          setSelId(null);
+          flash("Deleted — business already has a website");
+          return;
+        }
         await refreshDetail();
-        flash(
-          r.verifiedNoWebsite
-            ? "Verified: no website anywhere ✓"
-            : `Found a site: ${r.foundSite ?? "?"}`,
-        );
-      },
-    );
+        flash("Kept in leads (has a website)");
+        return;
+      }
+      await refreshDetail();
+      flash("Verified: no website anywhere ✓");
+    });
 
   const refreshAction = () =>
     act(
@@ -229,7 +239,7 @@ function LeadsInner() {
 
   const contactedAction = () => {
     if (!L) return;
-    if (!window.confirm(`Archive & delete "${L.name}"?\n\nIt will be appended to contacted-history.csv and removed from the app permanently.`)) return;
+    if (!window.confirm(`Mark "${L.name}" as contacted and delete it?\n\nThis permanently removes the lead from the app. It is NOT kept in any history.`)) return;
     act(
       "contacted",
       async () => {
@@ -238,7 +248,7 @@ function LeadsInner() {
         setSelId(null);
         await loadRows(true);
       },
-      "Archived to history.csv ✓",
+      "Lead deleted ✓",
     );
   };
 
@@ -667,20 +677,20 @@ function LeadsInner() {
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-                {L.phone && (
-                  <a
-                    href={`tel:${L.phone.replace(/\s/g, "")}`}
-                    className="btn-green"
-                    style={{ padding: "8px 16px", fontSize: 12, fontFamily: "var(--font-sg)", fontWeight: 600 }}
-                  >
-                    CALL {L.phone}
-                  </a>
-                )}
                 {L.phoneIntl && (
                   <a
                     href={`https://wa.me/${L.phoneIntl}`}
                     target="_blank"
                     rel="noreferrer"
+                    className="btn-green"
+                    style={{ padding: "8px 16px", fontSize: 12, fontFamily: "var(--font-sg)", fontWeight: 600 }}
+                  >
+                    WHATSAPP
+                  </a>
+                )}
+                {L.phone && (
+                  <a
+                    href={`tel:${L.phone.replace(/\s/g, "")}`}
                     style={{
                       border: "1px solid var(--border-hover)",
                       borderRadius: 6,
@@ -688,10 +698,11 @@ function LeadsInner() {
                       fontSize: 12,
                       fontWeight: 600,
                       color: "var(--text)",
+                      textDecoration: "none",
                       cursor: "pointer",
                     }}
                   >
-                    WHATSAPP
+                    CALL {L.phone}
                   </a>
                 )}
                 <div
@@ -734,7 +745,7 @@ function LeadsInner() {
                     cursor: "pointer",
                   }}
                 >
-                  ✓ CONTACTED → ARCHIVE
+                  ✓ CONTACTED → DELETE
                 </div>
               </div>
 

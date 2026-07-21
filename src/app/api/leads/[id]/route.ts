@@ -36,3 +36,18 @@ export async function GET(
     return jsonError(e);
   }
 }
+
+// Permanently delete a lead (no archive). Used when a lead is confirmed to have
+// a website. Cascades to its analyses + activities.
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    await db().delete(leads).where(eq(leads.id, Number(id)));
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return jsonError(e);
+  }
+}

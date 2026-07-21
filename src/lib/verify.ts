@@ -77,11 +77,15 @@ function looksLikeOwnSite(h: string, nameNorm: string, tokens: string[]): boolea
   return tokens.length >= 1 && tokens.every((t) => flatHost.includes(t));
 }
 
-export async function verifyLead(leadId: number): Promise<{
+export async function verifyLead(
+  leadId: number,
+  opts: { hideWhenFound?: boolean } = {},
+): Promise<{
   verifiedNoWebsite: boolean;
   foundSite: string | null;
   socials: string[];
 }> {
+  const { hideWhenFound = true } = opts;
   const d = db();
   const rows = await d.select().from(leads).where(eq(leads.id, leadId));
   const lead = rows[0];
@@ -123,14 +127,16 @@ export async function verifyLead(leadId: number): Promise<{
   }
 
   const verifiedNoWebsite = !foundSite;
-  await d
-    .update(leads)
-    .set({
-      verifiedNoWebsite,
-      verifiedAt: new Date(),
-      socials: [...socials],
-    })
-    .where(eq(leads.id, leadId));
+  const patch: { verifiedAt: Date; socials: string[]; verifiedNoWebsite?: boolean } = {
+    verifiedAt: new Date(),
+    socials: [...socials],
+  };
+  // When a real site is found we normally flag the lead (verified_no_website =
+  // false, which hides it). The manual "Verify on web" button passes
+  // hideWhenFound:false so the lead is NOT auto-flagged — the UI then asks the
+  // operator whether to delete it. A "no site" result is always recorded.
+  if (verifiedNoWebsite || hideWhenFound) patch.verifiedNoWebsite = verifiedNoWebsite;
+  await d.update(leads).set(patch).where(eq(leads.id, leadId));
 
   return { verifiedNoWebsite, foundSite, socials: [...socials] };
 }
