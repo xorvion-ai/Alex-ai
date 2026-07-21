@@ -66,12 +66,15 @@ function significantTokens(name: string): string[] {
 function looksLikeOwnSite(h: string, nameNorm: string, tokens: string[]): boolean {
   const flatHost = h.replace(/[^a-z0-9]/g, "");
   const flatName = nameNorm.replace(/[^a-z0-9]/g, "");
+  // Whole business name baked into the domain (e.g. arizonashowerdoor.com).
   if (flatName.length >= 5 && flatHost.includes(flatName)) return true;
-  if (tokens.length) {
-    const hits = tokens.filter((t) => flatHost.includes(t)).length;
-    if (hits >= Math.min(2, tokens.length)) return true;
-  }
-  return false;
+  // Otherwise EVERY significant token must appear in the domain. Requiring all
+  // of them (not just two) avoids matching a *different* business that merely
+  // shares generic category words — e.g. "The Wine & Spirits Boutique at
+  // Eastbridge" must NOT match joywineandspirits.com (missing boutique +
+  // eastbridge). Erring toward "no match" keeps a genuine lead rather than
+  // wrongly dropping it.
+  return tokens.length >= 1 && tokens.every((t) => flatHost.includes(t));
 }
 
 export async function verifyLead(leadId: number): Promise<{
