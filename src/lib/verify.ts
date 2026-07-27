@@ -22,8 +22,11 @@ async function tavilySearch(q: string): Promise<SearchResult[]> {
     },
     body: JSON.stringify({
       query: q,
-      max_results: 10,
-      search_depth: "basic",
+      max_results: 15,
+      // "advanced" returns a deeper, far more stable result set than "basic"
+      // (2 Tavily credits vs 1 — still well within the 1,000/mo free tier), so a
+      // lead's has-site/no-site verdict doesn't flip between identical runs.
+      search_depth: "advanced",
       include_answer: false,
     }),
   });
