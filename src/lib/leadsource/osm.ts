@@ -114,8 +114,14 @@ export function normalizeOsmElement(
   const websiteTag = tags.website || tags["contact:website"] || tags.url || null;
   let ws = classifyWebsite(websiteTag, SOCIAL_HOSTS, DIRECTORY_HOSTS);
   const socials: string[] = [];
-  for (const k of ["contact:facebook", "contact:instagram", "contact:whatsapp"]) {
-    if (tags[k]) socials.push(String(tags[k]));
+  if (tags["contact:facebook"]) socials.push(String(tags["contact:facebook"]));
+  if (tags["contact:instagram"]) socials.push(String(tags["contact:instagram"]));
+  // WhatsApp tag → normalize to a wa.me link so it's a recognizable WhatsApp
+  // signal (the value may be a bare number or a URL).
+  const waTag = tags["contact:whatsapp"] || tags["whatsapp"];
+  if (waTag) {
+    const d = String(waTag).replace(/[^\d]/g, "");
+    socials.push(d.length >= 7 ? `https://wa.me/${d}` : String(waTag));
   }
   if (ws.social) socials.unshift(ws.social);
   if (ws.status === "none" && socials.length > 0) {

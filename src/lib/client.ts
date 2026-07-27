@@ -65,6 +65,44 @@ export function mapsHref(l: {
   return l.mapsUri;
 }
 
+// WhatsApp reachability signal for a lead — free, compliant, no live check.
+// "yes" is definitive (a wa.me / WhatsApp link was found in the lead's socials,
+// e.g. an OSM contact:whatsapp tag or a link harvested during verify). Otherwise
+// it's a market heuristic: WhatsApp is the norm for SMBs in India/Brazil/Europe/
+// etc. but NOT in the US/Canada (there it's SMS/call), so country predicts it far
+// better than phone type does.
+const WA_LINK_RE = /(?:wa\.me|whatsapp\.com|api\.whatsapp\.com)/i;
+const LOW_WA_MARKETS = new Set(["United States", "Canada"]);
+const HIGH_WA_MARKETS = new Set([
+  "India", "Brazil", "Mexico", "Nigeria", "UAE", "Indonesia", "Spain", "Germany",
+  "United Kingdom", "France", "Italy", "Netherlands", "South Africa", "Argentina",
+  "Pakistan", "Bangladesh", "Turkey", "Saudi Arabia", "Egypt", "Malaysia",
+]);
+
+export type WhatsAppSignal = {
+  level: "yes" | "likely" | "unlikely" | "unknown";
+  label: string;
+  short: string;
+};
+
+export function whatsappStatus(lead: {
+  socials: string[] | null;
+  country: string | null;
+}): WhatsAppSignal {
+  const socials = lead.socials ?? [];
+  if (socials.some((u) => WA_LINK_RE.test(String(u)))) {
+    return { level: "yes", label: "on WhatsApp ✓ (link found)", short: "WA ✓" };
+  }
+  const c = lead.country ?? "";
+  if (LOW_WA_MARKETS.has(c)) {
+    return { level: "unlikely", label: "unlikely — US/Canada is a call/SMS market", short: "no WA · call" };
+  }
+  if (HIGH_WA_MARKETS.has(c)) {
+    return { level: "likely", label: "likely — WhatsApp-heavy market", short: "WA likely" };
+  }
+  return { level: "unknown", label: "unknown — no link found, market unclear", short: "WA?" };
+}
+
 export function timeAgo(iso: string | null | undefined): string {
   if (!iso) return "—";
   const ms = Date.now() - new Date(iso).getTime();

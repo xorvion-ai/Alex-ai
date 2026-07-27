@@ -16,6 +16,7 @@ import {
   scoreColor,
   scoreLabel,
   timeAgo,
+  whatsappStatus,
 } from "@/lib/client";
 import { CATEGORIES } from "@/lib/categories";
 
@@ -308,6 +309,7 @@ function LeadsInner() {
             ? "null — not checked"
             : `${L.verifiedNoWebsite} · ${timeAgo(L.verifiedAt)}`,
         ],
+        ["whatsapp", whatsappStatus(L).label],
         ["hours", L.hours ?? "—"],
         ["language_hint", L.languageHint ?? "—"],
         ["first_seen", L.firstSeenAt?.slice(0, 10) ?? "—"],
@@ -572,6 +574,23 @@ function LeadsInner() {
                     >
                       {r.source === "google" ? "G" : r.source === "osm" ? "OSM" : "TT"}
                     </span>
+                    {whatsappStatus(r).level === "yes" && (
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 8,
+                          fontWeight: 600,
+                          color: "var(--green)",
+                          border: "1px solid var(--green-border)",
+                          borderRadius: 3,
+                          padding: "1px 4px",
+                          verticalAlign: 2,
+                          marginLeft: 4,
+                        }}
+                      >
+                        WA
+                      </span>
+                    )}
                     {r.isDemo && (
                       <span
                         className="mono"
@@ -808,6 +827,21 @@ function LeadsInner() {
                               : L.verifiedNoWebsite
                                 ? "no_website ✓"
                                 : "site found ✗"}
+                          </span>
+                        </div>
+                        <div>
+                          whatsapp{" "}
+                          <span
+                            style={{
+                              color:
+                                whatsappStatus(L).level === "yes" || whatsappStatus(L).level === "likely"
+                                  ? "var(--green)"
+                                  : whatsappStatus(L).level === "unlikely"
+                                    ? "var(--amber)"
+                                    : "var(--sec)",
+                            }}
+                          >
+                            {whatsappStatus(L).label}
                           </span>
                         </div>
                       </div>,
