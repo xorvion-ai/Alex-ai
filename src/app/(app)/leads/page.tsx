@@ -696,9 +696,12 @@ function LeadsInner() {
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-                {L.phoneIntl && (
+                {(L.phoneIntl || L.phone) && (
                   <a
-                    href={`https://wa.me/${L.phoneIntl}`}
+                    // Always available so any number can be manually checked —
+                    // WhatsApp opens the chat or says "not on WhatsApp". Prefer
+                    // the international number; fall back to the phone's digits.
+                    href={`https://wa.me/${L.phoneIntl || L.phone!.replace(/\D/g, "")}`}
                     target="_blank"
                     rel="noreferrer"
                     className="btn-green"
