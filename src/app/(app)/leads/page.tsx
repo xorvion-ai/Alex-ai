@@ -187,12 +187,21 @@ function LeadsInner() {
         `/api/leads/${selId}/analyze`,
         { method: "POST" },
       );
-      if (r.dropped) {
-        // The auto web check found a real website — this is no longer a lead.
-        setRows((rs) => rs.filter((x) => x.id !== selId));
-        setDetail(null);
-        setSelId(null);
-        flash(`Has a website (${r.foundSite}) — removed from leads`);
+      if (r.foundSite) {
+        // Auto web-check found a website — ask before removing (don't auto-delete).
+        const del = window.confirm(
+          `This business appears to already have a website:\n\n${r.foundSite}\n\nDelete this lead?\n\nOK = delete permanently\nCancel = keep it in your leads`,
+        );
+        if (del) {
+          await api(`/api/leads/${selId}`, { method: "DELETE" });
+          setRows((rs) => rs.filter((x) => x.id !== selId));
+          setDetail(null);
+          setSelId(null);
+          flash("Deleted — business already has a website");
+        } else {
+          await refreshDetail();
+          flash("Kept — has a website (not analyzed)");
+        }
         return;
       }
       await refreshDetail();

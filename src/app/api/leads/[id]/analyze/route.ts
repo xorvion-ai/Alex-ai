@@ -8,7 +8,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const result = await analyzeLead(Number(id));
+    // Interactive single analyze: never auto-delete on a found website — the UI
+    // asks the operator to confirm first.
+    const result = await analyzeLead(Number(id), { dropOnSite: false });
     return NextResponse.json(result);
   } catch (e) {
     return jsonError(e);
