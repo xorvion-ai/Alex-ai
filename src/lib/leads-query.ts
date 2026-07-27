@@ -12,6 +12,7 @@ export type LeadFilters = {
   minScore?: number;
   verifiedOnly?: boolean;
   hasSite?: boolean;
+  includeNoContact?: boolean;
   status?: "new" | "analyzed";
 };
 
@@ -40,6 +41,7 @@ export function parseFilters(params: URLSearchParams): LeadFilters {
   if (minScore && Number(minScore) > 0) f.minScore = Number(minScore);
   if (g("verified") === "1") f.verifiedOnly = true;
   if (g("hasSite") === "1") f.hasSite = true;
+  if (g("noContact") === "1") f.includeNoContact = true;
   const status = g("status");
   if (status === "new" || status === "analyzed") f.status = status;
   return f;
@@ -76,6 +78,11 @@ export function filterConditions(f: LeadFilters): SQL[] {
     );
   }
   if (f.status) conds.push(eq(leads.status, f.status) as SQL);
+  // Only contactable leads by default — must have a phone (email isn't
+  // collected, so it's the only reachable channel). Opt out with ?noContact=1.
+  if (!f.includeNoContact) {
+    conds.push(sql`${leads.phone} is not null and ${leads.phone} <> ''`);
+  }
   return conds;
 }
 
