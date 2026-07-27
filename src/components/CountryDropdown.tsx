@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { COUNTRIES } from "@/lib/config";
+import { COUNTRIES, countryName } from "@/lib/config";
+import Flag from "@/components/Flag";
+
+// Flag image + plain name (emoji flags don't render on Windows). Global keeps
+// its globe emoji, which renders fine everywhere.
+function CountryLabel({ value }: { value: string }) {
+  const nm = countryName(value);
+  if (!nm) return <><span style={{ marginRight: 5 }}>🌍</span>Global</>;
+  return (
+    <>
+      <Flag country={nm} /> {nm}
+    </>
+  );
+}
 
 export default function CountryDropdown({
   value,
@@ -40,7 +53,7 @@ export default function CountryDropdown({
           cursor: "pointer",
         }}
       >
-        {value} <span style={{ color: "var(--muted)" }}>{open ? "▴" : "▾"}</span>
+        <span><CountryLabel value={value} /></span> <span style={{ color: "var(--muted)" }}>{open ? "▴" : "▾"}</span>
       </div>
       {open && (
         <div className="dd-panel">
@@ -53,7 +66,7 @@ export default function CountryDropdown({
                 setOpen(false);
               }}
             >
-              {c}
+              <CountryLabel value={c} />
             </div>
           ))}
         </div>

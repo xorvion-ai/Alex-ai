@@ -18,6 +18,7 @@ import {
   timeAgo,
   whatsappStatus,
 } from "@/lib/client";
+import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
@@ -587,6 +588,7 @@ function LeadsInner() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <Flag country={r.country} size={12} />
                     {r.name}{" "}
                     <span
                       className="mono"
@@ -689,7 +691,10 @@ function LeadsInner() {
                     {L.verifiedNoWebsite ? " · VERIFIED_NO_WEBSITE ✓" : ""}
                     {L.isDemo && <span style={{ color: "var(--amber)" }}> · DEMO_LEAD — archive me when done exploring</span>}
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.3px" }}>{L.name}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.3px" }}>
+                    <Flag country={L.country} size={18} />
+                    {L.name}
+                  </div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>
                     {[L.category ?? L.types?.[0], L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
                       .filter(Boolean)
