@@ -14,7 +14,11 @@ export const QUOTA_LIMITS: Record<
   Provider,
   { limit: number; period: "month" | "day"; label: string }
 > = {
-  google_places: { limit: 1000, period: "month", label: "PLACES" },
+  // Conservative monthly cap kept well inside Google's free tier. With UPI
+  // autopay now active, the Guardian hard-stops the app at 90% (450/mo) so it
+  // never generates billable volume. The true no-bill guarantee is a Cloud-side
+  // "Requests/day" quota cap on the Places SKUs (set in the Google console).
+  google_places: { limit: 500, period: "month", label: "PLACES" },
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
   tomtom: { limit: 2500, period: "day", label: "TOMTOM" },
   tavily: { limit: 1000, period: "month", label: "TAVILY" },
