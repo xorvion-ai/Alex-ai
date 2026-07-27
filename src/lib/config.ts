@@ -14,11 +14,15 @@ export const QUOTA_LIMITS: Record<
   Provider,
   { limit: number; period: "month" | "day"; label: string }
 > = {
-  // Conservative monthly cap kept well inside Google's free tier. With UPI
-  // autopay now active, the Guardian hard-stops the app at 90% (450/mo) so it
-  // never generates billable volume. The true no-bill guarantee is a Cloud-side
-  // "Requests/day" quota cap on the Places SKUs (set in the Google console).
-  google_places: { limit: 500, period: "month", label: "PLACES" },
+  // Google Maps Platform free tier is PER-SKU per month (since Mar 2025, replaced
+  // the $200 credit): Essentials 10k, Pro 5k, Enterprise 1k. Alex.ai's Text
+  // Search requests rating/userRatingCount/priceLevel → the ENTERPRISE SKU →
+  // 1,000 free/month. All Places SKUs are pooled into this one counter and the
+  // Guardian hard-stops at 90% = 900, so the pooled total can never cross any
+  // single SKU's 1,000 free tier → zero billing even with UPI autopay active.
+  // Daily quota caps are NOT adjustable on this account, so this app-side cap is
+  // the no-bill guarantee.
+  google_places: { limit: 1000, period: "month", label: "PLACES" },
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
   tomtom: { limit: 2500, period: "day", label: "TOMTOM" },
   tavily: { limit: 1000, period: "month", label: "TAVILY" },
