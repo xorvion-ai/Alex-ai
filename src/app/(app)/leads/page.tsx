@@ -588,7 +588,7 @@ function LeadsInner() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    <Flag country={r.country} size={12} />
+                    <Flag country={r.country} size={17} />
                     {r.name}{" "}
                     <span
                       className="mono"
@@ -692,7 +692,7 @@ function LeadsInner() {
                     {L.isDemo && <span style={{ color: "var(--amber)" }}> · DEMO_LEAD — archive me when done exploring</span>}
                   </div>
                   <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.3px" }}>
-                    <Flag country={L.country} size={18} />
+                    <Flag country={L.country} size={22} />
                     {L.name}
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>
