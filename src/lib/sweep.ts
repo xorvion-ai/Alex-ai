@@ -259,6 +259,9 @@ export async function stepSweep(
         const cand = normalizeOsmElement(el, q.categoryId);
         if (!cand) continue;
         scanned++;
+        // OSM entries usually list no contact at all. Keep only reachable ones:
+        // require a phone (the only channel we can act on — no email pipeline).
+        if (!cand.phone) continue;
         if (s.keyword) {
           const hay = `${cand.name} ${cand.types.join(" ")}`.toLowerCase();
           if (!hay.includes(s.keyword.toLowerCase())) continue;
