@@ -384,6 +384,25 @@ function LeadsInner() {
             >
               FILTERS {filtersOpen ? "▴" : "▾"}
             </div>
+            <a
+              className="mono"
+              href={`/api/leads/export?${buildParams(filterState)}`}
+              title="Download all leads as a CSV (opens in Excel)"
+              style={{
+                background: "var(--panel)",
+                border: "1px solid var(--border-hover)",
+                borderRadius: 6,
+                padding: "8px 12px",
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--text)",
+                cursor: "pointer",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              CSV ↓
+            </a>
           </div>
 
           {filtersOpen && (

@@ -20,7 +20,7 @@ A **single-user agentic web app** owned by Sumit Kumar (Xorvion). It finds small
 2. **Official APIs only, no scraping.** Phone numbers yes; emails are NOT available (no free source) — outreach is call/WhatsApp/visit.
 3. **Global** — any city, any country, any language.
 4. **Lead-gen only** — no website-builder inside the app (sites are built separately with Claude via the "COPY PLAN FOR CLAUDE" button).
-5. **Delete on contact** — marking a lead ✓ CONTACTED **permanently deletes it, with no archive/history copy** (changed 2026-07-21 at Sumit's request — previously it snapshotted to `contacted_archive`). The `contacted_archive` table + `/api/archive` endpoint remain (old rows still downloadable) but are no longer written. A confirmation dialog guards the delete.
+5. **Delete on contact** — marking a lead ✓ CONTACTED **permanently deletes it, with no archive/history copy** (changed 2026-07-21 at Sumit's request — previously it snapshotted to `contacted_archive`). The `/api/archive` endpoint and the dashboard history-CSV tile were **removed (2026-07-28)** — nothing is stored anywhere on contact. The `contacted_archive` table still exists in the DB (holds a few pre-change rows; safe to drop). A confirmation dialog guards the delete.
 6. **AI model:** `gemini-3.1-flash-lite` (Sumit's pick — highest free daily limit). Override with `GEMINI_MODEL` env var.
 7. **Design is fixed** — pixel-perfect implementation of the handoff in `Agentic AI web app design/design_handoff_alex_ai/` (dark "operator console", Space Grotesk + JetBrains Mono, green `#4ade80`). Don't redesign; follow `README.md` in that folder for tokens.
 8. Exactly **one demo lead** ("Annapurna Bhojanalay", marked DEMO) is auto-seeded on first run so every feature is visible — everything else starts empty. All features are real (live APIs), nothing is simulated.
@@ -48,7 +48,7 @@ Create tables with `npm run db:push` (drizzle-kit, needs DATABASE_URL in `.env`)
 
 Pages: `/login` (intro splash 3 s → password), `/` Dashboard (stats, follow-ups due, recent sweeps, batch analysis runner, quota), `/discover` (sweep form + live feed + radar), `/leads` (split view; tabs ANALYSIS · DATA · SITE_PLAN · LOG·n · OUTREACH; actions CALL/WHATSAPP/VERIFY/REFRESH/CONTACTED→ARCHIVE), `/settings`.
 
-API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `leads` (list/filters/countOnly) + `leads/export` (CSV) + `leads/[id]` + `[id]/analyze|verify|refresh|contacted|activities` · `analyze/step` (batch) · `dashboard` · `quota` · `settings` · `archive` (contacted-history CSV). All JSON errors: `{error}`; quota blocks add `{quotaBlocked:true}` with HTTP 429.
+API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `leads` (list/filters/countOnly) + `leads/export` (CSV) + `leads/[id]` + `[id]/analyze|verify|refresh|contacted|activities` · `analyze/step` (batch) · `dashboard` · `quota` · `settings`. (`leads/export` powers the always-visible "CSV ↓" button in the leads header — downloads all matching leads, opens in Excel.) All JSON errors: `{error}`; quota blocks add `{quotaBlocked:true}` with HTTP 429.
 
 ## 7. Environment (`.env`, template in `.env.example`)
 

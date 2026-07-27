@@ -198,16 +198,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginTop: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginTop: 20 }}>
         {statCard("LIVE LEADS", s?.live ?? "—", `across ${s?.cities ?? 0} cities · ${s?.sources ?? 0} sources`)}
         {statCard("ANALYZED", s?.analyzed ?? "—", `${newCount} new awaiting analysis`, true)}
-        {statCard(
-          "CONTACTED → ARCHIVED",
-          s?.archivedThisMonth ?? "—",
-          <>
-            this month · <a href="/api/archive">history.csv ↓</a>
-          </>,
-        )}
         {statCard("MONTHLY COST", "$0", "guardian armed · caps active", true)}
       </div>
 
