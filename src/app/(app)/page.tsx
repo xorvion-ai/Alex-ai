@@ -24,6 +24,14 @@ type Dash = {
     dueAt: string;
     leadName: string;
   }[];
+  activityLog: {
+    id: number;
+    leadId: number;
+    kind: string;
+    note: string;
+    createdAt: string;
+    leadName: string;
+  }[];
   sweeps: {
     id: number;
     label: string;
@@ -239,6 +247,43 @@ export default function Dashboard() {
             {dash && dash.followUps.length === 0 && (
               <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
                 nothing due — add follow-ups from a lead&apos;s LOG tab
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>ACTIVITY LOG</span>
+            </div>
+            {(dash?.activityLog ?? []).map((a) => (
+              <div
+                key={a.id}
+                className="hover-row"
+                onClick={() => router.push(`/leads?sel=${a.leadId}`)}
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  padding: "11px 15px",
+                  borderBottom: "1px solid var(--hairline)",
+                  alignItems: "baseline",
+                  cursor: "pointer",
+                }}
+              >
+                <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", width: 74, flex: "none" }}>
+                  {a.kind}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{a.leadName}</div>
+                  <div style={{ fontSize: 11, color: "var(--sec)" }}>{a.note}</div>
+                </div>
+                <span className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", flex: "none" }}>
+                  {timeAgo(a.createdAt)}
+                </span>
+              </div>
+            ))}
+            {dash && dash.activityLog.length === 0 && (
+              <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
+                no activity yet — notes and calls appear here
               </div>
             )}
           </div>

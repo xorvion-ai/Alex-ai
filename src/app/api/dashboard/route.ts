@@ -51,6 +51,20 @@ export async function GET() {
       .orderBy(activities.dueAt)
       .limit(8);
 
+    const activityLog = await d
+      .select({
+        id: activities.id,
+        leadId: activities.leadId,
+        kind: activities.kind,
+        note: activities.note,
+        createdAt: activities.createdAt,
+        leadName: leads.name,
+      })
+      .from(activities)
+      .innerJoin(leads, eq(activities.leadId, leads.id))
+      .orderBy(sql`${activities.createdAt} desc`)
+      .limit(10);
+
     const sweeps = await d
       .select()
       .from(searches)
@@ -67,6 +81,7 @@ export async function GET() {
         archivedThisMonth: archived?.n ?? 0,
       },
       followUps,
+      activityLog,
       sweeps: sweeps.map((s) => ({
         id: s.id,
         label: s.label,
