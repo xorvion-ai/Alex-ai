@@ -59,6 +59,7 @@ export async function GET() {
         note: activities.note,
         createdAt: activities.createdAt,
         leadName: leads.name,
+        country: leads.country,
       })
       .from(activities)
       .innerJoin(leads, eq(activities.leadId, leads.id))

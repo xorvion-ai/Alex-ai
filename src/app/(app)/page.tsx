@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError, QuotaDto, timeAgo } from "@/lib/client";
 import { useToast } from "@/components/useToast";
+import Flag from "@/components/Flag";
 
 type Dash = {
   stats: {
@@ -31,6 +32,7 @@ type Dash = {
     note: string;
     createdAt: string;
     leadName: string;
+    country: string | null;
   }[];
   sweeps: {
     id: number;
@@ -273,7 +275,10 @@ export default function Dashboard() {
                   {a.kind}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{a.leadName}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}>
+                    <Flag country={a.country} size={15} />
+                    {a.leadName}
+                  </div>
                   <div style={{ fontSize: 11, color: "var(--sec)" }}>{a.note}</div>
                 </div>
                 <span className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", flex: "none" }}>
@@ -284,56 +289,6 @@ export default function Dashboard() {
             {dash && dash.activityLog.length === 0 && (
               <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
                 no activity yet — notes and calls appear here
-              </div>
-            )}
-          </div>
-
-          <div className="card">
-            <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
-              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>RECENT SWEEPS</span>
-            </div>
-            <div
-              className="mono"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.6fr 1fr .6fr .6fr .7fr",
-                gap: "0 10px",
-                padding: "8px 15px 4px",
-                fontSize: 9,
-                fontWeight: 600,
-                color: "var(--faint)",
-              }}
-            >
-              <span>QUERY</span>
-              <span>WHEN</span>
-              <span>FOUND</span>
-              <span>NEW</span>
-              <span>REQUESTS</span>
-            </div>
-            {(dash?.sweeps ?? []).map((sw) => (
-              <div
-                key={sw.id}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.6fr 1fr .6fr .6fr .7fr",
-                  gap: "0 10px",
-                  padding: "9px 15px",
-                  borderTop: "1px solid var(--hairline)",
-                  fontSize: 12,
-                  color: "var(--body)",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ fontWeight: 600 }}>{sw.label}</span>
-                <span style={{ color: "var(--sec)", fontSize: 11 }}>{timeAgo(sw.when)}</span>
-                <span className="mono">{sw.found}</span>
-                <span className="mono" style={{ color: "var(--green)" }}>{sw.added}</span>
-                <span className="mono" style={{ color: "var(--sec)" }}>{sw.requests}</span>
-              </div>
-            ))}
-            {dash && dash.sweeps.length === 0 && (
-              <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
-                no sweeps yet — run one from Discover
               </div>
             )}
           </div>
@@ -391,6 +346,56 @@ export default function Dashboard() {
               <span style={{ flex: 1 }} />
               <span style={{ color: "var(--sec)" }}>unlimited · rate-limited</span>
             </div>
+          </div>
+
+          <div className="card">
+            <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>RECENT SWEEPS</span>
+            </div>
+            <div
+              className="mono"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.6fr 1fr .6fr .6fr .7fr",
+                gap: "0 10px",
+                padding: "8px 15px 4px",
+                fontSize: 9,
+                fontWeight: 600,
+                color: "var(--faint)",
+              }}
+            >
+              <span>QUERY</span>
+              <span>WHEN</span>
+              <span>FOUND</span>
+              <span>NEW</span>
+              <span>REQUESTS</span>
+            </div>
+            {(dash?.sweeps ?? []).map((sw) => (
+              <div
+                key={sw.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1.6fr 1fr .6fr .6fr .7fr",
+                  gap: "0 10px",
+                  padding: "9px 15px",
+                  borderTop: "1px solid var(--hairline)",
+                  fontSize: 12,
+                  color: "var(--body)",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>{sw.label}</span>
+                <span style={{ color: "var(--sec)", fontSize: 11 }}>{timeAgo(sw.when)}</span>
+                <span className="mono">{sw.found}</span>
+                <span className="mono" style={{ color: "var(--green)" }}>{sw.added}</span>
+                <span className="mono" style={{ color: "var(--sec)" }}>{sw.requests}</span>
+              </div>
+            ))}
+            {dash && dash.sweeps.length === 0 && (
+              <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
+                no sweeps yet — run one from Discover
+              </div>
+            )}
           </div>
         </div>
       </div>
