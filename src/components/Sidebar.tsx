@@ -39,44 +39,32 @@ export default function Sidebar() {
   }
 
   return (
-    <div
-      style={{
-        width: 204,
-        flex: "none",
-        display: "flex",
-        flexDirection: "column",
-        background: "var(--deep)",
-        borderRight: "1px solid var(--border)",
-        padding: "18px 0",
-      }}
-    >
-      <div style={{ padding: "0 16px 20px" }}>
+    <div className="side">
+      <div className="side-logo">
         <Logo variant="side" />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 13 }}>
+      <div className="side-nav">
         {NAVS.map((n) => {
           const active = pathname === n.path;
           return (
             <div
               key={n.path}
               onClick={() => router.push(n.path)}
-              style={{
-                padding: "9px 18px",
-                cursor: "pointer",
-                background: active ? "var(--panel)" : undefined,
-                color: active ? "var(--text)" : "var(--sec)",
-                borderLeft: active ? "2px solid var(--green)" : "2px solid transparent",
-                fontWeight: active ? 600 : 400,
-              }}
+              className={`nav-item${active ? " on" : ""}`}
             >
               {n.label}
-              {n.path === "/leads" && leadCount != null ? `  ·  ${leadCount}` : ""}
+              {/* the count is dropped on phones so the top bar fits — the
+                  dashboard shows the same number */}
+              {n.path === "/leads" && leadCount != null && (
+                <span className="desktop-only">{`  ·  ${leadCount}`}</span>
+              )}
             </div>
           );
         })}
       </div>
       <div style={{ flex: 1 }} />
       <div
+        className="side-quota"
         onClick={() => setQuotaOpen((o) => !o)}
         style={{
           margin: "0 12px",
@@ -127,7 +115,7 @@ export default function Sidebar() {
       </div>
       <div
         onClick={doLock}
-        className="mono"
+        className="mono side-lock"
         style={{
           margin: "10px 12px 0",
           padding: "8px 12px",

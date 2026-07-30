@@ -199,8 +199,8 @@ export default function Dashboard() {
   );
 
   return (
-    <div style={{ flex: 1, overflow: "auto", padding: "26px 30px" }}>
-      <div style={{ display: "flex", alignItems: "baseline" }}>
+    <div className="pg">
+      <div className="pg-head" style={{ display: "flex", alignItems: "baseline" }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.3px" }}>Dashboard</div>
         <div style={{ flex: 1 }} />
         <div className="mono" style={{ fontSize: 11, fontWeight: 500, color: "var(--muted)" }}>
@@ -208,13 +208,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginTop: 20 }}>
+      <div className="grid3" style={{ marginTop: 20 }}>
         {statCard("LIVE LEADS", s?.live ?? "—", `across ${s?.cities ?? 0} cities · ${s?.sources ?? 0} sources`)}
         {statCard("ANALYZED", s?.analyzed ?? "—", `${newCount} new awaiting analysis`, true)}
         {statCard("MONTHLY COST", "$0", "guardian armed · caps active", true)}
       </div>
 
-      <div style={{ display: "flex", gap: 14, marginTop: 14, alignItems: "flex-start" }}>
+      <div className="cols" style={{ marginTop: 14 }}>
         <div style={{ flex: 1.4, display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
           <div className="card">
             <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
@@ -353,11 +353,8 @@ export default function Dashboard() {
               <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>RECENT SWEEPS</span>
             </div>
             <div
-              className="mono"
+              className="mono sweeps-grid"
               style={{
-                display: "grid",
-                gridTemplateColumns: "1.6fr 1fr .6fr .6fr .7fr",
-                gap: "0 10px",
                 padding: "8px 15px 4px",
                 fontSize: 9,
                 fontWeight: 600,
@@ -373,10 +370,8 @@ export default function Dashboard() {
             {(dash?.sweeps ?? []).map((sw) => (
               <div
                 key={sw.id}
+                className="sweeps-grid"
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.6fr 1fr .6fr .6fr .7fr",
-                  gap: "0 10px",
                   padding: "9px 15px",
                   borderTop: "1px solid var(--hairline)",
                   fontSize: 12,
@@ -384,7 +379,7 @@ export default function Dashboard() {
                   alignItems: "center",
                 }}
               >
-                <span style={{ fontWeight: 600 }}>{sw.label}</span>
+                <span className="sweep-q" style={{ fontWeight: 600 }}>{sw.label}</span>
                 <span style={{ color: "var(--sec)", fontSize: 11 }}>{timeAgo(sw.when)}</span>
                 <span className="mono">{sw.found}</span>
                 <span className="mono" style={{ color: "var(--green)" }}>{sw.added}</span>

@@ -54,16 +54,8 @@ export default function DiscoverPage() {
   const visibleCats = s.moreCats ? CATEGORIES.map((c) => c.id) : CAT_IDS;
 
   return (
-    <div style={{ flex: 1, display: "flex", minWidth: 0 }}>
-      <div
-        style={{
-          width: 400,
-          flex: "none",
-          borderRight: "1px solid var(--border)",
-          overflow: "auto",
-          padding: "26px 22px",
-        }}
-      >
+    <div className="split">
+      <div className="pane-side" style={{ overflow: "auto", padding: "26px 22px" }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.3px" }}>Discover</div>
         <div style={{ fontSize: 12, color: "var(--sec)", marginTop: 4 }}>
           Sweep any city on Earth for businesses with no website.
@@ -174,9 +166,9 @@ export default function DiscoverPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div className="pane-main">
         <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border)", background: "#0e1013" }}>
-          <div className="mono" style={{ display: "flex", fontSize: 11, fontWeight: 500, color: "var(--sec)", gap: 22 }}>
+          <div className="mono" style={{ display: "flex", flexWrap: "wrap", fontSize: 11, fontWeight: 500, color: "var(--sec)", gap: "6px 22px" }}>
             <span>
               query <span style={{ color: "var(--text)" }}>{s.prog?.cursor ?? 0}/{s.prog?.total ?? estQueries}</span>
             </span>
@@ -199,7 +191,7 @@ export default function DiscoverPage() {
 
         <div style={{ flex: 1, overflow: "auto" }}>
           {s.feed.length === 0 ? (
-            <div style={{ height: "100%", display: "grid", placeItems: "center" }}>
+            <div style={{ height: "100%", minHeight: 260, display: "grid", placeItems: "center" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ position: "relative", width: 90, height: 90, margin: "0 auto" }}>
                   <div style={{ position: "absolute", inset: 0, border: "1.5px solid var(--border)", borderRadius: "50%" }} />

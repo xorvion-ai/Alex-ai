@@ -79,6 +79,10 @@ function LeadsInner() {
 
   const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified };
 
+  // On phones the list and detail take turns, so auto-selecting the first lead
+  // would drop the user straight into a detail view. 820px = the CSS breakpoint.
+  const autoSelect = () => window.innerWidth > 820;
+
   const loadRows = useCallback(
     async (selectFirst = false, preferId: number | null = null) => {
       const qs = buildParams(filterState);
@@ -97,7 +101,7 @@ function LeadsInner() {
   useEffect(() => {
     const want = Number(searchParams.get("sel")) || null;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadRows(true, want);
+    loadRows(autoSelect(), want);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -257,7 +261,7 @@ function LeadsInner() {
         await api(`/api/leads/${selId}/contacted`, { method: "POST" });
         setDetail(null);
         setSelId(null);
-        await loadRows(true);
+        await loadRows(autoSelect());
       },
       "Lead deleted ✓",
     );
@@ -349,17 +353,11 @@ function LeadsInner() {
   );
 
   return (
-    <div style={{ flex: 1, display: "flex", minWidth: 0 }}>
+    // On phones the list and the detail take turns: `sel` hides the list once a
+    // lead is picked (see the max-width rules in globals.css).
+    <div className={`split swap${selId ? " sel" : ""}`}>
       {/* LEFT: list */}
-      <div
-        style={{
-          width: 400,
-          flex: "none",
-          display: "flex",
-          flexDirection: "column",
-          borderRight: "1px solid var(--border)",
-        }}
-      >
+      <div className="pane-side">
         <div style={{ padding: "14px 16px 12px", borderBottom: "1px solid var(--border)" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <input
@@ -531,7 +529,7 @@ function LeadsInner() {
                   className="btn-green mono"
                   style={{ flex: 1, padding: "7px 0", fontSize: 11, borderRadius: 5 }}
                   onClick={() => {
-                    loadRows(true);
+                    loadRows(autoSelect());
                     setFiltersOpen(false);
                   }}
                 >
@@ -673,16 +671,23 @@ function LeadsInner() {
       </div>
 
       {/* RIGHT: detail */}
-      <div style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
+      <div className="pane-main">
         {!L ? (
           <div style={{ height: "100%", display: "grid", placeItems: "center" }}>
             <div className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
-              select a lead — or discover new ones
+              {selId != null ? "loading lead…" : "select a lead — or discover new ones"}
             </div>
           </div>
         ) : (
           <>
             <div style={{ padding: "20px 24px 0" }}>
+              <div
+                className="mono mobile-only"
+                onClick={() => setSelId(null)}
+                style={{ fontSize: 11, fontWeight: 600, color: "var(--green)", marginBottom: 12, cursor: "pointer" }}
+              >
+                ← ALL LEADS
+              </div>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
@@ -804,7 +809,7 @@ function LeadsInner() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", marginTop: 18, borderBottom: "1px solid var(--border)" }}>
+              <div className="tabs" style={{ marginTop: 18 }}>
                 {(
                   [
                     ["analysis", "ANALYSIS"],
@@ -824,7 +829,7 @@ function LeadsInner() {
             {/* ANALYSIS */}
             {tab === "analysis" &&
               (A ? (
-                <div style={{ display: "flex", gap: 14, padding: "16px 24px 22px", alignItems: "flex-start" }}>
+                <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
                     <div className="card">
                       <div className="card-head">LEAD_SCORE — WHY {A.score}</div>
@@ -842,7 +847,7 @@ function LeadsInner() {
                       </div>
                     </div>
                   </div>
-                  <div style={{ width: 250, flex: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div className="rail">
                     {railCard(
                       "SIGNALS",
                       <div className="mono" style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11, fontWeight: 500, color: "#a9b0ba" }}>
@@ -920,7 +925,7 @@ function LeadsInner() {
                       </span>
                     )}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                  <div className="data-grid">
                     {dataPairs.map(([k, v]) => (
                       <div
                         key={k}
@@ -942,7 +947,7 @@ function LeadsInner() {
             {/* SITE_PLAN */}
             {tab === "plan" &&
               (A ? (
-                <div style={{ display: "flex", gap: 14, padding: "16px 24px 22px", alignItems: "flex-start" }}>
+                <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
                     <div className="card">
                       <div className="card-head">CONTENT ANGLE</div>
@@ -962,7 +967,7 @@ function LeadsInner() {
                       </div>
                     </div>
                   </div>
-                  <div style={{ width: 250, flex: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div className="rail">
                     {railCard(
                       "SUGGESTED PAGES",
                       <div className="mono" style={{ display: "flex", flexWrap: "wrap", gap: 5, fontSize: 10.5, fontWeight: 500 }}>
@@ -1017,7 +1022,7 @@ function LeadsInner() {
                     </div>
                   ))}
                   {followOpen && (
-                    <div className="mono" style={{ display: "flex", gap: 8, padding: "12px 13px 0", alignItems: "center", fontSize: 10.5 }}>
+                    <div className="mono" style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "12px 13px 0", alignItems: "center", fontSize: 10.5 }}>
                       <span style={{ color: "var(--amber)" }}>⏰ due</span>
                       <input
                         type="datetime-local"
@@ -1033,10 +1038,10 @@ function LeadsInner() {
                       ))}
                     </div>
                   )}
-                  <div style={{ display: "flex", gap: 8, padding: "12px 13px" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "12px 13px" }}>
                     <input
                       className="input in-panel"
-                      style={{ flex: 1, fontSize: 12.5 }}
+                      style={{ flex: 1, minWidth: 160, fontSize: 12.5 }}
                       placeholder="add note… (e.g. owner busy, call back Tue)"
                       value={noteText}
                       onChange={(e) => setNoteText(e.target.value)}
@@ -1080,7 +1085,7 @@ function LeadsInner() {
             {/* OUTREACH */}
             {tab === "outreach" &&
               (A ? (
-                <div style={{ display: "flex", gap: 14, padding: "16px 24px 22px", alignItems: "flex-start" }}>
+                <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
                     <div className="card">
                       <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)" }}>

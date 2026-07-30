@@ -73,7 +73,7 @@ export default function LoginPage() {
         background: "radial-gradient(ellipse at 50% 42%,#12161a 0%,#0b0d0f 68%)",
       }}
     >
-      <div style={{ width: 380 }} className="fadeup">
+      <div style={{ width: 380, maxWidth: "92vw" }} className="fadeup">
         <div style={{ marginBottom: 30 }}>
           <Logo variant="login" />
         </div>

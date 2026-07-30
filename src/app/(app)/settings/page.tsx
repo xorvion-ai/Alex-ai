@@ -101,9 +101,9 @@ export default function SettingsPage() {
   const visibleCats = moreCats ? DEFAULT_CAT_CHOICES : DEFAULT_CAT_CHOICES.slice(0, 8);
 
   return (
-    <div style={{ flex: 1, overflow: "auto", padding: "26px 30px" }}>
+    <div className="pg">
       <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.3px" }}>Settings</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 20, maxWidth: 980 }}>
+      <div className="grid2" style={{ marginTop: 20, maxWidth: 980 }}>
         <div className="card" style={{ padding: 16 }}>
           <div className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)", marginBottom: 12 }}>API KEYS</div>
           {keyInput("GOOGLE PLACES (NEW)", keys.googlePlaces)}
