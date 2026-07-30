@@ -22,7 +22,7 @@ import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
-type Tab = "analysis" | "data" | "plan" | "log" | "outreach";
+type Tab = "analysis" | "log";
 
 const FILTER_CATS = CATEGORIES.map((c) => c.id).slice(0, 5);
 
@@ -813,10 +813,7 @@ function LeadsInner() {
                 {(
                   [
                     ["analysis", "ANALYSIS"],
-                    ["data", "DATA"],
-                    ["plan", "SITE_PLAN"],
                     ["log", `LOG·${detail?.activities.length ?? 0}`],
-                    ["outreach", "OUTREACH"],
                   ] as [Tab, string][]
                 ).map(([k, label]) => (
                   <div key={k} className={`tab${tab === k ? " on" : ""}`} onClick={() => setTab(k)}>
@@ -912,41 +909,8 @@ function LeadsInner() {
                 </div>
               ))}
 
-            {/* DATA */}
-            {tab === "data" && (
-              <div style={{ padding: "16px 24px 22px" }}>
-                <div className="card" style={{ overflow: "hidden" }}>
-                  <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
-                    <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>RAW LEAD DATA</span>
-                    <div style={{ flex: 1 }} />
-                    {L.source === "google" && (
-                      <span className="mono" style={{ fontSize: 9.5, fontWeight: 500, color: "var(--amber)" }}>
-                        google cache rule: refresh if &gt; 30d
-                      </span>
-                    )}
-                  </div>
-                  <div className="data-grid">
-                    {dataPairs.map(([k, v]) => (
-                      <div
-                        key={k}
-                        style={{ display: "flex", gap: 10, padding: "10px 13px", borderBottom: "1px solid var(--hairline)", fontSize: 12 }}
-                      >
-                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--muted)", width: 120, flex: "none", paddingTop: 1 }}>
-                          {k}
-                        </span>
-                        <span className="mono" style={{ color: "var(--body)", fontSize: 11.5, wordBreak: "break-word" }}>
-                          {v}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* SITE_PLAN */}
-            {tab === "plan" &&
-              (A ? (
+            {tab === "analysis" && A && (
                 <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
                     <div className="card">
@@ -990,11 +954,7 @@ function LeadsInner() {
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="mono" style={{ padding: "20px 24px", fontSize: 11, color: "var(--faint)" }}>
-                  run analysis first — the site plan is generated with it
-                </div>
-              ))}
+            )}
 
             {/* LOG */}
             {tab === "log" && (
@@ -1083,8 +1043,7 @@ function LeadsInner() {
             )}
 
             {/* OUTREACH */}
-            {tab === "outreach" &&
-              (A ? (
+            {tab === "analysis" && A && (
                 <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
                     <div className="card">
@@ -1124,19 +1083,41 @@ function LeadsInner() {
                         ))}
                       </div>
                     </div>
-                    {railCard(
-                      "BEST_CALL_WINDOW",
-                      <div className="mono" style={{ fontSize: 12, fontWeight: 500, color: "var(--text)" }}>
-                        {A.outreach.bestCallWindow}
-                      </div>,
-                    )}
                   </div>
                 </div>
-              ) : (
-                <div className="mono" style={{ padding: "20px 24px", fontSize: 11, color: "var(--faint)" }}>
-                  run analysis first — outreach drafts are generated with it
+            )}
+            {/* DATA */}
+            {tab === "analysis" && (
+              <div style={{ padding: "16px 24px 22px" }}>
+                <div className="card" style={{ overflow: "hidden" }}>
+                  <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
+                    <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>RAW LEAD DATA</span>
+                    <div style={{ flex: 1 }} />
+                    {L.source === "google" && (
+                      <span className="mono" style={{ fontSize: 9.5, fontWeight: 500, color: "var(--amber)" }}>
+                        google cache rule: refresh if &gt; 30d
+                      </span>
+                    )}
+                  </div>
+                  <div className="data-grid">
+                    {dataPairs.map(([k, v]) => (
+                      <div
+                        key={k}
+                        style={{ display: "flex", gap: 10, padding: "10px 13px", borderBottom: "1px solid var(--hairline)", fontSize: 12 }}
+                      >
+                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--muted)", width: 120, flex: "none", paddingTop: 1 }}>
+                          {k}
+                        </span>
+                        <span className="mono" style={{ color: "var(--body)", fontSize: 11.5, wordBreak: "break-word" }}>
+                          {v}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              </div>
+            )}
+
           </>
         )}
       </div>
