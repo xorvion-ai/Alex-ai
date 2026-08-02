@@ -13,6 +13,8 @@ export type LeadFilters = {
   verifiedOnly?: boolean;
   hasSite?: boolean;
   includeNoContact?: boolean;
+  /** include leads that already have a log entry (they live in the activity log) */
+  includeLogged?: boolean;
   status?: "new" | "analyzed";
 };
 
@@ -42,6 +44,7 @@ export function parseFilters(params: URLSearchParams): LeadFilters {
   if (g("verified") === "1") f.verifiedOnly = true;
   if (g("hasSite") === "1") f.hasSite = true;
   if (g("noContact") === "1") f.includeNoContact = true;
+  if (g("logged") === "1") f.includeLogged = true;
   const status = g("status");
   if (status === "new" || status === "analyzed") f.status = status;
   return f;
@@ -82,6 +85,13 @@ export function filterConditions(f: LeadFilters): SQL[] {
   // collected, so it's the only reachable channel). Opt out with ?noContact=1.
   if (!f.includeNoContact) {
     conds.push(sql`${leads.phone} is not null and ${leads.phone} <> ''`);
+  }
+  // Once a lead has a log entry (note / call / follow-up) it moves out of the
+  // working list and lives in the dashboard ACTIVITY LOG. Opt out with ?logged=1.
+  if (!f.includeLogged) {
+    conds.push(
+      sql`not exists (select 1 from activities a where a.lead_id = ${leads.id})`,
+    );
   }
   return conds;
 }

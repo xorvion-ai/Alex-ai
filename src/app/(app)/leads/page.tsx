@@ -11,8 +11,10 @@ import {
   AnalysisDto,
   api,
   ApiError,
+  categoryOf,
   LeadDto,
   mapsHref,
+  socialLinks,
   scoreColor,
   scoreLabel,
   timeAgo,
@@ -88,7 +90,9 @@ function LeadsInner() {
       const qs = buildParams(filterState);
       const r = await api<{ leads: LeadDto[] }>(`/api/leads${qs ? `?${qs}` : ""}`);
       setRows(r.leads);
-      if (preferId && r.leads.some((l) => l.id === preferId)) {
+      if (preferId) {
+        // Deep link from the dashboard activity log: that lead is no longer in
+        // the working list, but its detail must still open.
         setSelId(preferId);
       } else if (selectFirst || (selId != null && !r.leads.some((l) => l.id === selId))) {
         setSelId(r.leads[0]?.id ?? null);
@@ -176,6 +180,16 @@ function LeadsInner() {
     }
   }
 
+  // Removing a lead (contacted / deleted / logged) must not bounce back to the
+  // top of the list — step to the next row so you can keep working down it.
+  const dropCurrent = () => {
+    const i = rows.findIndex((r) => r.id === selId);
+    const next = i >= 0 ? (rows[i + 1] ?? rows[i - 1] ?? null) : null;
+    setRows((rs) => rs.filter((r) => r.id !== selId));
+    setDetail(null);
+    setSelId(next ? next.id : null);
+  };
+
   const refreshDetail = async () => {
     if (selId == null) return;
     const d = await api<Detail>(`/api/leads/${selId}`);
@@ -199,9 +213,7 @@ function LeadsInner() {
         );
         if (del) {
           await api(`/api/leads/${selId}`, { method: "DELETE" });
-          setRows((rs) => rs.filter((x) => x.id !== selId));
-          setDetail(null);
-          setSelId(null);
+          dropCurrent();
           flash("Deleted — business already has a website");
         } else {
           await refreshDetail();
@@ -226,9 +238,7 @@ function LeadsInner() {
         );
         if (del) {
           await api(`/api/leads/${selId}`, { method: "DELETE" });
-          setRows((rs) => rs.filter((x) => x.id !== selId));
-          setDetail(null);
-          setSelId(null);
+          dropCurrent();
           flash("Deleted — business already has a website");
           return;
         }
@@ -259,9 +269,7 @@ function LeadsInner() {
       "contacted",
       async () => {
         await api(`/api/leads/${selId}/contacted`, { method: "POST" });
-        setDetail(null);
-        setSelId(null);
-        await loadRows(autoSelect());
+        dropCurrent();
       },
       "Lead deleted ✓",
     );
@@ -277,8 +285,12 @@ function LeadsInner() {
     setNoteText("");
     setFollowOpen(false);
     setFollowAt("");
+    // A logged lead leaves the working list and lives in the dashboard
+    // ACTIVITY LOG from now on. Keep it open so the note is visible and a
+    // follow-up can still be added; it's already gone from the list behind it.
+    setRows((rs) => rs.filter((r) => r.id !== selId));
     await refreshDetail();
-    flash(dueAt ? "Follow-up set ⏰" : "Note added ✓");
+    flash(dueAt ? "Follow-up set ⏰ — moved to the activity log" : "Note added ✓ — moved to the activity log");
   };
 
   const planCopyText = () =>
@@ -287,7 +299,7 @@ function LeadsInner() {
           `Build a simple, mobile-first website for this small business:`,
           ``,
           `BUSINESS: ${L.name}`,
-          `CATEGORY: ${L.category ?? L.types?.[0] ?? "?"}`,
+          `CATEGORY: ${categoryOf(L) ?? "?"}`,
           `ADDRESS: ${L.address ?? "?"}${L.city ? `, ${L.city}` : ""}${L.country ? `, ${L.country}` : ""}`,
           `PHONE: ${L.phone ?? "?"}`,
           `HOURS: ${L.hours ?? "?"}`,
@@ -310,7 +322,7 @@ function LeadsInner() {
     ? [
         ["source", L.source === "google" ? "google_places" : "openstreetmap"],
         ["source_id", L.sourceId],
-        ["category", L.category ?? L.types?.[0] ?? "—"],
+        ["category", categoryOf(L) ?? "—"],
         ["price_level", L.priceLevel ?? "—"],
         ["address", L.address ?? "—"],
         ["phone", L.phone ?? "—"],
@@ -639,7 +651,7 @@ function LeadsInner() {
                   </div>
                   <div style={{ fontSize: 11, color: "var(--sec)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {[
-                      r.category ?? r.types?.[0],
+                      categoryOf(r),
                       r.rating ? `★${r.rating}·${r.reviewCount}` : null,
                       r.area ?? r.city,
                       r.verifiedNoWebsite ? "verified ✓" : null,
@@ -701,7 +713,7 @@ function LeadsInner() {
                     {L.name}
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>
-                    {[L.category ?? L.types?.[0], L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
+                    {[categoryOf(L), L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
                       .filter(Boolean)
                       .join(" · ")}
                     {mapsHref(L) && (
@@ -748,6 +760,26 @@ function LeadsInner() {
                     WHATSAPP
                   </a>
                 )}
+                {socialLinks(L).map((sl) => (
+                  <a
+                    key={sl.kind}
+                    href={sl.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      border: `1px solid ${sl.kind === "facebook" ? "var(--google-bd)" : "var(--osm-bd)"}`,
+                      borderRadius: 6,
+                      padding: "8px 16px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: sl.kind === "facebook" ? "var(--google)" : "var(--osm)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {sl.kind === "facebook" ? "FACEBOOK ↗" : "INSTAGRAM ↗"}
+                  </a>
+                ))}
                 {L.phone && (
                   <a
                     href={`tel:${L.phone.replace(/\s/g, "")}`}

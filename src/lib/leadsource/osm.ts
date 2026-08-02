@@ -3,7 +3,7 @@
 
 import { DIRECTORY_HOSTS, OSM_MAX_ELEMENTS, SOCIAL_HOSTS } from "@/lib/config";
 import { Category } from "@/lib/categories";
-import { classifyWebsite, digitsPhone, NormalizedLead } from "./types";
+import { classifyWebsite, cleanCategory, digitsPhone, NormalizedLead } from "./types";
 
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
 // Public Overpass servers get busy — try each in turn per query.
@@ -148,7 +148,7 @@ export function normalizeOsmElement(
     source: "osm",
     sourceId,
     name,
-    category: categoryId,
+    category: cleanCategory(categoryId) ?? (kind ? String(kind).replace(/_/g, " ") : null),
     types: [kind].filter(Boolean) as string[],
     address: addrParts.length ? addrParts.join(", ") : null,
     area: tags["addr:suburb"] || tags["addr:neighbourhood"] || tags["addr:street"] || null,

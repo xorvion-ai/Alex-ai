@@ -25,6 +25,7 @@ type Dash = {
     dueAt: string;
     leadName: string;
   }[];
+  activityTotal: number;
   activityLog: {
     id: number;
     leadId: number;
@@ -33,6 +34,7 @@ type Dash = {
     createdAt: string;
     leadName: string;
     country: string | null;
+    dueAt?: string | null;
   }[];
   sweeps: {
     id: number;
@@ -54,6 +56,14 @@ export default function Dashboard() {
   const { flash, node: toastNode } = useToast();
   const [dash, setDash] = useState<Dash | null>(null);
 
+  // ACTIVITY LOG — searchable, filterable, paged (the dashboard payload only
+  // carries the first page).
+  const [logRows, setLogRows] = useState<Dash["activityLog"] | null>(null);
+  const [logTotal, setLogTotal] = useState(0);
+  const [logSearch, setLogSearch] = useState("");
+  const [logKind, setLogKind] = useState("ALL");
+  const [logLimit, setLogLimit] = useState(10);
+
   const [batchRunning, setBatchRunning] = useState(false);
   const [batchTotal, setBatchTotal] = useState(0);
   const [batchDone, setBatchDone] = useState(0);
@@ -69,6 +79,21 @@ export default function Dashboard() {
       runningRef.current = false;
     };
   }, [reload]);
+
+  useEffect(() => {
+    const q = new URLSearchParams({ limit: String(logLimit) });
+    if (logSearch.trim()) q.set("search", logSearch.trim());
+    if (logKind !== "ALL") q.set("kind", logKind);
+    const t = setTimeout(() => {
+      api<{ activities: Dash["activityLog"]; total: number }>(`/api/activities?${q}`)
+        .then((r) => {
+          setLogRows(r.activities);
+          setLogTotal(r.total);
+        })
+        .catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [logSearch, logKind, logLimit]);
 
   async function runBatch() {
     if (batchRunning) {
@@ -255,9 +280,37 @@ export default function Dashboard() {
 
           <div className="card">
             <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
-              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>ACTIVITY LOG</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>
+                ACTIVITY LOG · {logTotal}
+              </span>
             </div>
-            {(dash?.activityLog ?? []).map((a) => (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "10px 15px", borderBottom: "1px solid var(--hairline)", alignItems: "center" }}>
+              <input
+                className="input in-panel mono"
+                style={{ flex: 1, minWidth: 150, padding: "6px 9px", fontSize: 11.5 }}
+                placeholder="/ search lead or note"
+                value={logSearch}
+                onChange={(e) => {
+                  setLogSearch(e.target.value);
+                  setLogLimit(10);
+                }}
+              />
+              <div className="mono" style={{ display: "flex", flexWrap: "wrap", gap: 4, fontSize: 9.5, fontWeight: 600 }}>
+                {["ALL", "NOTE", "CALL", "WHATSAPP", "VISIT"].map((k) => (
+                  <span
+                    key={k}
+                    className={`chip in-panel${logKind === k ? " on" : ""}`}
+                    onClick={() => {
+                      setLogKind(k);
+                      setLogLimit(10);
+                    }}
+                  >
+                    {k}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {(logRows ?? dash?.activityLog ?? []).map((a) => (
               <div
                 key={a.id}
                 className="hover-row"
@@ -279,16 +332,35 @@ export default function Dashboard() {
                     <Flag country={a.country} size={15} />
                     {a.leadName}
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--sec)" }}>{a.note}</div>
+                  <div style={{ fontSize: 11, color: "var(--sec)" }}>
+                    {a.note}
+                    {a.dueAt && (
+                      <span className="mono" style={{ color: "var(--amber)", fontSize: 10.5 }}>
+                        {" "}
+                        · due {new Date(a.dueAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <span className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", flex: "none" }}>
                   {timeAgo(a.createdAt)}
                 </span>
               </div>
             ))}
-            {dash && dash.activityLog.length === 0 && (
+            {logRows && logRows.length === 0 && (
               <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
-                no activity yet — notes and calls appear here
+                {logSearch || logKind !== "ALL"
+                  ? "nothing matches this search"
+                  : "no activity yet — notes and calls appear here"}
+              </div>
+            )}
+            {logRows && logRows.length < logTotal && (
+              <div
+                className="mono"
+                onClick={() => setLogLimit((n) => n + 25)}
+                style={{ padding: "11px 15px", fontSize: 10.5, fontWeight: 600, color: "var(--green)", cursor: "pointer", textAlign: "center" }}
+              >
+                SHOW MORE ▾ ({logTotal - logRows.length} more)
               </div>
             )}
           </div>

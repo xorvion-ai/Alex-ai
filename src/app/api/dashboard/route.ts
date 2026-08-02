@@ -66,6 +66,11 @@ export async function GET() {
       .orderBy(sql`${activities.createdAt} desc`)
       .limit(10);
 
+    const [activityCount] = await d
+      .select({ n: sql<number>`count(*)::int` })
+      .from(activities)
+      .innerJoin(leads, eq(activities.leadId, leads.id));
+
     const sweeps = await d
       .select()
       .from(searches)
@@ -83,6 +88,7 @@ export async function GET() {
       },
       followUps,
       activityLog,
+      activityTotal: activityCount?.n ?? 0,
       sweeps: sweeps.map((s) => ({
         id: s.id,
         label: s.label,

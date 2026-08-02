@@ -26,6 +26,29 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return json as T;
 }
 
+/** Category to show for a lead — "any" came from an any-category sweep and
+ * says nothing, so fall back to what the source called the business. */
+export function categoryOf(l: { category: string | null; types: string[] | null }): string | null {
+  const c = l.category && l.category !== "any" ? l.category : null;
+  return c ?? l.types?.find((t) => t && t !== "any")?.replace(/_/g, " ") ?? null;
+}
+
+/** Facebook / Instagram profile links found on a lead (empty for most leads). */
+export function socialLinks(l: { socials: string[] | null }): { kind: "facebook" | "instagram"; url: string }[] {
+  const out: { kind: "facebook" | "instagram"; url: string }[] = [];
+  for (const raw of l.socials ?? []) {
+    const u = String(raw);
+    const url = /^https?:\/\//i.test(u) ? u : `https://${u.replace(/^\/+/, "")}`;
+    const kind = /facebook\.com|fb\.me|fb\.com/i.test(u)
+      ? ("facebook" as const)
+      : /instagram\.com|instagr\.am/i.test(u)
+        ? ("instagram" as const)
+        : null;
+    if (kind && !out.some((x) => x.kind === kind)) out.push({ kind, url });
+  }
+  return out;
+}
+
 export function scoreColor(s: number | null | undefined): string {
   if (s == null) return "var(--muted)";
   return s >= 80 ? "#4ade80" : s >= 60 ? "#d9d9a0" : "#7a828c";

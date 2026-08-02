@@ -40,6 +40,11 @@ export function classifyWebsite(
   return { status: "has_site", social: null };
 }
 
+/** A sweep's own category label, or null when it carries no real information. */
+export function cleanCategory(categoryId: string | null): string | null {
+  return categoryId && categoryId !== "any" ? categoryId : null;
+}
+
 export function digitsPhone(phone: string | null | undefined): string | null {
   if (!phone) return null;
   const d = phone.replace(/[^\d]/g, "");

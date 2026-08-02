@@ -3,7 +3,7 @@
 
 import { DIRECTORY_HOSTS, SOCIAL_HOSTS } from "@/lib/config";
 import { guard, spend } from "@/lib/quota";
-import { classifyWebsite, digitsPhone, NormalizedLead } from "./types";
+import { classifyWebsite, cleanCategory, digitsPhone, NormalizedLead } from "./types";
 
 const BASE = "https://places.googleapis.com/v1";
 
@@ -71,7 +71,9 @@ export function normalizeGooglePlace(p: GooglePlace, categoryId: string | null):
     source: "google",
     sourceId: p.id,
     name: p.displayName?.text ?? "",
-    category: categoryId,
+    // "any" sweeps must not brand every lead "any" — fall back to what the
+    // source itself calls this business.
+    category: cleanCategory(categoryId) ?? (p.types?.[0]?.replace(/_/g, " ") ?? null),
     types: p.types ?? [],
     address,
     area,

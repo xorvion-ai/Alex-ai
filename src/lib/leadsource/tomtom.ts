@@ -4,7 +4,7 @@
 import { DIRECTORY_HOSTS, SOCIAL_HOSTS } from "@/lib/config";
 import { guard, spend } from "@/lib/quota";
 import { BBox } from "./osm";
-import { classifyWebsite, digitsPhone, NormalizedLead } from "./types";
+import { classifyWebsite, cleanCategory, digitsPhone, NormalizedLead } from "./types";
 
 function apiKey(): string {
   const k = process.env.TOMTOM_API_KEY;
@@ -72,7 +72,7 @@ export function normalizeTomtomPoi(
     source: "tomtom",
     sourceId: String(r.id),
     name,
-    category: categoryId,
+    category: cleanCategory(categoryId) ?? (r.poi?.categories?.[0] ?? null),
     types: (r.poi?.categories ?? []).slice(0, 5),
     address: r.address?.freeformAddress ?? null,
     area:
