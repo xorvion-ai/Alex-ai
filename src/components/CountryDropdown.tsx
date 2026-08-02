@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { COUNTRIES, countryName } from "@/lib/config";
+import { ANY_COUNTRY, COUNTRIES, countryName } from "@/lib/config";
 import Flag from "@/components/Flag";
 
-// Flag image + plain name (emoji flags don't render on Windows). Global keeps
-// its globe emoji, which renders fine everywhere.
+// Flag image + plain name (emoji flags don't render on Windows).
 function CountryLabel({ value }: { value: string }) {
   const nm = countryName(value);
-  if (!nm) return <><span style={{ marginRight: 5 }}>🌍</span>Global</>;
+  if (!nm) return <>{ANY_COUNTRY}</>;
   return (
     <>
       <Flag country={nm} /> {nm}
@@ -21,11 +20,14 @@ export default function CountryDropdown({
   onChange,
   small,
   inPanel,
+  anyOption,
 }: {
   value: string;
   onChange: (c: string) => void;
   small?: boolean;
   inPanel?: boolean;
+  /** show "All countries" (leads filter) — sweeps always target one country */
+  anyOption?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   // 80 countries is too many to scroll — type to narrow the list.
@@ -70,9 +72,9 @@ export default function CountryDropdown({
             onChange={(e) => setQ(e.target.value)}
             style={{ padding: "6px 9px", fontSize: 11.5, borderRadius: 0, borderWidth: "0 0 1px 0" }}
           />
-          {COUNTRIES.filter((c) =>
+          {(anyOption ? [ANY_COUNTRY, ...COUNTRIES] : COUNTRIES).filter((c) =>
             countryName(c).toLowerCase().includes(q.trim().toLowerCase()) ||
-            (!countryName(c) && "global".includes(q.trim().toLowerCase())),
+            (!countryName(c) && "all countries".includes(q.trim().toLowerCase())),
           ).map((c) => (
             <div
               key={c}

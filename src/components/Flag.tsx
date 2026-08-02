@@ -4,7 +4,7 @@
 // emoji (🇺🇸) — it shows the two regional-indicator letters ("US", "IN", "DE"),
 // which is why the emoji flags looked broken. We render the Twemoji SVG from a
 // free CDN instead, so real flags show on every platform. Renders nothing when
-// the country isn't mapped (e.g. Global sweeps with no country).
+// the country is unknown or not in the supported list.
 
 import { COUNTRY_ISO } from "@/lib/config";
 

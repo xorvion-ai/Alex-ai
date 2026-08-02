@@ -22,6 +22,7 @@ import {
 } from "@/lib/client";
 import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
+import { ANY_COUNTRY, countryName } from "@/lib/config";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
 type Tab = "analysis" | "log";
@@ -40,7 +41,7 @@ function buildParams(f: {
 }): string {
   const p = new URLSearchParams();
   if (f.search) p.set("search", f.search);
-  if (f.country && f.country !== "🌍 Global") p.set("country", f.country);
+  if (countryName(f.country)) p.set("country", f.country);
   if (f.city) p.set("city", f.city);
   if (f.cats.length && !f.cats.includes("any")) p.set("category", f.cats.join(","));
   if (f.source !== "all") p.set("source", f.source);
@@ -70,7 +71,7 @@ function LeadsInner() {
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [search, setSearch] = useState("");
-  const [country, setCountry] = useState("🌍 Global");
+  const [country, setCountry] = useState(ANY_COUNTRY);
   const [cityF, setCityF] = useState("");
   const [cats, setCats] = useState<string[]>(["any"]);
   const [source, setSource] = useState<"all" | "google" | "osm" | "tomtom">("all");
@@ -421,7 +422,7 @@ function LeadsInner() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 <div>
                   <div className="lbl" style={{ fontSize: 9, marginBottom: 4 }}>COUNTRY</div>
-                  <CountryDropdown value={country} onChange={setCountry} small inPanel />
+                  <CountryDropdown value={country} onChange={setCountry} small inPanel anyOption />
                 </div>
                 <div>
                   <div className="lbl" style={{ fontSize: 9, marginBottom: 4 }}>CITY / AREA</div>
@@ -551,7 +552,7 @@ function LeadsInner() {
                   className="btn-outline"
                   style={{ padding: "7px 12px", fontSize: 11, borderRadius: 5 }}
                   onClick={() => {
-                    setCountry("🌍 Global");
+                    setCountry(ANY_COUNTRY);
                     setCityF("");
                     setCats(["any"]);
                     setSource("all");

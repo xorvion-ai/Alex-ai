@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, settings } from "@/lib/db";
-import { DEFAULT_HARD_STOP } from "@/lib/config";
+import { COUNTRIES, DEFAULT_COUNTRY, DEFAULT_HARD_STOP } from "@/lib/config";
 
 export type AppSettings = {
   hardStop: number; // 0..1 fraction of the free tier
@@ -11,7 +11,7 @@ export type AppSettings = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   hardStop: DEFAULT_HARD_STOP,
-  defaultCountry: "🌍 Global",
+  defaultCountry: DEFAULT_COUNTRY,
   defaultCategories: ["restaurant", "salon", "tailor"],
   fallbackLanguage: "Hindi",
 };
@@ -20,7 +20,13 @@ export async function getSettings(): Promise<AppSettings> {
   try {
     const rows = await db().select().from(settings).where(eq(settings.key, "app"));
     const stored = (rows[0]?.value ?? {}) as Partial<AppSettings>;
-    return { ...DEFAULT_SETTINGS, ...stored };
+    const merged = { ...DEFAULT_SETTINGS, ...stored };
+    // A country saved before the list changed (e.g. the old "Global") is no
+    // longer selectable — fall back to the default market.
+    if (!COUNTRIES.includes(merged.defaultCountry)) {
+      merged.defaultCountry = DEFAULT_COUNTRY;
+    }
+    return merged;
   } catch {
     return DEFAULT_SETTINGS;
   }

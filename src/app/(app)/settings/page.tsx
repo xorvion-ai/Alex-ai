@@ -7,6 +7,7 @@ import CountryDropdown from "@/components/CountryDropdown";
 import { useToast } from "@/components/useToast";
 import { api } from "@/lib/client";
 import { CATEGORIES } from "@/lib/categories";
+import { DEFAULT_COUNTRY } from "@/lib/config";
 
 const LANGS = ["Hindi", "Spanish", "Portuguese", "French", "German"];
 const DEFAULT_CAT_CHOICES = CATEGORIES.map((c) => c.id).filter((c) => c !== "any");
@@ -14,7 +15,7 @@ const DEFAULT_CAT_CHOICES = CATEGORIES.map((c) => c.id).filter((c) => c !== "any
 export default function SettingsPage() {
   const { flash, node: toastNode } = useToast();
   const [hardStop, setHardStop] = useState(90);
-  const [defaultCountry, setDefaultCountry] = useState("🌍 Global");
+  const [defaultCountry, setDefaultCountry] = useState(DEFAULT_COUNTRY);
   const [defaultCategories, setDefaultCategories] = useState<string[]>([]);
   const [fallbackLanguage, setFallbackLanguage] = useState("Hindi");
   const [keys, setKeys] = useState<{

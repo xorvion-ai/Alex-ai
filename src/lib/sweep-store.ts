@@ -7,6 +7,7 @@
 // instead of the page resetting.
 
 import { api, ApiError } from "@/lib/client";
+import { DEFAULT_COUNTRY } from "@/lib/config";
 
 export type FeedItem = {
   name: string;
@@ -45,7 +46,7 @@ export type SweepState = {
 };
 
 let state: SweepState = {
-  country: "🌍 Global",
+  country: DEFAULT_COUNTRY,
   city: "",
   keyword: "",
   catSel: { restaurant: true, salon: true },
