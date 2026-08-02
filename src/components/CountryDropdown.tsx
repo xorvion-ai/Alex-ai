@@ -28,6 +28,8 @@ export default function CountryDropdown({
   inPanel?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  // 80 countries is too many to scroll — type to narrow the list.
+  const [q, setQ] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,7 +43,10 @@ export default function CountryDropdown({
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <div
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setOpen((o) => !o);
+          setQ("");
+        }}
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -57,7 +62,18 @@ export default function CountryDropdown({
       </div>
       {open && (
         <div className="dd-panel">
-          {COUNTRIES.map((c) => (
+          <input
+            className="input in-panel mono"
+            autoFocus
+            placeholder="/ type to filter"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            style={{ padding: "6px 9px", fontSize: 11.5, borderRadius: 0, borderWidth: "0 0 1px 0" }}
+          />
+          {COUNTRIES.filter((c) =>
+            countryName(c).toLowerCase().includes(q.trim().toLowerCase()) ||
+            (!countryName(c) && "global".includes(q.trim().toLowerCase())),
+          ).map((c) => (
             <div
               key={c}
               className={`dd-opt${c === value ? " on" : ""}`}

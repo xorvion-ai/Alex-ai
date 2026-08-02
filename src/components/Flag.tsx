@@ -6,31 +6,7 @@
 // free CDN instead, so real flags show on every platform. Renders nothing when
 // the country isn't mapped (e.g. Global sweeps with no country).
 
-const NAME_TO_ISO: Record<string, string> = {
-  India: "IN",
-  "United States": "US",
-  "United Kingdom": "GB",
-  Germany: "DE",
-  France: "FR",
-  Spain: "ES",
-  Brazil: "BR",
-  Mexico: "MX",
-  Nigeria: "NG",
-  UAE: "AE",
-  "United Arab Emirates": "AE",
-  Indonesia: "ID",
-  Canada: "CA",
-  Italy: "IT",
-  Netherlands: "NL",
-  Pakistan: "PK",
-  Bangladesh: "BD",
-  Turkey: "TR",
-  "Saudi Arabia": "SA",
-  Egypt: "EG",
-  Malaysia: "MY",
-  Argentina: "AR",
-  "South Africa": "ZA",
-};
+import { COUNTRY_ISO } from "@/lib/config";
 
 function twemojiUrl(iso: string): string {
   const cps = [...iso.toUpperCase()]
@@ -41,7 +17,7 @@ function twemojiUrl(iso: string): string {
 
 export function isoForCountry(country: string | null | undefined): string | null {
   if (!country) return null;
-  return NAME_TO_ISO[country] ?? null;
+  return COUNTRY_ISO[country] ?? null;
 }
 
 export default function Flag({

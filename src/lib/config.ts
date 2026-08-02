@@ -88,20 +88,115 @@ export const VERIFY_IGNORE_HOSTS = [
   "pinterest.com",
 ];
 
+// Countries Alex.ai sells into — the set PayPal India can receive business
+// payments from (plus Global for an unbiased sweep). One table feeds the
+// dropdowns, the flags and the outreach language hints.
+export type CountryDef = { name: string; iso: string; lang: string };
+
+export const COUNTRY_TABLE: CountryDef[] = [
+  { name: "India", iso: "IN", lang: "hi-IN" },
+  { name: "United States", iso: "US", lang: "en-US" },
+  { name: "Canada", iso: "CA", lang: "en-CA" },
+  { name: "Mexico", iso: "MX", lang: "es-MX" },
+  { name: "United Kingdom", iso: "GB", lang: "en-GB" },
+  { name: "Ireland", iso: "IE", lang: "en-IE" },
+  { name: "Germany", iso: "DE", lang: "de-DE" },
+  { name: "France", iso: "FR", lang: "fr-FR" },
+  { name: "Spain", iso: "ES", lang: "es-ES" },
+  { name: "Italy", iso: "IT", lang: "it-IT" },
+  { name: "Netherlands", iso: "NL", lang: "nl-NL" },
+  { name: "Belgium", iso: "BE", lang: "nl-BE" },
+  { name: "Luxembourg", iso: "LU", lang: "fr-LU" },
+  { name: "Austria", iso: "AT", lang: "de-AT" },
+  { name: "Switzerland", iso: "CH", lang: "de-CH" },
+  { name: "Portugal", iso: "PT", lang: "pt-PT" },
+  { name: "Sweden", iso: "SE", lang: "sv-SE" },
+  { name: "Norway", iso: "NO", lang: "nb-NO" },
+  { name: "Denmark", iso: "DK", lang: "da-DK" },
+  { name: "Finland", iso: "FI", lang: "fi-FI" },
+  { name: "Poland", iso: "PL", lang: "pl-PL" },
+  { name: "Czech Republic", iso: "CZ", lang: "cs-CZ" },
+  { name: "Slovakia", iso: "SK", lang: "sk-SK" },
+  { name: "Hungary", iso: "HU", lang: "hu-HU" },
+  { name: "Romania", iso: "RO", lang: "ro-RO" },
+  { name: "Bulgaria", iso: "BG", lang: "bg-BG" },
+  { name: "Croatia", iso: "HR", lang: "hr-HR" },
+  { name: "Slovenia", iso: "SI", lang: "sl-SI" },
+  { name: "Estonia", iso: "EE", lang: "et-EE" },
+  { name: "Latvia", iso: "LV", lang: "lv-LV" },
+  { name: "Lithuania", iso: "LT", lang: "lt-LT" },
+  { name: "Greece", iso: "GR", lang: "el-GR" },
+  { name: "Malta", iso: "MT", lang: "mt-MT" },
+  { name: "Cyprus", iso: "CY", lang: "el-CY" },
+  { name: "Iceland", iso: "IS", lang: "is-IS" },
+  { name: "Ukraine", iso: "UA", lang: "uk-UA" },
+  { name: "Australia", iso: "AU", lang: "en-AU" },
+  { name: "New Zealand", iso: "NZ", lang: "en-NZ" },
+  { name: "Japan", iso: "JP", lang: "ja-JP" },
+  { name: "Singapore", iso: "SG", lang: "en-SG" },
+  { name: "Hong Kong", iso: "HK", lang: "zh-HK" },
+  { name: "Taiwan", iso: "TW", lang: "zh-TW" },
+  { name: "South Korea", iso: "KR", lang: "ko-KR" },
+  { name: "Malaysia", iso: "MY", lang: "ms-MY" },
+  { name: "Philippines", iso: "PH", lang: "fil-PH" },
+  { name: "Thailand", iso: "TH", lang: "th-TH" },
+  { name: "Indonesia", iso: "ID", lang: "id-ID" },
+  { name: "Vietnam", iso: "VN", lang: "vi-VN" },
+  { name: "China", iso: "CN", lang: "zh-CN" },
+  { name: "Israel", iso: "IL", lang: "he-IL" },
+  { name: "United Arab Emirates", iso: "AE", lang: "ar-AE" },
+  { name: "Saudi Arabia", iso: "SA", lang: "ar-SA" },
+  { name: "Qatar", iso: "QA", lang: "ar-QA" },
+  { name: "Kuwait", iso: "KW", lang: "ar-KW" },
+  { name: "Bahrain", iso: "BH", lang: "ar-BH" },
+  { name: "Oman", iso: "OM", lang: "ar-OM" },
+  { name: "Brazil", iso: "BR", lang: "pt-BR" },
+  { name: "Argentina", iso: "AR", lang: "es-AR" },
+  { name: "Chile", iso: "CL", lang: "es-CL" },
+  { name: "Colombia", iso: "CO", lang: "es-CO" },
+  { name: "Peru", iso: "PE", lang: "es-PE" },
+  { name: "Uruguay", iso: "UY", lang: "es-UY" },
+  { name: "Costa Rica", iso: "CR", lang: "es-CR" },
+  { name: "Panama", iso: "PA", lang: "es-PA" },
+  { name: "Dominican Republic", iso: "DO", lang: "es-DO" },
+  { name: "Guatemala", iso: "GT", lang: "es-GT" },
+  { name: "Ecuador", iso: "EC", lang: "es-EC" },
+  { name: "Paraguay", iso: "PY", lang: "es-PY" },
+  { name: "South Africa", iso: "ZA", lang: "en-ZA" },
+  { name: "Kenya", iso: "KE", lang: "sw-KE" },
+  { name: "Nigeria", iso: "NG", lang: "en-NG" },
+  { name: "Egypt", iso: "EG", lang: "ar-EG" },
+  { name: "Morocco", iso: "MA", lang: "ar-MA" },
+  { name: "Ghana", iso: "GH", lang: "en-GH" },
+  { name: "Mauritius", iso: "MU", lang: "fr-MU" },
+  { name: "Botswana", iso: "BW", lang: "en-BW" },
+  { name: "Namibia", iso: "NA", lang: "en-NA" },
+  { name: "Uganda", iso: "UG", lang: "en-UG" },
+  { name: "Tanzania", iso: "TZ", lang: "sw-TZ" },
+  { name: "Zambia", iso: "ZM", lang: "en-ZM" },
+  { name: "Zimbabwe", iso: "ZW", lang: "en-ZW" },
+];
+
+/** Dropdown values: "🌍 Global" first, then "🇮🇳 India" etc. */
 export const COUNTRIES = [
   "🌍 Global",
-  "🇮🇳 India",
-  "🇺🇸 United States",
-  "🇬🇧 United Kingdom",
-  "🇩🇪 Germany",
-  "🇫🇷 France",
-  "🇪🇸 Spain",
-  "🇧🇷 Brazil",
-  "🇲🇽 Mexico",
-  "🇳🇬 Nigeria",
-  "🇦🇪 UAE",
-  "🇮🇩 Indonesia",
+  ...COUNTRY_TABLE.map((c) => `${isoToFlagEmoji(c.iso)} ${c.name}`),
 ];
+
+/** Regional-indicator pair for an ISO2 code — "IN" -> 🇮🇳 */
+export function isoToFlagEmoji(iso: string): string {
+  return [...iso.toUpperCase()]
+    .map((ch) => String.fromCodePoint(0x1f1e6 + ch.charCodeAt(0) - 65))
+    .join("");
+}
+
+/** ISO2 by country name, with a couple of aliases for older stored rows. */
+export const COUNTRY_ISO: Record<string, string> = {
+  ...Object.fromEntries(COUNTRY_TABLE.map((c) => [c.name, c.iso])),
+  UAE: "AE",
+  "Czechia": "CZ",
+  Vietnam: "VN",
+};
 
 // Strip the flag emoji: "🇮🇳 India" -> "India"; "🌍 Global" -> "" (no country bias)
 export function countryName(c: string): string {
@@ -110,15 +205,6 @@ export function countryName(c: string): string {
 }
 
 export const LANGUAGE_HINTS: Record<string, string> = {
-  India: "hi-IN",
-  "United States": "en-US",
-  "United Kingdom": "en-GB",
-  Germany: "de-DE",
-  France: "fr-FR",
-  Spain: "es-ES",
-  Brazil: "pt-BR",
-  Mexico: "es-MX",
-  Nigeria: "en-NG",
+  ...Object.fromEntries(COUNTRY_TABLE.map((c) => [c.name, c.lang])),
   UAE: "ar-AE",
-  Indonesia: "id-ID",
 };
