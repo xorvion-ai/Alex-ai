@@ -138,6 +138,7 @@ export default function SettingsPage() {
             {capRow("gemini cap", "1,000 / day")}
             {capRow("tomtom cap", "2,500 / day")}
             {capRow("tavily cap", "1,000 / month")}
+            {capRow("currency rates cap", "1,000 / month")}
             {capRow("osm", "polite rate-limit only", true)}
           </div>
           <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--amber)", marginTop: 12, lineHeight: 1.5 }}>

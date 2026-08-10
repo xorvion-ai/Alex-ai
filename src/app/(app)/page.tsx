@@ -2,10 +2,11 @@
 
 // Dashboard — stats, follow-ups, recent sweeps, AI batch analysis, quota. §Screen 4.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiError, QuotaDto, timeAgo } from "@/lib/client";
+import { api, QuotaDto, timeAgo } from "@/lib/client";
 import { useToast } from "@/components/useToast";
+import { batch, getSnapshot, subscribe } from "@/lib/analyze-store";
 import Flag from "@/components/Flag";
 
 type Dash = {
@@ -48,9 +49,6 @@ type Dash = {
   quota: QuotaDto;
 };
 
-// Pace batch calls for the Gemini free-tier rate limit (~12/min max).
-const BATCH_DELAY_MS = 5000;
-
 export default function Dashboard() {
   const router = useRouter();
   const { flash, node: toastNode } = useToast();
@@ -64,21 +62,30 @@ export default function Dashboard() {
   const [logKind, setLogKind] = useState("ALL");
   const [logLimit, setLogLimit] = useState(10);
 
-  const [batchRunning, setBatchRunning] = useState(false);
-  const [batchTotal, setBatchTotal] = useState(0);
-  const [batchDone, setBatchDone] = useState(0);
-  const [batchMsg, setBatchMsg] = useState("");
-  const runningRef = useRef(false);
+  // The batch lives in a module store so it keeps running when you leave this
+  // page (see analyze-store.ts).
+  const b = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const lastToast = useRef(b.toast?.seq ?? 0);
 
   const reload = useCallback(() => {
     api<Dash>("/api/dashboard").then(setDash).catch(() => {});
   }, []);
   useEffect(() => {
     reload();
-    return () => {
-      runningRef.current = false;
-    };
   }, [reload]);
+
+  // surface store toasts, and refresh the counters when a batch finishes
+  useEffect(() => {
+    if (b.toast && b.toast.seq > lastToast.current) {
+      lastToast.current = b.toast.seq;
+      flash(b.toast.msg);
+    }
+  }, [b.toast, flash]);
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (wasRunning.current && !b.running) reload();
+    wasRunning.current = b.running;
+  }, [b.running, reload]);
 
   useEffect(() => {
     const q = new URLSearchParams({ limit: String(logLimit) });
@@ -95,77 +102,12 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   }, [logSearch, logKind, logLimit]);
 
-  async function runBatch() {
-    if (batchRunning) {
-      runningRef.current = false;
-      setBatchRunning(false);
-      return;
-    }
-    const remaining = dash?.stats.newCount ?? 0;
-    if (!remaining) return;
-    if (!batchTotal || batchDone >= batchTotal) {
-      setBatchTotal(remaining + batchDone);
-    }
-    setBatchRunning(true);
-    runningRef.current = true;
-    while (runningRef.current) {
-      try {
-        const r = await api<{
-          analyzed: { id: number; name: string; score: number; dropped?: boolean; foundSite?: string } | null;
-          remaining: number;
-        }>("/api/analyze/step", { method: "POST" });
-        if (!r.analyzed) {
-          runningRef.current = false;
-          setBatchRunning(false);
-          setBatchMsg("");
-          reload();
-          break;
-        }
-        const dropped = !!r.analyzed.dropped;
-        setBatchDone((d) => d + 1);
-        setBatchMsg(
-          dropped
-            ? `${r.analyzed.name} → has a website, removed`
-            : `${r.analyzed.name} → ${r.analyzed.score}`,
-        );
-        setDash((prev) =>
-          prev
-            ? {
-                ...prev,
-                stats: {
-                  ...prev.stats,
-                  analyzed: prev.stats.analyzed + (dropped ? 0 : 1),
-                  newCount: Math.max(0, prev.stats.newCount - 1),
-                },
-              }
-            : prev,
-        );
-        if (r.remaining === 0) {
-          runningRef.current = false;
-          setBatchRunning(false);
-          reload();
-          break;
-        }
-      } catch (e) {
-        runningRef.current = false;
-        setBatchRunning(false);
-        if (e instanceof ApiError && e.quotaBlocked) {
-          flash("⛨ Quota Guardian stopped the batch");
-        } else {
-          flash(e instanceof Error ? e.message : "batch failed");
-        }
-        break;
-      }
-      if (runningRef.current) {
-        await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
-      }
-    }
-  }
-
   const s = dash?.stats;
-  const newCount = s?.newCount ?? 0;
-  const total = batchTotal || newCount;
-  const pct = total ? Math.round((batchDone / total) * 100) : 0;
+  // While a batch runs, the server's own "remaining" count is fresher than the
+  // dashboard payload (which was fetched before the batch started).
+  const newCount = b.running || b.remaining != null ? (b.remaining ?? s?.newCount ?? 0) : (s?.newCount ?? 0);
+  const total = b.total || newCount;
+  const pct = total ? Math.round((b.done / total) * 100) : 0;
 
   const now = new Date();
   const dateStr = now
@@ -175,32 +117,33 @@ export default function Dashboard() {
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const resetDays = Math.ceil((nextMonth.getTime() - now.getTime()) / 86400000);
 
-  const anaText = batchRunning
-    ? `Analyzing lead ${batchDone + 1} of ${total} — ${batchMsg || "scoring, profiling, drafting outreach…"}`
+  const anaText = b.running
+    ? `Analyzing lead ${b.done + 1} of ${total} — ${b.msg || "scoring, profiling, drafting outreach…"} · keeps running while you browse`
     : newCount === 0
       ? "All leads analyzed — nothing waiting."
-      : batchDone > 0
+      : b.done > 0
         ? `Paused — ${newCount} leads still waiting for analysis.`
         : `${newCount} new leads are waiting for deep analysis (score, profile, site plan, outreach drafts).`;
-  const anaBtn = batchRunning
+  const anaBtn = b.running
     ? "■ PAUSE"
     : newCount === 0
       ? "DONE ✓"
-      : batchDone > 0
+      : b.done > 0
         ? `▶ RESUME (${newCount} LEFT)`
         : `▶ ANALYZE ${newCount} NEW LEADS`;
 
-  const quotaRow = (provider: string, name: string, todaySuffix = "") => {
+  const quotaRow = (provider: string, name: string) => {
     const x = dash?.quota.find((q) => q.provider === provider);
     if (!x) return null;
     const left = Math.max(0, x.limit - x.used);
+    const window = x.period === "day" ? "today" : "this month";
     return (
       <div key={provider}>
         <div className="mono" style={{ display: "flex", fontSize: 11, fontWeight: 500, color: "var(--body)" }}>
           <span>{name}</span>
           <span style={{ flex: 1 }} />
           <span style={{ color: "var(--green)" }}>
-            {left.toLocaleString()} left{todaySuffix}
+            {left.toLocaleString()} left {window}
           </span>
         </div>
         <div className="bar" style={{ margin: "6px 0 12px" }}>
@@ -382,12 +325,12 @@ export default function Dashboard() {
               />
             </div>
             <div
-              onClick={runBatch}
+              onClick={() => batch.toggle(newCount)}
               className="mono"
               style={{
                 marginTop: 14,
                 textAlign: "center",
-                background: batchRunning ? "var(--panel)" : "var(--green-bg)",
+                background: b.running ? "var(--panel)" : "var(--green-bg)",
                 color: "var(--green)",
                 border: "1px solid var(--green-border)",
                 borderRadius: 6,
@@ -401,7 +344,7 @@ export default function Dashboard() {
               {anaBtn}
             </div>
             <div className="mono" style={{ fontSize: 10, color: "var(--faint)", marginTop: 10 }}>
-              rate-limited to gemini free tier · resumes if stopped
+              rate-limited to gemini free tier · runs in the background · resumes if stopped
             </div>
           </div>
 
@@ -410,9 +353,10 @@ export default function Dashboard() {
               FREE QUOTA REMAINING
             </div>
             {quotaRow("google_places", "google places")}
-            {quotaRow("gemini", "gemini flash-lite", " today")}
-            {quotaRow("tomtom", "tomtom", " today")}
+            {quotaRow("gemini", "gemini flash-lite")}
+            {quotaRow("tomtom", "tomtom")}
             {quotaRow("tavily", "tavily verify")}
+            {quotaRow("fx", "currency rates")}
             <div className="mono" style={{ display: "flex", fontSize: 11, fontWeight: 500, color: "var(--body)" }}>
               <span>openstreetmap</span>
               <span style={{ flex: 1 }} />

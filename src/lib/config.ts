@@ -4,7 +4,7 @@
 // Override with GEMINI_MODEL env var if the ID ever changes.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 
-export type Provider = "google_places" | "gemini" | "tomtom" | "tavily";
+export type Provider = "google_places" | "gemini" | "tomtom" | "tavily" | "fx";
 
 // Free-tier caps. Conservative: all Google Places SKUs share one monthly pool
 // so the guardian can never be tricked by SKU mix. TomTom free tier is 2,500
@@ -26,6 +26,9 @@ export const QUOTA_LIMITS: Record<
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
   tomtom: { limit: 2500, period: "day", label: "TOMTOM" },
   tavily: { limit: 1000, period: "month", label: "TAVILY" },
+  // open.er-api.com: free, keyless, daily rates. Cached 12h server-side, so
+  // this counter should sit near 60/month.
+  fx: { limit: 1000, period: "month", label: "FX" },
 };
 
 export const DEFAULT_HARD_STOP = 0.9; // stop at 90% of free tier
@@ -91,54 +94,54 @@ export const VERIFY_IGNORE_HOSTS = [
 // Countries Alex.ai sells into — Sumit's payout-supported markets. One table
 // feeds the dropdowns, the flags and the outreach language hints. There is no
 // "Global" option: a sweep always targets one country.
-export type CountryDef = { name: string; iso: string; lang: string };
+export type CountryDef = { name: string; iso: string; lang: string; cur: string; sym: string };
 
 export const COUNTRY_TABLE: CountryDef[] = [
-  { name: "United States", iso: "US", lang: "en-US" },
-  { name: "Australia", iso: "AU", lang: "en-AU" },
-  { name: "Brazil", iso: "BR", lang: "pt-BR" },
-  { name: "Canada", iso: "CA", lang: "en-CA" },
-  { name: "Switzerland", iso: "CH", lang: "de-CH" },
-  { name: "Liechtenstein", iso: "LI", lang: "de-LI" },
-  { name: "Czech Republic", iso: "CZ", lang: "cs-CZ" },
-  { name: "Denmark", iso: "DK", lang: "da-DK" },
-  { name: "Greenland", iso: "GL", lang: "da-GL" },
-  { name: "Faroe Islands", iso: "FO", lang: "fo-FO" },
-  { name: "Austria", iso: "AT", lang: "de-AT" },
-  { name: "Belgium", iso: "BE", lang: "nl-BE" },
-  { name: "Croatia", iso: "HR", lang: "hr-HR" },
-  { name: "Cyprus", iso: "CY", lang: "el-CY" },
-  { name: "Estonia", iso: "EE", lang: "et-EE" },
-  { name: "Finland", iso: "FI", lang: "fi-FI" },
-  { name: "France", iso: "FR", lang: "fr-FR" },
-  { name: "Germany", iso: "DE", lang: "de-DE" },
-  { name: "Greece", iso: "GR", lang: "el-GR" },
-  { name: "Ireland", iso: "IE", lang: "en-IE" },
-  { name: "Italy", iso: "IT", lang: "it-IT" },
-  { name: "Latvia", iso: "LV", lang: "lv-LV" },
-  { name: "Lithuania", iso: "LT", lang: "lt-LT" },
-  { name: "Luxembourg", iso: "LU", lang: "fr-LU" },
-  { name: "Malta", iso: "MT", lang: "mt-MT" },
-  { name: "Netherlands", iso: "NL", lang: "nl-NL" },
-  { name: "Portugal", iso: "PT", lang: "pt-PT" },
-  { name: "Slovakia", iso: "SK", lang: "sk-SK" },
-  { name: "Slovenia", iso: "SI", lang: "sl-SI" },
-  { name: "Spain", iso: "ES", lang: "es-ES" },
-  { name: "United Kingdom", iso: "GB", lang: "en-GB" },
-  { name: "Hong Kong", iso: "HK", lang: "zh-HK" },
-  { name: "Hungary", iso: "HU", lang: "hu-HU" },
-  { name: "Israel", iso: "IL", lang: "he-IL" },
-  { name: "Japan", iso: "JP", lang: "ja-JP" },
-  { name: "Mexico", iso: "MX", lang: "es-MX" },
-  { name: "Norway", iso: "NO", lang: "nb-NO" },
-  { name: "New Zealand", iso: "NZ", lang: "en-NZ" },
-  { name: "Philippines", iso: "PH", lang: "fil-PH" },
-  { name: "Poland", iso: "PL", lang: "pl-PL" },
-  { name: "Sweden", iso: "SE", lang: "sv-SE" },
-  { name: "Singapore", iso: "SG", lang: "en-SG" },
-  { name: "Thailand", iso: "TH", lang: "th-TH" },
-  { name: "Taiwan", iso: "TW", lang: "zh-TW" },
-  { name: "India", iso: "IN", lang: "hi-IN" },
+  { name: "United States", iso: "US", lang: "en-US", cur: "USD", sym: "$" },
+  { name: "Australia", iso: "AU", lang: "en-AU", cur: "AUD", sym: "A$" },
+  { name: "Brazil", iso: "BR", lang: "pt-BR", cur: "BRL", sym: "R$" },
+  { name: "Canada", iso: "CA", lang: "en-CA", cur: "CAD", sym: "C$" },
+  { name: "Switzerland", iso: "CH", lang: "de-CH", cur: "CHF", sym: "CHF" },
+  { name: "Liechtenstein", iso: "LI", lang: "de-LI", cur: "CHF", sym: "CHF" },
+  { name: "Czech Republic", iso: "CZ", lang: "cs-CZ", cur: "CZK", sym: "Kč" },
+  { name: "Denmark", iso: "DK", lang: "da-DK", cur: "DKK", sym: "kr" },
+  { name: "Greenland", iso: "GL", lang: "da-GL", cur: "DKK", sym: "kr" },
+  { name: "Faroe Islands", iso: "FO", lang: "fo-FO", cur: "DKK", sym: "kr" },
+  { name: "Austria", iso: "AT", lang: "de-AT", cur: "EUR", sym: "€" },
+  { name: "Belgium", iso: "BE", lang: "nl-BE", cur: "EUR", sym: "€" },
+  { name: "Croatia", iso: "HR", lang: "hr-HR", cur: "EUR", sym: "€" },
+  { name: "Cyprus", iso: "CY", lang: "el-CY", cur: "EUR", sym: "€" },
+  { name: "Estonia", iso: "EE", lang: "et-EE", cur: "EUR", sym: "€" },
+  { name: "Finland", iso: "FI", lang: "fi-FI", cur: "EUR", sym: "€" },
+  { name: "France", iso: "FR", lang: "fr-FR", cur: "EUR", sym: "€" },
+  { name: "Germany", iso: "DE", lang: "de-DE", cur: "EUR", sym: "€" },
+  { name: "Greece", iso: "GR", lang: "el-GR", cur: "EUR", sym: "€" },
+  { name: "Ireland", iso: "IE", lang: "en-IE", cur: "EUR", sym: "€" },
+  { name: "Italy", iso: "IT", lang: "it-IT", cur: "EUR", sym: "€" },
+  { name: "Latvia", iso: "LV", lang: "lv-LV", cur: "EUR", sym: "€" },
+  { name: "Lithuania", iso: "LT", lang: "lt-LT", cur: "EUR", sym: "€" },
+  { name: "Luxembourg", iso: "LU", lang: "fr-LU", cur: "EUR", sym: "€" },
+  { name: "Malta", iso: "MT", lang: "mt-MT", cur: "EUR", sym: "€" },
+  { name: "Netherlands", iso: "NL", lang: "nl-NL", cur: "EUR", sym: "€" },
+  { name: "Portugal", iso: "PT", lang: "pt-PT", cur: "EUR", sym: "€" },
+  { name: "Slovakia", iso: "SK", lang: "sk-SK", cur: "EUR", sym: "€" },
+  { name: "Slovenia", iso: "SI", lang: "sl-SI", cur: "EUR", sym: "€" },
+  { name: "Spain", iso: "ES", lang: "es-ES", cur: "EUR", sym: "€" },
+  { name: "United Kingdom", iso: "GB", lang: "en-GB", cur: "GBP", sym: "£" },
+  { name: "Hong Kong", iso: "HK", lang: "zh-HK", cur: "HKD", sym: "HK$" },
+  { name: "Hungary", iso: "HU", lang: "hu-HU", cur: "HUF", sym: "Ft" },
+  { name: "Israel", iso: "IL", lang: "he-IL", cur: "ILS", sym: "₪" },
+  { name: "Japan", iso: "JP", lang: "ja-JP", cur: "JPY", sym: "¥" },
+  { name: "Mexico", iso: "MX", lang: "es-MX", cur: "MXN", sym: "MX$" },
+  { name: "Norway", iso: "NO", lang: "nb-NO", cur: "NOK", sym: "kr" },
+  { name: "New Zealand", iso: "NZ", lang: "en-NZ", cur: "NZD", sym: "NZ$" },
+  { name: "Philippines", iso: "PH", lang: "fil-PH", cur: "PHP", sym: "₱" },
+  { name: "Poland", iso: "PL", lang: "pl-PL", cur: "PLN", sym: "zł" },
+  { name: "Sweden", iso: "SE", lang: "sv-SE", cur: "SEK", sym: "kr" },
+  { name: "Singapore", iso: "SG", lang: "en-SG", cur: "SGD", sym: "S$" },
+  { name: "Thailand", iso: "TH", lang: "th-TH", cur: "THB", sym: "฿" },
+  { name: "Taiwan", iso: "TW", lang: "zh-TW", cur: "TWD", sym: "NT$" },
+  { name: "India", iso: "IN", lang: "hi-IN", cur: "INR", sym: "₹" },
 ];
 
 /** Dropdown values, e.g. "🇺🇸 United States". */
@@ -173,6 +176,12 @@ export const COUNTRY_ISO: Record<string, string> = {
 export function countryName(c: string): string {
   const name = c.replace(/^[^\p{L}]*/u, "").trim();
   return COUNTRY_ISO[name] ? name : "";
+}
+
+/** Currency (ISO 4217 + symbol) for a country name — INR when unknown. */
+export function currencyOf(country: string | null | undefined): { cur: string; sym: string } {
+  const row = country ? COUNTRY_TABLE.find((c) => c.name === country) : null;
+  return row ? { cur: row.cur, sym: row.sym } : { cur: "INR", sym: "₹" };
 }
 
 export const LANGUAGE_HINTS: Record<string, string> = {

@@ -22,7 +22,7 @@ import {
 } from "@/lib/client";
 import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
-import { ANY_COUNTRY, countryName } from "@/lib/config";
+import { ANY_COUNTRY, countryName, currencyOf } from "@/lib/config";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
 type Tab = "analysis" | "log";
@@ -79,6 +79,9 @@ function LeadsInner() {
   const [minScore, setMinScore] = useState(0);
   const [verified, setVerified] = useState(false);
   const [moreCats, setMoreCats] = useState(false);
+  // FX: one fetch per page load (server caches for 12h), used by the CURRENCY card.
+  const [inrPer, setInrPer] = useState<Record<string, number>>({});
+  const [amount, setAmount] = useState("1");
 
   const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified };
 
@@ -102,6 +105,12 @@ function LeadsInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [search, country, cityF, cats, source, ws, minScore, verified, selId],
   );
+
+  useEffect(() => {
+    api<{ inrPer: Record<string, number> }>("/api/fx")
+      .then((r) => setInrPer(r.inrPer ?? {}))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const want = Number(searchParams.get("sel")) || null;
@@ -357,6 +366,49 @@ function LeadsInner() {
       color: on ? "var(--green)" : "var(--sec)",
       border: `1px solid ${on ? "var(--green-border)" : "var(--border)"}`,
     });
+
+  // "1 EUR = ₹95.20" for the lead's country, plus a converter — how much is
+  // their price in rupees.
+  const currencyCard = () => {
+    if (!L) return null;
+    const { cur, sym } = currencyOf(L.country);
+    const rate = cur === "INR" ? 1 : inrPer[cur];
+    const n = Number(amount.replace(/,/g, ""));
+    const inr = rate && Number.isFinite(n) ? n * rate : null;
+    const money = (v: number) =>
+      v.toLocaleString("en-IN", { maximumFractionDigits: v < 100 ? 2 : 0 });
+    return railCard(
+      `CURRENCY · ${cur}`,
+      <div className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: "#a9b0ba" }}>
+        {rate ? (
+          <>
+            <div style={{ color: "var(--text)", fontSize: 12.5 }}>
+              1 {cur} = <span style={{ color: "var(--green)" }}>₹{money(rate)}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
+              <span style={{ color: "var(--sec)" }}>{sym}</span>
+              <input
+                className="input in-panel mono"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                style={{ width: 90, padding: "5px 7px", fontSize: 11.5 }}
+              />
+              <span style={{ color: "var(--muted)" }}>=</span>
+              <span style={{ color: "var(--green)", fontSize: 12.5 }}>
+                {inr == null ? "—" : `₹${money(inr)}`}
+              </span>
+            </div>
+            <div style={{ color: "var(--faint)", fontSize: 9.5, marginTop: 7 }}>
+              open.er-api.com · daily rate · free
+            </div>
+          </>
+        ) : (
+          <span style={{ color: "var(--faint)" }}>rate unavailable</span>
+        )}
+      </div>,
+    );
+  };
 
   const railCard = (title: string, children: React.ReactNode) => (
     <div className="card" style={{ padding: "12px 13px" }}>
@@ -923,10 +975,11 @@ function LeadsInner() {
                         {A.outreach.bestCallWindow}
                       </div>,
                     )}
+                    {currencyCard()}
                   </div>
                 </div>
               ) : (
-                <div style={{ padding: "16px 24px 22px" }}>
+                <div style={{ padding: "16px 24px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
                   <div className="card" style={{ padding: 20, textAlign: "center" }}>
                     <div className="mono" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 14 }}>
                       not analyzed yet — run the AI brain on this lead
@@ -939,6 +992,7 @@ function LeadsInner() {
                       {busy === "analyze" ? "ANALYZING…" : "▶ ANALYZE THIS LEAD"}
                     </div>
                   </div>
+                  {currencyCard()}
                 </div>
               ))}
 

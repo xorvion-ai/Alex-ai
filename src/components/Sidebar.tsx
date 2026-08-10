@@ -87,7 +87,7 @@ export default function Sidebar() {
           <i style={{ width: `${pct(places)}%` }} />
         </div>
         <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", marginTop: 4 }}>
-          PLACES {places ? `${places.used}/${places.limit}` : "—"}
+          PLACES {places ? `${places.used}/${places.limit}·${places.period}` : "—"}
         </div>
         {quotaOpen && (
           <>
@@ -99,8 +99,7 @@ export default function Sidebar() {
                     <i style={{ width: `${pct(x)}%` }} />
                   </div>
                   <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", marginTop: 4 }}>
-                    {x.label} {x.used}/{x.limit}
-                    {x.period === "day" ? "·day" : ""}
+                    {x.label} {x.used}/{x.limit}·{x.period}
                   </div>
                 </div>
               ))}
