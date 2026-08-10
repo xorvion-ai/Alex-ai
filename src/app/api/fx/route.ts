@@ -5,7 +5,7 @@ import { jsonError } from "@/lib/api";
 export async function GET() {
   try {
     const rates = await getRates();
-    if (!rates) return NextResponse.json({ inrPer: {}, updatedAt: null });
+    if (!rates) return NextResponse.json({ inrPer: {}, updatedAt: null, source: null });
     return NextResponse.json(rates);
   } catch (e) {
     return jsonError(e);

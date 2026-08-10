@@ -81,6 +81,7 @@ function LeadsInner() {
   const [moreCats, setMoreCats] = useState(false);
   // FX: one fetch per page load (server caches for 12h), used by the CURRENCY card.
   const [inrPer, setInrPer] = useState<Record<string, number>>({});
+  const [fxAt, setFxAt] = useState<string | null>(null);
   const [amount, setAmount] = useState("1");
 
   const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified };
@@ -107,9 +108,17 @@ function LeadsInner() {
   );
 
   useEffect(() => {
-    api<{ inrPer: Record<string, number> }>("/api/fx")
-      .then((r) => setInrPer(r.inrPer ?? {}))
-      .catch(() => {});
+    const load = () =>
+      api<{ inrPer: Record<string, number>; updatedAt: string | null }>("/api/fx")
+        .then((r) => {
+          setInrPer(r.inrPer ?? {});
+          setFxAt(r.updatedAt ?? null);
+        })
+        .catch(() => {});
+    load();
+    // the server caches for 15 min, so poll at the same cadence to stay current
+    const t = setInterval(load, 15 * 60 * 1000);
+    return () => clearInterval(t);
   }, []);
 
   useEffect(() => {
@@ -375,6 +384,8 @@ function LeadsInner() {
     const rate = cur === "INR" ? 1 : inrPer[cur];
     const n = Number(amount.replace(/,/g, ""));
     const inr = rate && Number.isFinite(n) ? n * rate : null;
+    // rates need decimals (1 HUF = ₹0.30), converted totals don't (₹1,19,070)
+    const rateStr = rate?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: rate < 1 ? 4 : 2 });
     const money = (v: number) =>
       v.toLocaleString("en-IN", { maximumFractionDigits: v < 100 ? 2 : 0 });
     return railCard(
@@ -383,7 +394,7 @@ function LeadsInner() {
         {rate ? (
           <>
             <div style={{ color: "var(--text)", fontSize: 12.5 }}>
-              1 {cur} = <span style={{ color: "var(--green)" }}>₹{money(rate)}</span>
+              1 {cur} = <span style={{ color: "var(--green)" }}>₹{rateStr}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
               <span style={{ color: "var(--sec)" }}>{sym}</span>
@@ -400,7 +411,7 @@ function LeadsInner() {
               </span>
             </div>
             <div style={{ color: "var(--faint)", fontSize: 9.5, marginTop: 7 }}>
-              open.er-api.com · daily rate · free
+              live market rate · {fxAt ? timeAgo(fxAt) : "—"}
             </div>
           </>
         ) : (

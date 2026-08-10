@@ -26,9 +26,9 @@ export const QUOTA_LIMITS: Record<
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
   tomtom: { limit: 2500, period: "day", label: "TOMTOM" },
   tavily: { limit: 1000, period: "month", label: "TAVILY" },
-  // open.er-api.com: free, keyless, daily rates. Cached 12h server-side, so
-  // this counter should sit near 60/month.
-  fx: { limit: 1000, period: "month", label: "FX" },
+  // Coinbase market feed + open.er-api fallback: both free and keyless, refreshed
+  // every 15 min at most, so a few thousand a month. The cap is only a leash.
+  fx: { limit: 20000, period: "month", label: "FX" },
   // Cloud Monitoring READS (real Places usage from the console). Google's first
   // 1M read API calls/month are free; 5-min cache keeps this in the hundreds.
   gcp_monitoring: { limit: 5000, period: "month", label: "GCP MON" },
