@@ -312,6 +312,92 @@ function LeadsInner() {
     flash(dueAt ? "Follow-up set ⏰ — moved to the activity log" : "Note added ✓ — moved to the activity log");
   };
 
+  // Everything on this lead's page, top to bottom, as plain text — one click
+  // next to the name copies the lot (header, analysis, currency, site plan,
+  // outreach, raw data, activity log).
+  const fullCopyText = () => {
+    if (!L) return "";
+    const { cur } = currencyOf(L.country);
+    const rate = cur === "INR" ? 1 : inrPer[cur];
+    const acts = detail?.activities ?? [];
+    const lines: string[] = [
+      `${L.name}${L.country ? ` (${L.country})` : ""}`,
+      `LEAD_${String(L.id).padStart(4, "0")} · ${L.status.toUpperCase()} · source: ${L.source} · refreshed ${timeAgo(L.lastRefreshedAt)}${L.verifiedNoWebsite ? " · VERIFIED_NO_WEBSITE" : ""}`,
+      [categoryOf(L), L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
+        .filter(Boolean)
+        .join(" · "),
+      `SCORE: ${L.score ?? "—"} (${scoreLabel(L.score)})`,
+      ``,
+      `CONTACT`,
+      `phone: ${L.phone ?? "—"}`,
+      `whatsapp: ${L.phoneIntl || L.phone ? `https://wa.me/${L.phoneIntl || L.phone!.replace(/\D/g, "")}` : "—"} (${whatsappStatus(L).label})`,
+      ...socialLinks(L).map((sl) => `${sl.kind}: ${sl.url}`),
+      mapsHref(L) ? `maps: ${mapsHref(L)}` : "",
+      ``,
+    ];
+
+    if (A) {
+      lines.push(
+        `LEAD_SCORE — WHY ${A.score}`,
+        A.reasoning,
+        `— ${A.model} · ${timeAgo(A.createdAt)}`,
+        ``,
+        `BUSINESS_PROFILE`,
+        A.businessProfile,
+        ``,
+        `SIGNALS`,
+        `rating: ${L.rating ? `${L.rating} ★` : "n/a"} · reviews: ${L.reviewCount ?? "n/a"} · website: ${L.websiteStatus} · verified: ${
+          L.verifiedNoWebsite == null ? "not checked" : L.verifiedNoWebsite ? "no_website" : "site found"
+        }`,
+        `best call window: ${A.outreach.bestCallWindow}`,
+        ``,
+      );
+    } else {
+      lines.push(`(not analyzed yet)`, ``);
+    }
+
+    lines.push(
+      `CURRENCY · ${cur}`,
+      rate ? `1 ${cur} = ₹${rate.toFixed(cur === "INR" ? 2 : rate < 1 ? 4 : 2)} (live market rate)` : `rate unavailable`,
+      ``,
+    );
+
+    if (A) {
+      lines.push(
+        `CONTENT ANGLE`,
+        A.sitePlan.contentAngle,
+        ``,
+        `SELLING POINTS`,
+        ...A.sitePlan.sellingPoints.map((x) => `- ${x}`),
+        ``,
+        `SUGGESTED PAGES: ${A.sitePlan.suggestedPages.join(", ")}`,
+        ``,
+        `WHATSAPP · ENGLISH`,
+        A.outreach.whatsappEn,
+        ``,
+        `WHATSAPP · ${A.outreach.localLanguageLabel}`,
+        A.outreach.whatsappLocal,
+        ``,
+        `PHONE CALL SCRIPT`,
+        ...A.outreach.callScript.map((c, i) => `${String(i + 1).padStart(2, "0")}. ${c}`),
+        ``,
+      );
+    }
+
+    lines.push(`RAW LEAD DATA`, ...dataPairs.map(([k, v]) => `${k}: ${v}`), ``);
+
+    if (acts.length) {
+      lines.push(
+        `ACTIVITY LOG`,
+        ...acts.map(
+          (a) =>
+            `${a.kind} · ${timeAgo(a.createdAt)}${a.dueAt ? ` · due ${new Date(a.dueAt).toLocaleString("en-GB")}` : ""} — ${a.note}`,
+        ),
+      );
+    }
+    return lines.filter((l, i, arr) => !(l === "" && arr[i - 1] === "")).join("\n");
+  };
+
   const planCopyText = () =>
     L && A
       ? [
@@ -772,9 +858,28 @@ function LeadsInner() {
                     {L.verifiedNoWebsite ? " · VERIFIED_NO_WEBSITE ✓" : ""}
                     {L.isDemo && <span style={{ color: "var(--amber)" }}> · DEMO_LEAD — archive me when done exploring</span>}
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.3px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 24, fontWeight: 700, letterSpacing: "-.3px" }}>
                     <Flag country={L.country} size={22} />
-                    {L.name}
+                    <span style={{ minWidth: 0 }}>{L.name}</span>
+                    <span
+                      className="mono"
+                      title="Copy this lead — everything on the page, top to bottom"
+                      onClick={() => copy("all", fullCopyText())}
+                      style={{
+                        flex: "none",
+                        border: `1px solid ${copied === "all" ? "var(--green-border)" : "var(--border-hover)"}`,
+                        background: copied === "all" ? "var(--green-bg)" : "transparent",
+                        color: copied === "all" ? "var(--green)" : "var(--sec)",
+                        borderRadius: 5,
+                        padding: "3px 8px",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        userSelect: "none",
+                      }}
+                    >
+                      {copied === "all" ? "COPIED ✓" : "⧉ COPY ALL"}
+                    </span>
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>
                     {[categoryOf(L), L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
@@ -986,7 +1091,6 @@ function LeadsInner() {
                         {A.outreach.bestCallWindow}
                       </div>,
                     )}
-                    {currencyCard()}
                   </div>
                 </div>
               ) : (
@@ -1003,7 +1107,6 @@ function LeadsInner() {
                       {busy === "analyze" ? "ANALYZING…" : "▶ ANALYZE THIS LEAD"}
                     </div>
                   </div>
-                  {currencyCard()}
                 </div>
               ))}
 
@@ -1056,8 +1159,8 @@ function LeadsInner() {
 
             {/* LOG */}
             {tab === "log" && (
-              <div style={{ padding: "16px 24px 22px" }}>
-                <div className="card" style={{ overflow: "hidden" }}>
+              <div className="cols" style={{ padding: "16px 24px 22px" }}>
+                <div className="card" style={{ overflow: "hidden", flex: 1.2, minWidth: 0 }}>
                   <div className="card-head">ACTIVITY LOG</div>
                   {(detail?.activities ?? []).map((a) => (
                     <div key={a.id} style={{ display: "flex", gap: 12, padding: "11px 13px", borderBottom: "1px solid var(--hairline)", alignItems: "baseline" }}>
@@ -1137,6 +1240,8 @@ function LeadsInner() {
                     </div>
                   </div>
                 </div>
+                {/* the rate sits next to the log — that's where prices get discussed */}
+                <div className="rail">{currencyCard()}</div>
               </div>
             )}
 
