@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, saveSettings } from "@/lib/settings";
+import { consoleSyncConfigured } from "@/lib/gcp";
 import { jsonError } from "@/lib/api";
 
 function maskKey(v: string | undefined): string | null {
@@ -18,6 +19,9 @@ export async function GET() {
         gemini: maskKey(process.env.GOOGLE_GENERATIVE_AI_API_KEY),
         tomtom: maskKey(process.env.TOMTOM_API_KEY),
         tavily: maskKey(process.env.TAVILY_API_KEY),
+        gcpConsole: consoleSyncConfigured()
+          ? `${process.env.GCP_PROJECT_ID || "service account"} · connected`
+          : null,
       },
     });
   } catch (e) {

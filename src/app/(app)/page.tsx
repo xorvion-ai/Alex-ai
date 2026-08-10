@@ -56,6 +56,9 @@ export default function Dashboard() {
 
   // ACTIVITY LOG — searchable, filterable, paged (the dashboard payload only
   // carries the first page).
+  // Google's own Places count (Cloud Monitoring), when console sync is set up.
+  const [gconsole, setGconsole] = useState<{ configured: boolean; places: number | null } | null>(null);
+
   const [logRows, setLogRows] = useState<Dash["activityLog"] | null>(null);
   const [logTotal, setLogTotal] = useState(0);
   const [logSearch, setLogSearch] = useState("");
@@ -72,6 +75,9 @@ export default function Dashboard() {
   }, []);
   useEffect(() => {
     reload();
+    api<{ configured: boolean; places: number | null }>("/api/quota/console")
+      .then(setGconsole)
+      .catch(() => {});
   }, [reload]);
 
   // surface store toasts, and refresh the counters when a batch finishes
@@ -353,10 +359,25 @@ export default function Dashboard() {
               FREE QUOTA REMAINING
             </div>
             {quotaRow("google_places", "google places")}
+            <div
+              className="mono"
+              style={{ display: "flex", fontSize: 9.5, fontWeight: 500, color: "var(--faint)", margin: "-6px 0 12px" }}
+            >
+              <span>google console</span>
+              <span style={{ flex: 1 }} />
+              <span style={{ color: gconsole?.places != null ? "var(--sec)" : "var(--faint)" }}>
+                {gconsole?.places != null
+                  ? `${gconsole.places.toLocaleString()} requests this month · live`
+                  : gconsole?.configured
+                    ? "unavailable"
+                    : "not connected — see .env.example"}
+              </span>
+            </div>
             {quotaRow("gemini", "gemini flash-lite")}
             {quotaRow("tomtom", "tomtom")}
             {quotaRow("tavily", "tavily verify")}
             {quotaRow("fx", "currency rates")}
+            {quotaRow("gcp_monitoring", "console sync")}
             <div className="mono" style={{ display: "flex", fontSize: 11, fontWeight: 500, color: "var(--body)" }}>
               <span>openstreetmap</span>
               <span style={{ flex: 1 }} />

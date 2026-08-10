@@ -4,7 +4,7 @@
 // Override with GEMINI_MODEL env var if the ID ever changes.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 
-export type Provider = "google_places" | "gemini" | "tomtom" | "tavily" | "fx";
+export type Provider = "google_places" | "gemini" | "tomtom" | "tavily" | "fx" | "gcp_monitoring";
 
 // Free-tier caps. Conservative: all Google Places SKUs share one monthly pool
 // so the guardian can never be tricked by SKU mix. TomTom free tier is 2,500
@@ -29,6 +29,9 @@ export const QUOTA_LIMITS: Record<
   // open.er-api.com: free, keyless, daily rates. Cached 12h server-side, so
   // this counter should sit near 60/month.
   fx: { limit: 1000, period: "month", label: "FX" },
+  // Cloud Monitoring READS (real Places usage from the console). Google's first
+  // 1M read API calls/month are free; 5-min cache keeps this in the hundreds.
+  gcp_monitoring: { limit: 5000, period: "month", label: "GCP MON" },
 };
 
 export const DEFAULT_HARD_STOP = 0.9; // stop at 90% of free tier

@@ -23,7 +23,8 @@ export default function SettingsPage() {
     gemini: string | null;
     tomtom: string | null;
     tavily: string | null;
-  }>({ googlePlaces: null, gemini: null, tomtom: null, tavily: null });
+    gcpConsole: string | null;
+  }>({ googlePlaces: null, gemini: null, tomtom: null, tavily: null, gcpConsole: null });
   const [langOpen, setLangOpen] = useState(false);
   const [moreCats, setMoreCats] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
@@ -31,7 +32,13 @@ export default function SettingsPage() {
   useEffect(() => {
     api<{
       settings: { hardStop: number; defaultCountry: string; defaultCategories: string[]; fallbackLanguage: string };
-      keys: { googlePlaces: string | null; gemini: string | null; tomtom: string | null; tavily: string | null };
+      keys: {
+        googlePlaces: string | null;
+        gemini: string | null;
+        tomtom: string | null;
+        tavily: string | null;
+        gcpConsole: string | null;
+      };
     }>("/api/settings")
       .then((r) => {
         setHardStop(Math.round(r.settings.hardStop * 100));
@@ -111,6 +118,7 @@ export default function SettingsPage() {
           {keyInput("GOOGLE AI STUDIO (GEMINI)", keys.gemini)}
           {keyInput("TOMTOM SEARCH", keys.tomtom)}
           {keyInput("TAVILY (WEB VERIFY)", keys.tavily)}
+          {keyInput("GOOGLE CLOUD CONSOLE SYNC (PLACES USAGE)", keys.gcpConsole)}
           <div className="mono" style={{ fontSize: 10, color: "var(--faint)", marginTop: 10, lineHeight: 1.5 }}>
             keys live in env vars — never in the database
           </div>
