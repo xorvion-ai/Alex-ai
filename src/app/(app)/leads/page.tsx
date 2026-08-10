@@ -462,9 +462,9 @@ function LeadsInner() {
       border: `1px solid ${on ? "var(--green-border)" : "var(--border)"}`,
     });
 
-  // "1 EUR = ₹95.20" for the lead's country, plus a converter — how much is
-  // their price in rupees.
-  const currencyCard = () => {
+  // Its own section under the action buttons — one compact strip, visible on
+  // both tabs: today's rate for the lead's currency plus a converter.
+  const currencyBar = () => {
     if (!L) return null;
     const { cur, sym } = currencyOf(L.country);
     const rate = cur === "INR" ? 1 : inrPer[cur];
@@ -474,15 +474,27 @@ function LeadsInner() {
     const rateStr = rate?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: rate < 1 ? 4 : 2 });
     const money = (v: number) =>
       v.toLocaleString("en-IN", { maximumFractionDigits: v < 100 ? 2 : 0 });
-    return railCard(
-      `CURRENCY · ${cur}`,
-      <div className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: "#a9b0ba" }}>
+    return (
+      <div
+        className="card mono"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "8px 14px",
+          padding: "10px 13px",
+          marginTop: 14,
+          fontSize: 11.5,
+          fontWeight: 500,
+        }}
+      >
+        <span className="lbl" style={{ fontSize: 9.5 }}>CURRENCY · {cur}</span>
         {rate ? (
           <>
-            <div style={{ color: "var(--text)", fontSize: 12.5 }}>
+            <span style={{ color: "var(--text)", fontSize: 12.5 }}>
               1 {cur} = <span style={{ color: "var(--green)" }}>₹{rateStr}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ color: "var(--sec)" }}>{sym}</span>
               <input
                 className="input in-panel mono"
@@ -495,15 +507,16 @@ function LeadsInner() {
               <span style={{ color: "var(--green)", fontSize: 12.5 }}>
                 {inr == null ? "—" : `₹${money(inr)}`}
               </span>
-            </div>
-            <div style={{ color: "var(--faint)", fontSize: 9.5, marginTop: 7 }}>
+            </span>
+            <span style={{ flex: 1 }} />
+            <span style={{ color: "var(--faint)", fontSize: 9.5 }}>
               live market rate · {fxAt ? timeAgo(fxAt) : "—"}
-            </div>
+            </span>
           </>
         ) : (
           <span style={{ color: "var(--faint)" }}>rate unavailable</span>
         )}
-      </div>,
+      </div>
     );
   };
 
@@ -1010,6 +1023,8 @@ function LeadsInner() {
                 </div>
               </div>
 
+              {currencyBar()}
+
               <div className="tabs" style={{ marginTop: 18 }}>
                 {(
                   [
@@ -1159,8 +1174,8 @@ function LeadsInner() {
 
             {/* LOG */}
             {tab === "log" && (
-              <div className="cols" style={{ padding: "16px 24px 22px" }}>
-                <div className="card" style={{ overflow: "hidden", flex: 1.2, minWidth: 0 }}>
+              <div style={{ padding: "16px 24px 22px" }}>
+                <div className="card" style={{ overflow: "hidden" }}>
                   <div className="card-head">ACTIVITY LOG</div>
                   {(detail?.activities ?? []).map((a) => (
                     <div key={a.id} style={{ display: "flex", gap: 12, padding: "11px 13px", borderBottom: "1px solid var(--hairline)", alignItems: "baseline" }}>
@@ -1240,8 +1255,6 @@ function LeadsInner() {
                     </div>
                   </div>
                 </div>
-                {/* the rate sits next to the log — that's where prices get discussed */}
-                <div className="rail">{currencyCard()}</div>
               </div>
             )}
 
