@@ -82,13 +82,14 @@ function looksLikeOwnSite(h: string, nameNorm: string, tokens: string[]): boolea
 
 export async function verifyLead(
   leadId: number,
-  opts: { hideWhenFound?: boolean } = {},
+  opts: { deleteWhenFound?: boolean } = {},
 ): Promise<{
   verifiedNoWebsite: boolean;
   foundSite: string | null;
+  deleted?: boolean;
   socials: string[];
 }> {
-  const { hideWhenFound = true } = opts;
+  const { deleteWhenFound = true } = opts;
   const d = db();
   const rows = await d.select().from(leads).where(eq(leads.id, leadId));
   const lead = rows[0];
@@ -134,11 +135,14 @@ export async function verifyLead(
     verifiedAt: new Date(),
     socials: [...socials],
   };
-  // When a real site is found we normally flag the lead (verified_no_website =
-  // false, which hides it). The manual "Verify on web" button passes
-  // hideWhenFound:false so the lead is NOT auto-flagged — the UI then asks the
-  // operator whether to delete it. A "no site" result is always recorded.
-  if (verifiedNoWebsite || hideWhenFound) patch.verifiedNoWebsite = verifiedNoWebsite;
+  // A business with a real website is not a lead: delete the row outright
+  // (Sumit's call, 2026-08-10 — no hidden bucket, no confirmation). Pass
+  // deleteWhenFound:false only when the caller wants to inspect it first.
+  if (!verifiedNoWebsite && deleteWhenFound) {
+    await d.delete(leads).where(eq(leads.id, leadId));
+    return { verifiedNoWebsite, foundSite, socials: [...socials], deleted: true };
+  }
+  patch.verifiedNoWebsite = verifiedNoWebsite;
   await d.update(leads).set(patch).where(eq(leads.id, leadId));
 
   return { verifiedNoWebsite, foundSite, socials: [...socials] };

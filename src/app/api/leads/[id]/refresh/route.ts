@@ -60,10 +60,8 @@ export async function POST(
         priceLevel: fresh.priceLevel ?? lead.priceLevel,
         hours: fresh.hours ?? lead.hours,
         mapsUri: fresh.mapsUri ?? lead.mapsUri,
-        websiteStatus: hasSiteNow
-          ? lead.websiteStatus
-          : (fresh.websiteStatus as "none" | "social_only"),
-        verifiedNoWebsite: hasSiteNow ? false : lead.verifiedNoWebsite,
+        websiteStatus: fresh.websiteStatus as "none" | "social_only",
+        verifiedNoWebsite: lead.verifiedNoWebsite,
         socials: fresh.socials.length ? fresh.socials : lead.socials,
         lastRefreshedAt: new Date(),
       })

@@ -8,9 +8,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    // Interactive single analyze: never auto-delete on a found website — the UI
-    // asks the operator to confirm first.
-    const result = await analyzeLead(Number(id), { dropOnSite: false });
+    // Same rule as the batch: a found website deletes the lead, no prompt.
+    const result = await analyzeLead(Number(id));
     return NextResponse.json(result);
   } catch (e) {
     return jsonError(e);

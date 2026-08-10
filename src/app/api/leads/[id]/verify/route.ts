@@ -8,9 +8,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    // Manual verify: do NOT auto-flag/hide a lead when a site is found — the UI
-    // asks the operator whether to delete it first.
-    const result = await verifyLead(Number(id), { hideWhenFound: false });
+    // A found website deletes the lead right here — no confirmation step.
+    const result = await verifyLead(Number(id));
     return NextResponse.json(result);
   } catch (e) {
     return jsonError(e);

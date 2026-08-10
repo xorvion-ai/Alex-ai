@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, isNull, or, sql, SQL } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, or, sql, SQL } from "drizzle-orm";
 import { countryName } from "@/lib/config";
 import { db, leads } from "@/lib/db";
 
@@ -11,7 +11,6 @@ export type LeadFilters = {
   ws?: ("none" | "social_only")[];
   minScore?: number;
   verifiedOnly?: boolean;
-  hasSite?: boolean;
   includeNoContact?: boolean;
   /** include leads that already have a log entry (they live in the activity log) */
   includeLogged?: boolean;
@@ -42,7 +41,6 @@ export function parseFilters(params: URLSearchParams): LeadFilters {
   const minScore = g("minScore");
   if (minScore && Number(minScore) > 0) f.minScore = Number(minScore);
   if (g("verified") === "1") f.verifiedOnly = true;
-  if (g("hasSite") === "1") f.hasSite = true;
   if (g("noContact") === "1") f.includeNoContact = true;
   if (g("logged") === "1") f.includeLogged = true;
   const status = g("status");
@@ -69,17 +67,9 @@ export function filterConditions(f: LeadFilters): SQL[] {
   if (f.source) conds.push(eq(leads.source, f.source) as SQL);
   if (f.ws) conds.push(eq(leads.websiteStatus, f.ws[0]) as SQL);
   if (f.minScore) conds.push(gte(leads.score, f.minScore) as SQL);
-  if (f.verifiedOnly) {
-    conds.push(eq(leads.verifiedNoWebsite, true) as SQL);
-  } else if (f.hasSite) {
-    // The "dropped" bucket: businesses the web check found DO have a website.
-    conds.push(eq(leads.verifiedNoWebsite, false) as SQL);
-  } else {
-    // Default view hides leads confirmed to have a website.
-    conds.push(
-      or(isNull(leads.verifiedNoWebsite), eq(leads.verifiedNoWebsite, true))! as SQL,
-    );
-  }
+  // Leads found to have a real website are deleted, not hidden, so the only
+  // distinction left is "web-verified as having none" vs "not checked yet".
+  if (f.verifiedOnly) conds.push(eq(leads.verifiedNoWebsite, true) as SQL);
   if (f.status) conds.push(eq(leads.status, f.status) as SQL);
   // Only contactable leads by default — must have a phone (email isn't
   // collected, so it's the only reachable channel). Opt out with ?noContact=1.

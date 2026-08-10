@@ -226,18 +226,9 @@ function LeadsInner() {
         { method: "POST" },
       );
       if (r.foundSite) {
-        // Auto web-check found a website — ask before removing (don't auto-delete).
-        const del = window.confirm(
-          `This business appears to already have a website:\n\n${r.foundSite}\n\nDelete this lead?\n\nOK = delete permanently\nCancel = keep it in your leads`,
-        );
-        if (del) {
-          await api(`/api/leads/${selId}`, { method: "DELETE" });
-          dropCurrent();
-          flash("Deleted — business already has a website");
-        } else {
-          await refreshDetail();
-          flash("Kept — has a website (not analyzed)");
-        }
+        // The server already deleted it (a real website means it isn't a lead).
+        dropCurrent();
+        flash(`Deleted — already has a website (${r.foundSite})`);
         return;
       }
       await refreshDetail();
@@ -251,18 +242,8 @@ function LeadsInner() {
         { method: "POST" },
       );
       if (r.foundSite) {
-        // Don't remove it silently — let the operator decide.
-        const del = window.confirm(
-          `This business appears to already have a website:\n\n${r.foundSite}\n\nDelete this lead?\n\nOK = delete permanently\nCancel = keep it in your leads`,
-        );
-        if (del) {
-          await api(`/api/leads/${selId}`, { method: "DELETE" });
-          dropCurrent();
-          flash("Deleted — business already has a website");
-          return;
-        }
-        await refreshDetail();
-        flash("Kept in leads (has a website)");
+        dropCurrent();
+        flash(`Deleted — already has a website (${r.foundSite})`);
         return;
       }
       await refreshDetail();
@@ -273,11 +254,18 @@ function LeadsInner() {
     act(
       "refresh",
       async () => {
-        const r = await api<{ hasSiteNow: boolean }>(`/api/leads/${selId}/refresh`, {
-          method: "POST",
-        });
+        const r = await api<{ hasSiteNow: boolean; deleted?: boolean }>(
+          `/api/leads/${selId}/refresh`,
+          { method: "POST" },
+        );
+        if (r.deleted) {
+          // It has a website now, so the server deleted it — move on.
+          dropCurrent();
+          flash("Deleted — the business now has a website");
+          return;
+        }
         await refreshDetail();
-        flash(r.hasSiteNow ? "⚠ business now has a website" : "Refreshed ✓");
+        flash("Refreshed ✓");
       },
     );
 

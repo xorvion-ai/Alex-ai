@@ -47,14 +47,7 @@ export type AnalysisResult = z.infer<typeof AnalysisSchema>;
 
 export type AnalyzeOutcome = { score: number; dropped?: boolean; foundSite?: string };
 
-export async function analyzeLead(
-  leadId: number,
-  opts: { dropOnSite?: boolean } = {},
-): Promise<AnalyzeOutcome> {
-  // dropOnSite=true (batch): silently hide a lead found to have a website.
-  // dropOnSite=false (interactive single analyze): don't hide — return the site
-  // so the UI can ask the operator to confirm deletion first.
-  const { dropOnSite = true } = opts;
+export async function analyzeLead(leadId: number): Promise<AnalyzeOutcome> {
   const d = db();
   const rows = await d.select().from(leads).where(eq(leads.id, leadId));
   let lead = rows[0];
@@ -71,7 +64,7 @@ export async function analyzeLead(
     (await canSpend("tavily"))
   ) {
     try {
-      const v = await verifyLead(leadId, { hideWhenFound: dropOnSite });
+      const v = await verifyLead(leadId, { deleteWhenFound: false });
       foundSite = v.foundSite;
       lead = { ...lead, verifiedNoWebsite: v.verifiedNoWebsite, socials: v.socials };
     } catch {
@@ -79,15 +72,12 @@ export async function analyzeLead(
     }
   }
 
-  // If the web check proved the business actually HAS a real website, it is not
-  // a lead worth pitching: skip the Gemini spend and report it as dropped. The
-  // row stays in the DB (verifyLead set verified_no_website = false) but is
-  // hidden from the leads list — recoverable via the "has site" filter.
+  // If the web check proved the business actually HAS a real website it is not a
+  // lead at all, so it is DELETED outright — no Gemini spend, no hidden bucket,
+  // no confirmation prompt (Sumit's call, 2026-08-10).
   if (foundSite) {
-    // Batch hides + reports dropped; interactive returns the site un-hidden so
-    // the UI confirms deletion (never auto-delete on a manual analyze click).
-    if (dropOnSite) return { score: lead.score ?? 0, dropped: true, foundSite };
-    return { score: lead.score ?? 0, foundSite };
+    await d.delete(leads).where(eq(leads.id, leadId));
+    return { score: lead.score ?? 0, dropped: true, foundSite };
   }
 
   await guard("gemini");
