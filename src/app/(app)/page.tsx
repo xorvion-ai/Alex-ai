@@ -142,9 +142,15 @@ export default function Dashboard() {
 
   // Google Cloud free trial: show the end date and days left, amber in the last
   // week. Editable in Settings (clear it after upgrading).
-  const trialDaysLeft = dash?.trialEndsAt
-    ? Math.ceil((new Date(`${dash.trialEndsAt}T23:59:59`).getTime() - now.getTime()) / 86400000)
-    : null;
+  // Whole calendar days between today and the end date — counting from local
+  // midnight so a partial day never rounds the number up.
+  const trialDaysLeft = (() => {
+    if (!dash?.trialEndsAt) return null;
+    const [y, m, d] = dash.trialEndsAt.split("-").map(Number);
+    if (!y || !m || !d) return null;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return Math.round((new Date(y, m - 1, d).getTime() - today) / 86400000);
+  })();
   const trialSub =
     trialDaysLeft == null ? (
       "guardian armed · caps active"
@@ -156,9 +162,16 @@ export default function Dashboard() {
           className="mono"
           style={{ fontSize: 10.5, color: trialDaysLeft <= 7 ? "var(--amber)" : "var(--sec)" }}
         >
-          {trialDaysLeft < 0
-            ? `gcp trial ended ${new Date(dash!.trialEndsAt!).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`
-            : `gcp trial ends ${new Date(dash!.trialEndsAt!).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} · ${trialDaysLeft}d left`}
+          {(() => {
+            const when = new Date(dash!.trialEndsAt!).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            });
+            if (trialDaysLeft < 0) return `gcp trial ended ${when}`;
+            if (trialDaysLeft === 0) return `gcp trial ends today (${when})`;
+            return `gcp trial ends ${when} · ${trialDaysLeft}d left`;
+          })()}
         </span>
       </>
     );
