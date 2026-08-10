@@ -3,6 +3,7 @@ import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { activities, contactedArchive, db, leads, searches } from "@/lib/db";
 import { getQuotaSnapshot } from "@/lib/quota";
 import { ensureSeeded } from "@/lib/seed";
+import { getSettings } from "@/lib/settings";
 import { jsonError } from "@/lib/api";
 
 export async function GET() {
@@ -99,6 +100,7 @@ export async function GET() {
         status: s.status,
       })),
       quota: await getQuotaSnapshot(),
+      trialEndsAt: (await getSettings()).trialEndsAt || null,
     });
   } catch (e) {
     return jsonError(e);

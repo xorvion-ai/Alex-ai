@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
     if (Array.isArray(patch.defaultCategories))
       allowed.defaultCategories = patch.defaultCategories.filter((c: unknown) => typeof c === "string");
     if (typeof patch.fallbackLanguage === "string") allowed.fallbackLanguage = patch.fallbackLanguage;
+    if (typeof patch.trialEndsAt === "string" && /^(\d{4}-\d{2}-\d{2})?$/.test(patch.trialEndsAt))
+      allowed.trialEndsAt = patch.trialEndsAt;
     const merged = await saveSettings(allowed);
     return NextResponse.json({ settings: merged });
   } catch (e) {

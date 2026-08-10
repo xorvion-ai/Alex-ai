@@ -47,6 +47,8 @@ type Dash = {
     status: string;
   }[];
   quota: QuotaDto;
+  /** Google Cloud free-trial end date, "YYYY-MM-DD" (null = none set) */
+  trialEndsAt: string | null;
 };
 
 export default function Dashboard() {
@@ -138,6 +140,29 @@ export default function Dashboard() {
         ? `▶ RESUME (${newCount} LEFT)`
         : `▶ ANALYZE ${newCount} NEW LEADS`;
 
+  // Google Cloud free trial: show the end date and days left, amber in the last
+  // week. Editable in Settings (clear it after upgrading).
+  const trialDaysLeft = dash?.trialEndsAt
+    ? Math.ceil((new Date(`${dash.trialEndsAt}T23:59:59`).getTime() - now.getTime()) / 86400000)
+    : null;
+  const trialSub =
+    trialDaysLeft == null ? (
+      "guardian armed · caps active"
+    ) : (
+      <>
+        guardian armed · caps active
+        <br />
+        <span
+          className="mono"
+          style={{ fontSize: 10.5, color: trialDaysLeft <= 7 ? "var(--amber)" : "var(--sec)" }}
+        >
+          {trialDaysLeft < 0
+            ? `gcp trial ended ${new Date(dash!.trialEndsAt!).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`
+            : `gcp trial ends ${new Date(dash!.trialEndsAt!).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} · ${trialDaysLeft}d left`}
+        </span>
+      </>
+    );
+
   const quotaRow = (provider: string, name: string) => {
     const x = dash?.quota.find((q) => q.provider === provider);
     if (!x) return null;
@@ -185,7 +210,7 @@ export default function Dashboard() {
       <div className="grid3" style={{ marginTop: 20 }}>
         {statCard("LIVE LEADS", s?.live ?? "—", `across ${s?.cities ?? 0} cities · ${s?.sources ?? 0} sources`)}
         {statCard("ANALYZED", s?.analyzed ?? "—", `${newCount} new awaiting analysis`, true)}
-        {statCard("MONTHLY COST", "$0", "guardian armed · caps active", true)}
+        {statCard("MONTHLY COST", "$0", trialSub, true)}
       </div>
 
       <div className="cols" style={{ marginTop: 14 }}>

@@ -7,6 +7,8 @@ export type AppSettings = {
   defaultCountry: string;
   defaultCategories: string[];
   fallbackLanguage: string; // outreach local-language fallback
+  /** Google Cloud free-trial end date, "YYYY-MM-DD" ("" = no trial running) */
+  trialEndsAt: string;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -14,6 +16,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultCountry: DEFAULT_COUNTRY,
   defaultCategories: ["restaurant", "salon", "tailor"],
   fallbackLanguage: "Hindi",
+  // Sumit's current trial; editable in Settings, clear it once he upgrades.
+  trialEndsAt: "2026-10-18",
 };
 
 export async function getSettings(): Promise<AppSettings> {

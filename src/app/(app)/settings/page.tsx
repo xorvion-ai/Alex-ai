@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [defaultCountry, setDefaultCountry] = useState(DEFAULT_COUNTRY);
   const [defaultCategories, setDefaultCategories] = useState<string[]>([]);
   const [fallbackLanguage, setFallbackLanguage] = useState("Hindi");
+  const [trialEndsAt, setTrialEndsAt] = useState("");
   const [keys, setKeys] = useState<{
     googlePlaces: string | null;
     gemini: string | null;
@@ -31,7 +32,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     api<{
-      settings: { hardStop: number; defaultCountry: string; defaultCategories: string[]; fallbackLanguage: string };
+      settings: {
+        hardStop: number;
+        defaultCountry: string;
+        defaultCategories: string[];
+        fallbackLanguage: string;
+        trialEndsAt: string;
+      };
       keys: {
         googlePlaces: string | null;
         gemini: string | null;
@@ -45,6 +52,7 @@ export default function SettingsPage() {
         setDefaultCountry(r.settings.defaultCountry);
         setDefaultCategories(r.settings.defaultCategories);
         setFallbackLanguage(r.settings.fallbackLanguage);
+        setTrialEndsAt(r.settings.trialEndsAt ?? "");
         setKeys(r.keys);
       })
       .catch(() => {});
@@ -67,6 +75,7 @@ export default function SettingsPage() {
           defaultCountry,
           defaultCategories,
           fallbackLanguage,
+          trialEndsAt,
         }),
       });
       flash("Settings saved ✓");
@@ -151,6 +160,19 @@ export default function SettingsPage() {
           </div>
           <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--amber)", marginTop: 12, lineHeight: 1.5 }}>
             ⛨ also set console-side caps + $1 budget alert (see setup docs)
+          </div>
+          <div className="lbl" style={{ fontSize: 9, margin: "14px 0 4px" }}>
+            GOOGLE CLOUD FREE-TRIAL END DATE (shown on the dashboard · clear it after upgrading)
+          </div>
+          <input
+            type="date"
+            className="input in-panel mono"
+            value={trialEndsAt}
+            onChange={(e) => setTrialEndsAt(e.target.value)}
+            style={{ padding: "7px 9px", fontSize: 12 }}
+          />
+          <div className="mono" style={{ fontSize: 10, color: "var(--faint)", marginTop: 6, lineHeight: 1.5 }}>
+            trial resources stop on this date unless billing is upgraded
           </div>
         </div>
 
