@@ -52,13 +52,20 @@ export function filterConditions(f: LeadFilters): SQL[] {
   const conds: SQL[] = [];
   if (f.search) {
     const term = `%${f.search}%`;
-    conds.push(
-      or(
-        ilike(leads.name, term),
-        ilike(leads.address, term),
-        ilike(leads.city, term),
-      )! as SQL,
-    );
+    const parts: SQL[] = [
+      ilike(leads.name, term) as SQL,
+      ilike(leads.address, term) as SQL,
+      ilike(leads.city, term) as SQL,
+    ];
+    // Typing a phone number finds its lead, however it is punctuated: both sides
+    // are reduced to digits, so "096548 53020", "+91 96548-53020" and
+    // "9654853020" all match the same row.
+    const digits = f.search.replace(/\D/g, "");
+    if (digits.length >= 4) {
+      parts.push(sql`regexp_replace(coalesce(${leads.phone}, ''), '[^0-9]', '', 'g') like ${`%${digits}%`}`);
+      parts.push(sql`regexp_replace(coalesce(${leads.phoneIntl}, ''), '[^0-9]', '', 'g') like ${`%${digits}%`}`);
+    }
+    conds.push(or(...parts)! as SQL);
   }
   if (f.country) conds.push(eq(leads.country, f.country) as SQL);
   if (f.city) conds.push(ilike(leads.city, `%${f.city}%`) as SQL);

@@ -526,7 +526,7 @@ function LeadsInner() {
             <input
               className="input mono"
               style={{ flex: 1, minWidth: 0, padding: "8px 10px", fontSize: 12.5 }}
-              placeholder="/ search leads"
+              placeholder="/ search name, phone, area"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

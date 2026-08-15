@@ -20,7 +20,15 @@ export async function GET(req: NextRequest) {
     const conds: SQL[] = [];
     if (search) {
       const term = `%${search}%`;
-      conds.push(or(ilike(leads.name, term), ilike(activities.note, term))! as SQL);
+      const parts: SQL[] = [ilike(leads.name, term) as SQL, ilike(activities.note, term) as SQL];
+      // Same as the leads list: a phone number finds its lead whatever the
+      // punctuation, by comparing digits only.
+      const digits = search.replace(/\D/g, "");
+      if (digits.length >= 4) {
+        parts.push(sql`regexp_replace(coalesce(${leads.phone}, ''), '[^0-9]', '', 'g') like ${`%${digits}%`}`);
+        parts.push(sql`regexp_replace(coalesce(${leads.phoneIntl}, ''), '[^0-9]', '', 'g') like ${`%${digits}%`}`);
+      }
+      conds.push(or(...parts)! as SQL);
     }
     if (kind && KINDS.includes(kind)) conds.push(eq(activities.kind, kind) as SQL);
     const where = conds.length ? and(...conds) : undefined;

@@ -275,7 +275,7 @@ export default function Dashboard() {
               <input
                 className="input in-panel mono"
                 style={{ flex: 1, minWidth: 150, padding: "6px 9px", fontSize: 11.5 }}
-                placeholder="/ search lead or note"
+                placeholder="/ search lead, phone or note"
                 value={logSearch}
                 onChange={(e) => {
                   setLogSearch(e.target.value);
