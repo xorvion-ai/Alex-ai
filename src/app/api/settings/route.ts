@@ -41,12 +41,15 @@ export async function POST(req: NextRequest) {
     if (typeof patch.fallbackLanguage === "string") allowed.fallbackLanguage = patch.fallbackLanguage;
     if (typeof patch.trialEndsAt === "string" && /^(\d{4}-\d{2}-\d{2})?$/.test(patch.trialEndsAt))
       allowed.trialEndsAt = patch.trialEndsAt;
-    if (patch.messageTemplates && typeof patch.messageTemplates === "object") {
-      const clean: Record<string, string> = {};
-      for (const [country, tpl] of Object.entries(patch.messageTemplates as Record<string, unknown>)) {
-        if (typeof tpl === "string" && tpl.trim() && tpl.length <= 4000) clean[country] = tpl;
+    for (const key of ["messageTemplates", "messageTemplatesEn"] as const) {
+      const raw = (patch as Record<string, unknown>)[key];
+      if (raw && typeof raw === "object") {
+        const clean: Record<string, string> = {};
+        for (const [country, tpl] of Object.entries(raw as Record<string, unknown>)) {
+          if (typeof tpl === "string" && tpl.trim() && tpl.length <= 4000) clean[country] = tpl;
+        }
+        allowed[key] = clean;
       }
-      allowed.messageTemplates = clean;
     }
     const merged = await saveSettings(allowed);
     return NextResponse.json({ settings: merged });

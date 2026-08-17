@@ -57,6 +57,52 @@ Price: ₹799 — one-time payment, pay after the website is delivered.
 I've also attached a demo for you so you can see how it could look. 😊`,
 };
 
+/**
+ * The English twin of each country template — what the translation box shows,
+ * so it mirrors the message being sent instead of a separately written draft.
+ * Countries whose template is already English simply reuse it.
+ */
+export const DEFAULT_TEMPLATES_EN: Record<string, string> = {
+  Spain: `Hi {name} team! 👋 I'm Sumit, Software Developer.
+
+I saw your {category} and your amazing {rating}⭐ rating with {reviews} reviews. ✨ I love the concept of {name}.
+
+I noticed you don't have a website yet. I can build a modern, elegant site to show your {category}, your menu and your atmosphere, and help more people find and contact you.
+
+Price: 20 € — one-time payment, after the website is delivered.
+
+I've also attached a demo so you can see how it could look. 😊`,
+
+  Mexico: `Hi {name} team! 👋 I'm Sumit, Software Developer.
+
+I saw your {category} and your excellent {rating}⭐ rating with {reviews} reviews. 📸 I noticed you don't have a website yet.
+
+I can build you a professional website to show your {category} services and help more people find you and get in touch.
+
+Price: MX$450 — one-time payment, pay after the website is delivered.
+
+I've also attached a demo so you can see how it could look. 😊`,
+
+  Brazil: `Hi {name} team! 👋 I'm Sumit, Software Developer.
+
+I saw {name} and noticed you don't have a website yet. I can build a professional site to show your {category} services, your service and your contact details, helping more people find and reach you.
+
+Price: R$ 99 — one-time payment, pay after the site is delivered.
+
+I've also attached a demo so you can see how it could look. 😊`,
+};
+
+/** English twin for a country: an override, the default, or the local template
+ *  itself when that template is already written in English. */
+export function templateEnFor(
+  overrides: Record<string, string>,
+  country: string | null | undefined,
+  localTemplate: string | null,
+): string | null {
+  if (!country) return null;
+  return overrides[country] ?? DEFAULT_TEMPLATES_EN[country] ?? localTemplate;
+}
+
 export type TemplateLead = {
   name: string;
   rating: number | null;

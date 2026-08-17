@@ -23,7 +23,7 @@ import {
 import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
 import { ANY_COUNTRY, CHATGPT_CHAT_URL, CHATGPT_DEMO_LINE, countryName, currencyOf } from "@/lib/config";
-import { PLACEHOLDERS, renderTemplate, templateFor, templatize } from "@/lib/messages";
+import { PLACEHOLDERS, renderTemplate, templateEnFor, templateFor, templatize } from "@/lib/messages";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
 type Tab = "analysis" | "log";
@@ -87,8 +87,11 @@ function LeadsInner() {
   // Country WhatsApp templates (overrides; defaults live in messages.ts) and the
   // editable draft for the lead on screen.
   const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [templatesEn, setTemplatesEn] = useState<Record<string, string>>({});
   const [msgDraft, setMsgDraft] = useState("");
+  const [enDraft, setEnDraft] = useState("");
   const [msgSaving, setMsgSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified };
 
@@ -128,8 +131,16 @@ function LeadsInner() {
   }, []);
 
   useEffect(() => {
-    api<{ settings: { messageTemplates?: Record<string, string> } }>("/api/settings")
-      .then((r) => setTemplates(r.settings.messageTemplates ?? {}))
+    api<{
+      settings: {
+        messageTemplates?: Record<string, string>;
+        messageTemplatesEn?: Record<string, string>;
+      };
+    }>("/api/settings")
+      .then((r) => {
+        setTemplates(r.settings.messageTemplates ?? {});
+        setTemplatesEn(r.settings.messageTemplatesEn ?? {});
+      })
       .catch(() => {});
   }, []);
 
@@ -235,14 +246,21 @@ function LeadsInner() {
   // falling back to the AI-written local draft when that country has none.
   const countryTpl = L ? templateFor(templates, L.country) : null;
   const msgBase = L && countryTpl ? renderTemplate(countryTpl, L) : "";
+  // The translation box mirrors the message being sent: the English twin of the
+  // same country template, filled with the same lead. (TRANSLATE re-does it with
+  // Gemini after an edit, or for a country with no twin yet.)
+  const countryTplEn = L ? templateEnFor(templatesEn, L.country, countryTpl) : null;
+  const enBase = L && countryTplEn ? renderTemplate(countryTplEn, L) : "";
 
   // Reset the editable draft whenever the lead (or its template) changes; an
   // edit lives until you move on, so it only ever affects this one lead.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    /* eslint-disable react-hooks/set-state-in-effect */
     setMsgDraft(msgBase);
+    setEnDraft(enBase);
+    /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [L?.id, countryTpl]);
+  }, [L?.id, countryTpl, countryTplEn]);
 
   const waHref = (text: string) =>
     L && (L.phoneIntl || L.phone)
@@ -256,11 +274,15 @@ function LeadsInner() {
     setMsgSaving(true);
     try {
       const next = { ...templates, [L.country]: templatize(msgDraft, L, countryTpl) };
+      const nextEn = enDraft.trim()
+        ? { ...templatesEn, [L.country]: templatize(enDraft, L, countryTplEn) }
+        : templatesEn;
       await api("/api/settings", {
         method: "POST",
-        body: JSON.stringify({ messageTemplates: next }),
+        body: JSON.stringify({ messageTemplates: next, messageTemplatesEn: nextEn }),
       });
       setTemplates(next);
+      setTemplatesEn(nextEn);
       flash(`Template set for ${L.country} — every lead there uses it now`);
     } catch (e) {
       flash(e instanceof Error ? e.message : "could not save the template");
@@ -627,6 +649,23 @@ function LeadsInner() {
                       </div>
                     </div>
     );
+  };
+
+  const translateDraft = async () => {
+    if (!msgDraft.trim() || translating) return;
+    setTranslating(true);
+    try {
+      const r = await api<{ english: string }>("/api/translate", {
+        method: "POST",
+        body: JSON.stringify({ text: msgDraft }),
+      });
+      setEnDraft(r.english);
+    } catch (e) {
+      if (e instanceof ApiError && e.quotaBlocked) flash("⛨ Quota Guardian blocked the translation");
+      else flash(e instanceof Error ? e.message : "translation failed");
+    } finally {
+      setTranslating(false);
+    }
   };
 
   const railCard = (title: string, children: React.ReactNode) => (
@@ -1185,18 +1224,40 @@ ${CHATGPT_DEMO_LINE}`);
             {tab === "analysis" && (
               <div className="cols" style={{ padding: "16px 24px 0" }}>
                 <div style={{ flex: 1.25, minWidth: 0 }}>{messageCard()}</div>
-                {A && <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="card">
-                      <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)" }}>
-                        <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>WHATSAPP · ENGLISH</span>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "9px 13px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
+                        <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>
+                          ENGLISH · WHAT THE MESSAGE SAYS
+                        </span>
                         <div style={{ flex: 1 }} />
-                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", cursor: "pointer" }} onClick={() => copy("en", A.outreach.whatsappEn)}>
+                        <span
+                          className="mono"
+                          onClick={translateDraft}
+                          title="Translate exactly what is in the message box right now (1 Gemini call)"
+                          style={{ fontSize: 10, fontWeight: 600, color: "var(--amber)", cursor: "pointer" }}
+                        >
+                          {translating ? "TRANSLATING…" : "↻ TRANSLATE"}
+                        </span>
+                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", cursor: "pointer" }} onClick={() => copy("en", enDraft)}>
                           {copied === "en" ? "COPIED ✓" : "COPY"}
                         </span>
                       </div>
-                      <div style={{ padding: 13, fontSize: 12.5, lineHeight: 1.6, color: "var(--body)" }}>{A.outreach.whatsappEn}</div>
+                      <div style={{ padding: 13 }}>
+                        <textarea
+                          className="input in-panel"
+                          value={enDraft}
+                          onChange={(e) => setEnDraft(e.target.value)}
+                          rows={12}
+                          placeholder="press ↻ TRANSLATE to render the message above in English"
+                          style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--body)", resize: "vertical", fontFamily: "var(--font-sg)" }}
+                        />
+                        <div className="mono" style={{ fontSize: 9.5, color: "var(--faint)", marginTop: 9, lineHeight: 1.6 }}>
+                          this is the same message, in English — SET saves both sides for the country
+                        </div>
+                      </div>
                     </div>
-                </div>}
+                </div>
               </div>
             )}
 

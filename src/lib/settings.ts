@@ -11,6 +11,8 @@ export type AppSettings = {
   trialEndsAt: string;
   /** Per-country WhatsApp templates that override DEFAULT_TEMPLATES (messages.ts) */
   messageTemplates: Record<string, string>;
+  /** English twins of the above, shown in the translation box */
+  messageTemplatesEn: Record<string, string>;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -21,6 +23,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Sumit's current trial; editable in Settings, clear it once he upgrades.
   trialEndsAt: "2026-10-18",
   messageTemplates: {},
+  messageTemplatesEn: {},
 };
 
 export async function getSettings(): Promise<AppSettings> {
