@@ -22,7 +22,8 @@ import {
 } from "@/lib/client";
 import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
-import { ANY_COUNTRY, countryName, currencyOf } from "@/lib/config";
+import { ANY_COUNTRY, CHATGPT_CHAT_URL, CHATGPT_DEMO_LINE, countryName, currencyOf } from "@/lib/config";
+import { PLACEHOLDERS, renderTemplate, templateFor, templatize } from "@/lib/messages";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
 type Tab = "analysis" | "log";
@@ -83,6 +84,11 @@ function LeadsInner() {
   const [inrPer, setInrPer] = useState<Record<string, number>>({});
   const [fxAt, setFxAt] = useState<string | null>(null);
   const [amount, setAmount] = useState("1");
+  // Country WhatsApp templates (overrides; defaults live in messages.ts) and the
+  // editable draft for the lead on screen.
+  const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [msgDraft, setMsgDraft] = useState("");
+  const [msgSaving, setMsgSaving] = useState(false);
 
   const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified };
 
@@ -119,6 +125,12 @@ function LeadsInner() {
     // the server caches for 15 min, so poll at the same cadence to stay current
     const t = setInterval(load, 15 * 60 * 1000);
     return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    api<{ settings: { messageTemplates?: Record<string, string> } }>("/api/settings")
+      .then((r) => setTemplates(r.settings.messageTemplates ?? {}))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -218,6 +230,44 @@ function LeadsInner() {
 
   const L = detail?.lead ?? null;
   const A = detail?.analysis ?? null;
+
+  // The message for this lead: its country's template filled with its own data,
+  // falling back to the AI-written local draft when that country has none.
+  const countryTpl = L ? templateFor(templates, L.country) : null;
+  const msgBase = L && countryTpl ? renderTemplate(countryTpl, L) : "";
+
+  // Reset the editable draft whenever the lead (or its template) changes; an
+  // edit lives until you move on, so it only ever affects this one lead.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMsgDraft(msgBase);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [L?.id, countryTpl]);
+
+  const waHref = (text: string) =>
+    L && (L.phoneIntl || L.phone)
+      ? `https://wa.me/${L.phoneIntl || L.phone!.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`
+      : null;
+
+  // SET: store the edit as this country's template, with this lead's own values
+  // turned back into placeholders so the next lead gets its own details.
+  const setCountryTemplate = async () => {
+    if (!L?.country || !msgDraft.trim() || msgSaving) return;
+    setMsgSaving(true);
+    try {
+      const next = { ...templates, [L.country]: templatize(msgDraft, L, countryTpl) };
+      await api("/api/settings", {
+        method: "POST",
+        body: JSON.stringify({ messageTemplates: next }),
+      });
+      setTemplates(next);
+      flash(`Template set for ${L.country} — every lead there uses it now`);
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "could not save the template");
+    } finally {
+      setMsgSaving(false);
+    }
+  };
 
   const analyzeAction = () =>
     act("analyze", async () => {
@@ -505,6 +555,77 @@ function LeadsInner() {
           <span style={{ color: "var(--faint)" }}>rate unavailable</span>
         )}
       </div>
+    );
+  };
+
+  // The message that actually gets sent: this country's template filled with the
+  // lead's own details, editable first. Countries with no template yet start
+  // blank — type one, press SET, and every lead there inherits the wording.
+  const messageCard = () => {
+    if (!L) return null;
+    return (
+                    <div className="card">
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "9px 13px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
+                        <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>
+                          WHATSAPP MESSAGE ·{" "}
+                          {countryTpl
+                            ? `${L.country?.toUpperCase()} TEMPLATE`
+                            : `NO ${L.country?.toUpperCase() ?? "COUNTRY"} TEMPLATE YET — WRITE ONE AND PRESS SET`}
+                        </span>
+                        <div style={{ flex: 1 }} />
+                        {msgDraft !== msgBase && (
+                          <span
+                            className="mono"
+                            onClick={() => setMsgDraft(msgBase)}
+                            style={{ fontSize: 10, fontWeight: 600, color: "var(--muted)", cursor: "pointer" }}
+                          >
+                            RESET
+                          </span>
+                        )}
+                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", cursor: "pointer" }} onClick={() => copy("lo", msgDraft)}>
+                          {copied === "lo" ? "COPIED ✓" : "COPY"}
+                        </span>
+                      </div>
+                      <div style={{ padding: 13 }}>
+                        <textarea
+                          className="input in-panel"
+                          value={msgDraft}
+                          onChange={(e) => setMsgDraft(e.target.value)}
+                          rows={12}
+                          style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--body)", resize: "vertical", fontFamily: "var(--font-sg)" }}
+                        />
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                          <a
+                            className="btn-green"
+                            href={waHref(msgDraft) ?? undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              padding: "9px 18px",
+                              fontSize: 12,
+                              textDecoration: "none",
+                              opacity: waHref(msgDraft) ? 1 : 0.4,
+                              pointerEvents: waHref(msgDraft) ? undefined : "none",
+                            }}
+                          >
+                            ➤ SEND ON WHATSAPP
+                          </a>
+                          <div
+                            className="btn-outline mono"
+                            onClick={setCountryTemplate}
+                            title="Save this wording as the template for every lead in this country"
+                            style={{ padding: "9px 14px", fontSize: 11, opacity: L.country && msgDraft.trim() ? 1 : 0.4 }}
+                          >
+                            {msgSaving ? "SAVING…" : `SET AS ${L.country?.toUpperCase() ?? "COUNTRY"} TEMPLATE`}
+                          </div>
+                        </div>
+                        <div className="mono" style={{ fontSize: 9.5, color: "var(--faint)", marginTop: 9, lineHeight: 1.6 }}>
+                          edit freely — SEND uses what you see, and only this lead. SET saves the wording
+                          for every {L.country ?? "country"} lead (your {PLACEHOLDERS.join(" ")} are kept
+                          per lead).
+                        </div>
+                      </div>
+                    </div>
     );
   };
 
@@ -881,6 +1002,39 @@ function LeadsInner() {
                     >
                       {copied === "all" ? "COPIED ✓" : "⧉ COPY ALL"}
                     </span>
+                    <span
+                      className="mono"
+                      title="Copy this lead + the demo-image request, and open your ChatGPT chat to paste it"
+                      onClick={() => {
+                        copy("gpt", `${fullCopyText().trimEnd()}
+
+${CHATGPT_DEMO_LINE}`);
+                        window.open(CHATGPT_CHAT_URL, "_blank", "noopener");
+                        flash("Copied — paste it into the ChatGPT chat that just opened");
+                      }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        flex: "none",
+                        border: `1px solid ${copied === "gpt" ? "var(--green-border)" : "var(--border-hover)"}`,
+                        background: copied === "gpt" ? "var(--green-bg)" : "transparent",
+                        color: copied === "gpt" ? "var(--green)" : "var(--sec)",
+                        borderRadius: 5,
+                        padding: "3px 8px",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        userSelect: "none",
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style={{ flex: "none" }}>
+                        <g stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+                          <path d="M12 3.5v17M20.4 7.75L3.6 16.25M3.6 7.75l16.8 8.5" />
+                        </g>
+                      </svg>
+                      {copied === "gpt" ? "COPIED ✓" : "ASK CHATGPT"}
+                    </span>
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>
                     {[categoryOf(L), L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
@@ -1113,6 +1267,10 @@ function LeadsInner() {
                 </div>
               ))}
 
+            {tab === "analysis" && (
+              <div style={{ padding: "16px 24px 0" }}>{messageCard()}</div>
+            )}
+
             {/* SITE_PLAN */}
             {tab === "analysis" && A && (
                 <div className="cols" style={{ padding: "16px 24px 22px" }}>
@@ -1259,18 +1417,6 @@ function LeadsInner() {
                         </span>
                       </div>
                       <div style={{ padding: 13, fontSize: 12.5, lineHeight: 1.6, color: "var(--body)" }}>{A.outreach.whatsappEn}</div>
-                    </div>
-                    <div className="card">
-                      <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)" }}>
-                        <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>
-                          WHATSAPP · {A.outreach.localLanguageLabel}
-                        </span>
-                        <div style={{ flex: 1 }} />
-                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", cursor: "pointer" }} onClick={() => copy("lo", A.outreach.whatsappLocal)}>
-                          {copied === "lo" ? "COPIED ✓" : "COPY"}
-                        </span>
-                      </div>
-                      <div style={{ padding: 13, fontSize: 12.5, lineHeight: 1.6, color: "var(--body)" }}>{A.outreach.whatsappLocal}</div>
                     </div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>

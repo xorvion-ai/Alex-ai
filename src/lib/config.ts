@@ -34,6 +34,16 @@ export const QUOTA_LIMITS: Record<
   gcp_monitoring: { limit: 5000, period: "month", label: "GCP MON" },
 };
 
+// Sumit's own ChatGPT conversation, opened by the ASK CHATGPT button on a lead.
+// ChatGPT has no URL parameter that can inject text into an EXISTING chat, so
+// the button copies the lead + the demo-image request to the clipboard and opens
+// this chat for one paste. Change the link here if the chat changes.
+export const CHATGPT_CHAT_URL = "https://chatgpt.com/c/6a68d286-8844-83e8-9a05-7fc4ed3e74bc";
+
+/** Appended to the copied lead when asking ChatGPT for demo mockups. */
+export const CHATGPT_DEMO_LINE =
+  "create a demo website image for this as both pc and phone look";
+
 export const DEFAULT_HARD_STOP = 0.9; // stop at 90% of free tier
 
 // Max result pages per Google text-search query (20 places each).

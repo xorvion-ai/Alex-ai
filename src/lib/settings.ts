@@ -9,6 +9,8 @@ export type AppSettings = {
   fallbackLanguage: string; // outreach local-language fallback
   /** Google Cloud free-trial end date, "YYYY-MM-DD" ("" = no trial running) */
   trialEndsAt: string;
+  /** Per-country WhatsApp templates that override DEFAULT_TEMPLATES (messages.ts) */
+  messageTemplates: Record<string, string>;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -18,6 +20,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   fallbackLanguage: "Hindi",
   // Sumit's current trial; editable in Settings, clear it once he upgrades.
   trialEndsAt: "2026-10-18",
+  messageTemplates: {},
 };
 
 export async function getSettings(): Promise<AppSettings> {
