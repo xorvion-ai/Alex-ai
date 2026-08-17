@@ -1181,6 +1181,25 @@ ${CHATGPT_DEMO_LINE}`);
               </div>
             </div>
 
+            {/* WHATSAPP MESSAGE + ENGLISH TRANSLATION — first thing you see */}
+            {tab === "analysis" && (
+              <div className="cols" style={{ padding: "16px 24px 0" }}>
+                <div style={{ flex: 1.25, minWidth: 0 }}>{messageCard()}</div>
+                {A && <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="card">
+                      <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)" }}>
+                        <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>WHATSAPP · ENGLISH</span>
+                        <div style={{ flex: 1 }} />
+                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", cursor: "pointer" }} onClick={() => copy("en", A.outreach.whatsappEn)}>
+                          {copied === "en" ? "COPIED ✓" : "COPY"}
+                        </span>
+                      </div>
+                      <div style={{ padding: 13, fontSize: 12.5, lineHeight: 1.6, color: "var(--body)" }}>{A.outreach.whatsappEn}</div>
+                    </div>
+                </div>}
+              </div>
+            )}
+
             {/* ANALYSIS */}
             {tab === "analysis" &&
               (A ? (
@@ -1266,10 +1285,6 @@ ${CHATGPT_DEMO_LINE}`);
                   </div>
                 </div>
               ))}
-
-            {tab === "analysis" && (
-              <div style={{ padding: "16px 24px 0" }}>{messageCard()}</div>
-            )}
 
             {/* SITE_PLAN */}
             {tab === "analysis" && A && (
@@ -1407,18 +1422,6 @@ ${CHATGPT_DEMO_LINE}`);
             {/* OUTREACH */}
             {tab === "analysis" && A && (
                 <div className="cols" style={{ padding: "16px 24px 22px" }}>
-                  <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div className="card">
-                      <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)" }}>
-                        <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>WHATSAPP · ENGLISH</span>
-                        <div style={{ flex: 1 }} />
-                        <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", cursor: "pointer" }} onClick={() => copy("en", A.outreach.whatsappEn)}>
-                          {copied === "en" ? "COPIED ✓" : "COPY"}
-                        </span>
-                      </div>
-                      <div style={{ padding: 13, fontSize: 12.5, lineHeight: 1.6, color: "var(--body)" }}>{A.outreach.whatsappEn}</div>
-                    </div>
-                  </div>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
                     <div className="card">
                       <div className="card-head">PHONE CALL SCRIPT</div>

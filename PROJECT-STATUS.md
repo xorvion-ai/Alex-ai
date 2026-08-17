@@ -105,6 +105,11 @@ API: `auth/login|logout` · `sweep` (start) + `sweep/step` + `sweep/stop` · `le
   4. The message card is its own section, so it also works on **unanalyzed** leads. Verified live: India template rendered per lead with a working wa.me link; a German lead started blank, a typed message + SET became the Germany template and survived a reload.
   5. **ASK CHATGPT button** next to ⟩ COPY ALL: copies the whole lead (COPY ALL text) **+ “create a demo website image for this as both pc and phone look”** and opens Sumit's chat (`CHATGPT_CHAT_URL` in `config.ts`) to paste into. ChatGPT has no URL parameter that injects text into an existing conversation — clipboard + open is the only way to land in *that* chat. Verified: 4.2k chars copied, chat URL opened.
   6. **Pruned at Sumit's request:** the 21 hardware leads in Spain / Brazil / United States were deleted (1,612 → 1,591). India was left alone (he changed his mind on the barber removal mid-request).
+- **2026-08-10 (later) — message boxes first, eight categories dropped, Mexico hardware purged:**
+  1. The **WHATSAPP MESSAGE** box and the **WHATSAPP · ENGLISH** translation are now the first and second cards of the ANALYSIS tab (side by side on desktop, stacked on phones), above LEAD_SCORE — the outreach text is what Sumit acts on, so it leads. The OUTREACH section keeps the call script + best-call window.
+  2. **Eight categories removed** from Discover/filters at Sumit's request: hardware, electrician, mobile repair, bike repair, computer repair, printing, tuition, ac repair (`CATEGORIES` 44 → 36; existing leads keep their stored category, the options are simply gone).
+  3. **Mexico's 20 hardware leads deleted** (1,591 → 1,571), matching the earlier Spain/Brazil/US purge. India untouched.
+  4. Cleanup note: a Germany template typed during testing was removed from `settings.messageTemplates` — the label “NO <COUNTRY> TEMPLATE YET” is generated from the open lead's own country, nothing about Germany is hardcoded.
 - Note: ~215 REAL leads (Jaipur tailors/barbers + Noida salons) live in the DB for Sumit to use or archive; SETUP.md was deleted at Sumit's request — key docs now live inline in `.env.example`.
 
 ## 9. Repos & deployment
