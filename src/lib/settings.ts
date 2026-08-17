@@ -13,6 +13,8 @@ export type AppSettings = {
   messageTemplates: Record<string, string>;
   /** English twins of the above, shown in the translation box */
   messageTemplatesEn: Record<string, string>;
+  /** Personal ChatGPT conversation opened by ASK CHATGPT ("" = button hidden) */
+  chatgptUrl: string;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -24,6 +26,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   trialEndsAt: "2026-10-18",
   messageTemplates: {},
   messageTemplatesEn: {},
+  chatgptUrl: "",
 };
 
 export async function getSettings(): Promise<AppSettings> {

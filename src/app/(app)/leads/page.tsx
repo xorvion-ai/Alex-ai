@@ -22,7 +22,7 @@ import {
 } from "@/lib/client";
 import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
-import { ANY_COUNTRY, CHATGPT_CHAT_URL, CHATGPT_DEMO_LINE, countryName, currencyOf } from "@/lib/config";
+import { ANY_COUNTRY, CHATGPT_DEMO_LINE, countryName, currencyOf } from "@/lib/config";
 import { PLACEHOLDERS, renderTemplate, templateEnFor, templateFor, templatize } from "@/lib/messages";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
@@ -88,6 +88,8 @@ function LeadsInner() {
   // editable draft for the lead on screen.
   const [templates, setTemplates] = useState<Record<string, string>>({});
   const [templatesEn, setTemplatesEn] = useState<Record<string, string>>({});
+  // Personal ChatGPT chat link — a setting, never in the repo.
+  const [chatgptUrl, setChatgptUrl] = useState("");
   const [msgDraft, setMsgDraft] = useState("");
   const [enDraft, setEnDraft] = useState("");
   const [msgSaving, setMsgSaving] = useState(false);
@@ -135,11 +137,13 @@ function LeadsInner() {
       settings: {
         messageTemplates?: Record<string, string>;
         messageTemplatesEn?: Record<string, string>;
+        chatgptUrl?: string;
       };
     }>("/api/settings")
       .then((r) => {
         setTemplates(r.settings.messageTemplates ?? {});
         setTemplatesEn(r.settings.messageTemplatesEn ?? {});
+        setChatgptUrl(r.settings.chatgptUrl ?? "");
       })
       .catch(() => {});
   }, []);
@@ -1041,14 +1045,14 @@ function LeadsInner() {
                     >
                       {copied === "all" ? "COPIED ✓" : "⧉ COPY ALL"}
                     </span>
-                    <span
+                    {chatgptUrl && <span
                       className="mono"
                       title="Copy this lead + the demo-image request, and open your ChatGPT chat to paste it"
                       onClick={() => {
                         copy("gpt", `${fullCopyText().trimEnd()}
 
 ${CHATGPT_DEMO_LINE}`);
-                        window.open(CHATGPT_CHAT_URL, "_blank", "noopener");
+                        window.open(chatgptUrl, "_blank", "noopener");
                         flash("Copied — paste it into the ChatGPT chat that just opened");
                       }}
                       style={{
@@ -1073,7 +1077,7 @@ ${CHATGPT_DEMO_LINE}`);
                         </g>
                       </svg>
                       {copied === "gpt" ? "COPIED ✓" : "ASK CHATGPT"}
-                    </span>
+                    </span>}
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>
                     {[categoryOf(L), L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]

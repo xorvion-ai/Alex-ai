@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [defaultCategories, setDefaultCategories] = useState<string[]>([]);
   const [fallbackLanguage, setFallbackLanguage] = useState("Hindi");
   const [trialEndsAt, setTrialEndsAt] = useState("");
+  const [chatgptUrl, setChatgptUrl] = useState("");
   const [keys, setKeys] = useState<{
     googlePlaces: string | null;
     gemini: string | null;
@@ -38,6 +39,7 @@ export default function SettingsPage() {
         defaultCategories: string[];
         fallbackLanguage: string;
         trialEndsAt: string;
+        chatgptUrl: string;
       };
       keys: {
         googlePlaces: string | null;
@@ -53,6 +55,7 @@ export default function SettingsPage() {
         setDefaultCategories(r.settings.defaultCategories);
         setFallbackLanguage(r.settings.fallbackLanguage);
         setTrialEndsAt(r.settings.trialEndsAt ?? "");
+        setChatgptUrl(r.settings.chatgptUrl ?? "");
         setKeys(r.keys);
       })
       .catch(() => {});
@@ -76,6 +79,7 @@ export default function SettingsPage() {
           defaultCategories,
           fallbackLanguage,
           trialEndsAt,
+          chatgptUrl,
         }),
       });
       flash("Settings saved ✓");
@@ -239,6 +243,16 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
+          <div className="lbl" style={{ fontSize: 9, margin: "14px 0 4px" }}>
+            CHATGPT CHAT LINK (for the ASK CHATGPT button — kept private, never in the repo)
+          </div>
+          <input
+            className="input in-panel mono"
+            placeholder="https://chatgpt.com/c/…"
+            value={chatgptUrl}
+            onChange={(e) => setChatgptUrl(e.target.value)}
+            style={{ padding: "7px 9px", fontSize: 11.5 }}
+          />
           <div className="mono" style={{ fontSize: 10, color: "var(--faint)", marginTop: 10, lineHeight: 1.5 }}>
             drafts are always generated in english + the lead&apos;s local language
           </div>

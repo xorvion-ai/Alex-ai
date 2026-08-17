@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local tooling
 .claude/
+
+# local-only working context (personal notes, account details) — never pushed
+PROJECT-STATUS.md

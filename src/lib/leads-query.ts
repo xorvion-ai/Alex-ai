@@ -58,8 +58,8 @@ export function filterConditions(f: LeadFilters): SQL[] {
       ilike(leads.city, term) as SQL,
     ];
     // Typing a phone number finds its lead, however it is punctuated: both sides
-    // are reduced to digits, so "096548 53020", "+91 96548-53020" and
-    // "9654853020" all match the same row.
+    // are reduced to digits, so a spaced, dashed or bare form of the same
+    // number all match the same row.
     const digits = f.search.replace(/\D/g, "");
     if (digits.length >= 4) {
       parts.push(sql`regexp_replace(coalesce(${leads.phone}, ''), '[^0-9]', '', 'g') like ${`%${digits}%`}`);

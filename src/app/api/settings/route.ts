@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
         allowed[key] = clean;
       }
     }
+    if (typeof patch.chatgptUrl === "string") {
+      const u = patch.chatgptUrl.trim();
+      if (!u || /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//.test(u)) allowed.chatgptUrl = u;
+    }
     const merged = await saveSettings(allowed);
     return NextResponse.json({ settings: merged });
   } catch (e) {
