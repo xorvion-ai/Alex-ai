@@ -1023,9 +1023,9 @@ function LeadsInner() {
                     {L.verifiedNoWebsite ? " · VERIFIED_NO_WEBSITE ✓" : ""}
                     {L.isDemo && <span style={{ color: "var(--amber)" }}> · DEMO_LEAD — archive me when done exploring</span>}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 24, fontWeight: 700, letterSpacing: "-.3px" }}>
+                  <div className="lead-title">
                     <Flag country={L.country} size={22} />
-                    <span style={{ minWidth: 0 }}>{L.name}</span>
+                    <span className="lead-name">{L.name}</span>
                     <span
                       className="mono"
                       title="Copy this lead — everything on the page, top to bottom"

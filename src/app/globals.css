@@ -417,6 +417,19 @@ input::placeholder {
   gap: 2px;
   font-size: 13px;
 }
+/* lead detail title: name + COPY ALL / ASK CHATGPT buttons on one line */
+.lead-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.lead-name {
+  min-width: 0;
+}
+
 .mobile-only {
   display: none;
 }
@@ -518,6 +531,17 @@ input::placeholder {
   }
   .tabs {
     overflow-x: auto;
+  }
+  /* on a phone the buttons drop below the name instead of squeezing it into a
+     one-word-per-line column */
+  .lead-title {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    font-size: 20px;
+  }
+  .lead-name {
+    /* flag + name share the first line; the buttons wrap onto the next */
+    flex: 1 1 calc(100% - 40px);
   }
   .mobile-only {
     display: block;
