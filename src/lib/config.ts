@@ -1,5 +1,10 @@
 // Central config — every tunable in one place.
 
+// Shown in the sidebar. Read from package.json so the badge and the git tag
+// can never disagree: bump the version there and this follows.
+import pkg from "../../package.json";
+export const APP_VERSION: string = pkg.version;
+
 // Sumit's pick: highest free daily request limit of the Gemini models.
 // Override with GEMINI_MODEL env var if the ID ever changes.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";

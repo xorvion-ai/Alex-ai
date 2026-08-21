@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { api, QuotaDto } from "@/lib/client";
+import { APP_VERSION } from "@/lib/config";
 
 const NAVS = [
   { path: "/", label: "◳ Dashboard" },
@@ -42,6 +43,9 @@ export default function Sidebar() {
     <div className="side">
       <div className="side-logo">
         <Logo variant="side" />
+        <div className="mono" style={{ fontSize: 9, fontWeight: 600, color: "var(--faint)", marginTop: 6, letterSpacing: ".5px" }}>
+          v{APP_VERSION}
+        </div>
       </div>
       <div className="side-nav">
         {NAVS.map((n) => {
