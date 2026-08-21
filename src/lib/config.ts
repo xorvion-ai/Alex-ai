@@ -40,7 +40,7 @@ export const QUOTA_LIMITS: Record<
  * `chatgptUrl` setting (Settings screen, stored in your own database).
  */
 export const CHATGPT_DEMO_LINE =
-  "create a demo website image for this as both pc and phone look";
+  "create an attractive demo website image for this as both pc and phone look";
 
 export const DEFAULT_HARD_STOP = 0.9; // stop at 90% of free tier
 
