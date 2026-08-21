@@ -158,10 +158,12 @@ export async function analyzeNextNew(): Promise<{
   remaining: number;
 }> {
   const d = db();
-  // Skip leads the web check already proved to have a website (verified false).
+  // Only leads worth spending a Gemini call on: still new, not already known to
+  // have a website, and contactable (a lead with no phone shows up nowhere).
   const wanted = and(
     eq(leads.status, "new"),
     or(isNull(leads.verifiedNoWebsite), eq(leads.verifiedNoWebsite, true)),
+    sql`${leads.phone} is not null and ${leads.phone} <> ''`,
   );
   const next = await d
     .select({ id: leads.id, name: leads.name })

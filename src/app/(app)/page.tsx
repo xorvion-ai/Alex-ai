@@ -12,6 +12,8 @@ import Flag from "@/components/Flag";
 type Dash = {
   stats: {
     live: number;
+    inList: number;
+    logged: number;
     analyzed: number;
     newCount: number;
     cities: number;
@@ -221,7 +223,17 @@ export default function Dashboard() {
       </div>
 
       <div className="grid3" style={{ marginTop: 20 }}>
-        {statCard("LIVE LEADS", s?.live ?? "—", `across ${s?.cities ?? 0} cities · ${s?.sources ?? 0} sources`)}
+        {statCard(
+          "LIVE LEADS",
+          s?.live ?? "—",
+          <>
+            {s?.inList ?? 0} in the list · {s?.logged ?? 0} in the activity log
+            <br />
+            <span style={{ color: "var(--muted)" }}>
+              across {s?.cities ?? 0} cities · {s?.sources ?? 0} sources
+            </span>
+          </>,
+        )}
         {statCard("ANALYZED", s?.analyzed ?? "—", `${newCount} new awaiting analysis`, true)}
         {statCard("MONTHLY COST", "$0", trialSub, true)}
       </div>

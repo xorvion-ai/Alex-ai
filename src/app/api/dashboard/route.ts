@@ -11,15 +11,29 @@ export async function GET() {
     await ensureSeeded();
     const d = db();
 
+    // "Live leads" = leads that exist in the app: the working list plus the ones
+    // that moved to the activity log. Rows without a phone are uncontactable and
+    // show up nowhere, so counting them here made the tile read like a scan total.
+    const contactable = sql`${leads.phone} is not null and ${leads.phone} <> ''`;
     const [counts] = await d
       .select({
-        live: sql<number>`count(*) filter (where ${leads.verifiedNoWebsite} is distinct from false)::int`,
-        analyzed: sql<number>`count(*) filter (where ${leads.status} = 'analyzed' and ${leads.verifiedNoWebsite} is distinct from false)::int`,
-        fresh: sql<number>`count(*) filter (where ${leads.status} = 'new' and ${leads.verifiedNoWebsite} is distinct from false)::int`,
+        live: sql<number>`count(*) filter (where ${contactable})::int`,
+        analyzed: sql<number>`count(*) filter (where ${leads.status} = 'analyzed' and ${contactable})::int`,
+        fresh: sql<number>`count(*) filter (where ${leads.status} = 'new' and ${contactable})::int`,
         cities: sql<number>`count(distinct ${leads.city})::int`,
         sources: sql<number>`count(distinct ${leads.source})::int`,
       })
       .from(leads);
+
+    // How many of those already have a log entry (they live in the ACTIVITY LOG
+    // rather than the working list). Counted separately: a subquery inside a
+    // `count(*) filter (...)` came back as 0 through the query builder.
+    const [loggedRow] = await d
+      .select({ n: sql<number>`count(distinct ${activities.leadId})::int` })
+      .from(activities)
+      .innerJoin(leads, eq(activities.leadId, leads.id))
+      .where(sql`${leads.phone} is not null and ${leads.phone} <> ''`);
+    const logged = loggedRow?.n ?? 0;
 
     const monthStart = new Date();
     monthStart.setUTCDate(1);
@@ -81,6 +95,8 @@ export async function GET() {
     return NextResponse.json({
       stats: {
         live: counts?.live ?? 0,
+        inList: Math.max(0, (counts?.live ?? 0) - logged),
+        logged,
         analyzed: counts?.analyzed ?? 0,
         newCount: counts?.fresh ?? 0,
         cities: counts?.cities ?? 0,
