@@ -266,6 +266,13 @@ function LeadsInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [L?.id, countryTpl, countryTplEn]);
 
+  // Phone-only ‹ › stepping: walk the list without going back to it.
+  const rowIndex = rows.findIndex((r) => r.id === selId);
+  const stepLead = (delta: number) => {
+    const next = rows[rowIndex + delta];
+    if (next) setSelId(next.id);
+  };
+
   const waHref = (text: string) =>
     L && (L.phoneIntl || L.phone)
       ? `https://wa.me/${L.phoneIntl || L.phone!.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`
@@ -1009,11 +1016,36 @@ function LeadsInner() {
           <>
             <div style={{ padding: "20px 24px 0" }}>
               <div
-                className="mono mobile-only"
-                onClick={() => setSelId(null)}
-                style={{ fontSize: 11, fontWeight: 600, color: "var(--green)", marginBottom: 12, cursor: "pointer" }}
+                className="mono lead-nav"
               >
-                ← ALL LEADS
+                <span onClick={() => setSelId(null)} style={{ color: "var(--green)", cursor: "pointer" }}>
+                  ← ALL LEADS
+                </span>
+                <span style={{ flex: 1 }} />
+                {([-1, 1] as const).map((d) => {
+                  const target = rows[rowIndex + d];
+                  return (
+                    <span
+                      key={d}
+                      onClick={() => stepLead(d)}
+                      title={d < 0 ? "previous lead" : "next lead"}
+                      style={{
+                        border: "1px solid var(--border-hover)",
+                        borderRadius: 5,
+                        padding: "4px 11px",
+                        fontSize: 13,
+                        color: target ? "var(--text)" : "var(--faint)",
+                        cursor: target ? "pointer" : "default",
+                        userSelect: "none",
+                      }}
+                    >
+                      {d < 0 ? "‹" : "›"}
+                    </span>
+                  );
+                })}
+                <span style={{ color: "var(--muted)", fontWeight: 500 }}>
+                  {rowIndex >= 0 ? `${rowIndex + 1}/${rows.length}` : ""}
+                </span>
               </div>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>

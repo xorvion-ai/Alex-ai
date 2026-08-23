@@ -433,6 +433,16 @@ input::placeholder {
 .mobile-only {
   display: none;
 }
+/* phone-only row above a lead: back to the list + ‹ › stepping. Layout lives
+   here, not inline, or the inline display would beat the hide rule. */
+.lead-nav {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
 
 @media (max-width: 820px) {
   .shell {
@@ -545,6 +555,9 @@ input::placeholder {
   }
   .mobile-only {
     display: block;
+  }
+  .lead-nav {
+    display: flex;
   }
   .toast {
     right: 12px;
