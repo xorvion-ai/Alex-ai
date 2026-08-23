@@ -318,21 +318,6 @@ function LeadsInner() {
       flash("Analysis complete ✓");
     });
 
-  const verifyAction = () =>
-    act("verify", async () => {
-      const r = await api<{ verifiedNoWebsite: boolean; foundSite: string | null }>(
-        `/api/leads/${selId}/verify`,
-        { method: "POST" },
-      );
-      if (r.foundSite) {
-        dropCurrent();
-        flash(`Deleted — already has a website (${r.foundSite})`);
-        return;
-      }
-      await refreshDetail();
-      flash("Verified: no website anywhere ✓");
-    });
-
   const refreshAction = () =>
     act(
       "refresh",
@@ -1196,20 +1181,6 @@ ${CHATGPT_DEMO_LINE}`);
                     CALL {L.phone}
                   </a>
                 )}
-                <div
-                  onClick={verifyAction}
-                  style={{
-                    border: "1px solid var(--border-hover)",
-                    borderRadius: 6,
-                    padding: "8px 16px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "var(--sec)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {busy === "verify" ? "VERIFYING…" : "VERIFY ON WEB ⌕"}
-                </div>
                 <div
                   onClick={refreshAction}
                   style={{
