@@ -318,25 +318,6 @@ function LeadsInner() {
       flash("Analysis complete ✓");
     });
 
-  const refreshAction = () =>
-    act(
-      "refresh",
-      async () => {
-        const r = await api<{ hasSiteNow: boolean; deleted?: boolean }>(
-          `/api/leads/${selId}/refresh`,
-          { method: "POST" },
-        );
-        if (r.deleted) {
-          // It has a website now, so the server deleted it — move on.
-          dropCurrent();
-          flash("Deleted — the business now has a website");
-          return;
-        }
-        await refreshDetail();
-        flash("Refreshed ✓");
-      },
-    );
-
   const contactedAction = () => {
     if (!L) return;
     if (!window.confirm(`Mark "${L.name}" as contacted and delete it?\n\nThis permanently removes the lead from the app. It is NOT kept in any history.`)) return;
@@ -1181,20 +1162,6 @@ ${CHATGPT_DEMO_LINE}`);
                     CALL {L.phone}
                   </a>
                 )}
-                <div
-                  onClick={refreshAction}
-                  style={{
-                    border: "1px solid var(--border-hover)",
-                    borderRadius: 6,
-                    padding: "8px 16px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "var(--sec)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {busy === "refresh" ? "REFRESHING…" : "⟳ REFRESH"}
-                </div>
                 <div style={{ flex: 1 }} />
                 <div
                   onClick={contactedAction}
