@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.18",
+    "@vercel/analytics": "^2.0.1",
     "ai": "^7.0.31",
     "drizzle-orm": "^0.45.2",
     "next": "16.2.10",
