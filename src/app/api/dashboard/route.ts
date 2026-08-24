@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { eq, gte, sql } from "drizzle-orm";
 import { activities, contactedArchive, db, leads, searches } from "@/lib/db";
 import { getQuotaSnapshot } from "@/lib/quota";
 import { ensureSeeded } from "@/lib/seed";
@@ -12,8 +12,8 @@ export async function GET() {
     const d = db();
 
     // "Live leads" = leads that exist in the app: the working list plus the ones
-    // that moved to the activity log. Rows without a phone are uncontactable and
-    // show up nowhere, so counting them here made the tile read like a scan total.
+    // already contacted. Rows without a phone are uncontactable and show up
+    // nowhere, so counting them here made the tile read like a scan total.
     const contactable = sql`${leads.phone} is not null and ${leads.phone} <> ''`;
     const [counts] = await d
       .select({
@@ -25,7 +25,7 @@ export async function GET() {
       })
       .from(leads);
 
-    // How many of those already have a log entry (they live in the ACTIVITY LOG
+    // How many of those are already contacted (they live in the CONTACTED LIST
     // rather than the working list). Counted separately: a subquery inside a
     // `count(*) filter (...)` came back as 0 through the query builder.
     const [loggedRow] = await d
@@ -42,29 +42,6 @@ export async function GET() {
       .select({ n: sql<number>`count(*)::int` })
       .from(contactedArchive)
       .where(gte(contactedArchive.archivedAt, monthStart));
-
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-    const followUps = await d
-      .select({
-        id: activities.id,
-        leadId: activities.leadId,
-        kind: activities.kind,
-        note: activities.note,
-        dueAt: activities.dueAt,
-        leadName: leads.name,
-      })
-      .from(activities)
-      .innerJoin(leads, eq(activities.leadId, leads.id))
-      .where(
-        and(
-          isNotNull(activities.dueAt),
-          eq(activities.done, false),
-          lte(activities.dueAt, endOfToday),
-        ),
-      )
-      .orderBy(activities.dueAt)
-      .limit(8);
 
     const activityLog = await d
       .select({
@@ -103,9 +80,8 @@ export async function GET() {
         sources: counts?.sources ?? 0,
         archivedThisMonth: archived?.n ?? 0,
       },
-      followUps,
-      activityLog,
-      activityTotal: activityCount?.n ?? 0,
+      contacted: activityLog,
+      contactedTotal: activityCount?.n ?? 0,
       sweeps: sweeps.map((s) => ({
         id: s.id,
         label: s.label,

@@ -20,16 +20,8 @@ type Dash = {
     sources: number;
     archivedThisMonth: number;
   };
-  followUps: {
-    id: number;
-    leadId: number;
-    kind: string;
-    note: string;
-    dueAt: string;
-    leadName: string;
-  }[];
-  activityTotal: number;
-  activityLog: {
+  contactedTotal: number;
+  contacted: {
     id: number;
     leadId: number;
     kind: string;
@@ -58,15 +50,14 @@ export default function Dashboard() {
   const { flash, node: toastNode } = useToast();
   const [dash, setDash] = useState<Dash | null>(null);
 
-  // ACTIVITY LOG — searchable, filterable, paged (the dashboard payload only
-  // carries the first page).
+  // CONTACTED LIST — leads you have contacted, searchable and paged (the
+  // dashboard payload only carries the first page).
   // Google's own Places count (Cloud Monitoring), when console sync is set up.
   const [gconsole, setGconsole] = useState<{ configured: boolean; places: number | null } | null>(null);
 
-  const [logRows, setLogRows] = useState<Dash["activityLog"] | null>(null);
+  const [logRows, setLogRows] = useState<Dash["contacted"] | null>(null);
   const [logTotal, setLogTotal] = useState(0);
   const [logSearch, setLogSearch] = useState("");
-  const [logKind, setLogKind] = useState("ALL");
   const [logLimit, setLogLimit] = useState(10);
 
   // The batch lives in a module store so it keeps running when you leave this
@@ -100,9 +91,8 @@ export default function Dashboard() {
   useEffect(() => {
     const q = new URLSearchParams({ limit: String(logLimit) });
     if (logSearch.trim()) q.set("search", logSearch.trim());
-    if (logKind !== "ALL") q.set("kind", logKind);
     const t = setTimeout(() => {
-      api<{ activities: Dash["activityLog"]; total: number }>(`/api/activities?${q}`)
+      api<{ activities: Dash["contacted"]; total: number }>(`/api/activities?${q}`)
         .then((r) => {
           setLogRows(r.activities);
           setLogTotal(r.total);
@@ -110,7 +100,7 @@ export default function Dashboard() {
         .catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [logSearch, logKind, logLimit]);
+  }, [logSearch, logLimit]);
 
   const s = dash?.stats;
   // While a batch runs, the server's own "remaining" count is fresher than the
@@ -227,7 +217,7 @@ export default function Dashboard() {
           "LIVE LEADS",
           s?.live ?? "—",
           <>
-            {s?.inList ?? 0} in the list · {s?.logged ?? 0} in the activity log
+            {s?.inList ?? 0} in the list · {s?.logged ?? 0} contacted
             <br />
             <span style={{ color: "var(--muted)" }}>
               across {s?.cities ?? 0} cities · {s?.sources ?? 0} sources
@@ -243,73 +233,22 @@ export default function Dashboard() {
           <div className="card">
             <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
               <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>
-                FOLLOW-UPS DUE TODAY · {dash?.followUps.length ?? 0}
-              </span>
-            </div>
-            {(dash?.followUps ?? []).map((f) => (
-              <div
-                key={f.id}
-                className="hover-row"
-                onClick={() => router.push(`/leads?sel=${f.leadId}`)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "11px 15px",
-                  borderBottom: "1px solid var(--hairline)",
-                  cursor: "pointer",
-                }}
-              >
-                <div className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--amber)", width: 44, flex: "none" }}>
-                  {new Date(f.dueAt).toTimeString().slice(0, 5)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{f.leadName}</div>
-                  <div style={{ fontSize: 11, color: "var(--sec)" }}>{f.note}</div>
-                </div>
-                <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)" }}>{f.kind}</div>
-              </div>
-            ))}
-            {dash && dash.followUps.length === 0 && (
-              <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
-                nothing due — add follow-ups from a lead&apos;s LOG tab
-              </div>
-            )}
-          </div>
-
-          <div className="card">
-            <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
-              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>
-                ACTIVITY LOG · {logTotal}
+                CONTACTED LIST · {logTotal}
               </span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "10px 15px", borderBottom: "1px solid var(--hairline)", alignItems: "center" }}>
               <input
                 className="input in-panel mono"
                 style={{ flex: 1, minWidth: 150, padding: "6px 9px", fontSize: 11.5 }}
-                placeholder="/ search lead, phone or note"
+                placeholder="/ search contacted lead or phone"
                 value={logSearch}
                 onChange={(e) => {
                   setLogSearch(e.target.value);
                   setLogLimit(10);
                 }}
               />
-              <div className="mono" style={{ display: "flex", flexWrap: "wrap", gap: 4, fontSize: 9.5, fontWeight: 600 }}>
-                {["ALL", "NOTE", "CALL", "WHATSAPP", "VISIT"].map((k) => (
-                  <span
-                    key={k}
-                    className={`chip in-panel${logKind === k ? " on" : ""}`}
-                    onClick={() => {
-                      setLogKind(k);
-                      setLogLimit(10);
-                    }}
-                  >
-                    {k}
-                  </span>
-                ))}
-              </div>
             </div>
-            {(logRows ?? dash?.activityLog ?? []).map((a) => (
+            {(logRows ?? dash?.contacted ?? []).map((a) => (
               <div
                 key={a.id}
                 className="hover-row"
@@ -348,9 +287,9 @@ export default function Dashboard() {
             ))}
             {logRows && logRows.length === 0 && (
               <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
-                {logSearch || logKind !== "ALL"
+                {logSearch
                   ? "nothing matches this search"
-                  : "no activity yet — notes and calls appear here"}
+                  : "nothing here yet — press ✓ CONTACTED on a lead"}
               </div>
             )}
             {logRows && logRows.length < logTotal && (

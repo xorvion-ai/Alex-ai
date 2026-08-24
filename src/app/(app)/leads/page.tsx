@@ -26,7 +26,6 @@ import { ANY_COUNTRY, CHATGPT_DEMO_LINE, countryName, currencyOf } from "@/lib/c
 import { PLACEHOLDERS, renderTemplate, templateEnFor, templateFor, templatize } from "@/lib/messages";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
-type Tab = "analysis" | "log";
 
 const FILTER_CATS = CATEGORIES.map((c) => c.id).slice(0, 5);
 
@@ -60,15 +59,10 @@ function LeadsInner() {
   const [rows, setRows] = useState<LeadDto[]>([]);
   const [selId, setSelId] = useState<number | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
-  const [tab, setTab] = useState<Tab>("analysis");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [matchCount, setMatchCount] = useState<number | null>(null);
   const [busy, setBusy] = useState("");
   const [copied, setCopied] = useState("");
-  const [noteText, setNoteText] = useState("");
-  const [followOpen, setFollowOpen] = useState(false);
-  const [followAt, setFollowAt] = useState("");
-  const [followKind, setFollowKind] = useState("CALL");
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [search, setSearch] = useState("");
@@ -164,9 +158,6 @@ function LeadsInner() {
     api<Detail>(`/api/leads/${selId}`)
       .then((d) => {
         setDetail(d);
-        setTab("analysis");
-        setNoteText("");
-        setFollowOpen(false);
       })
       .catch(() => setDetail(null));
   }, [selId]);
@@ -318,35 +309,30 @@ function LeadsInner() {
       flash("Analysis complete ✓");
     });
 
-  const contactedAction = () => {
-    if (!L) return;
-    if (!window.confirm(`Mark "${L.name}" as contacted and delete it?\n\nThis permanently removes the lead from the app. It is NOT kept in any history.`)) return;
+  const contactedAction = () =>
     act(
       "contacted",
       async () => {
         await api(`/api/leads/${selId}/contacted`, { method: "POST" });
+        // The record keeps it out of the working list; move to the next lead.
         dropCurrent();
       },
-      "Lead deleted ✓",
+      "Moved to the contacted list ✓",
     );
-  };
 
-  const addActivity = async (kind: string, dueAt?: string) => {
-    const note = noteText.trim();
-    if (!note || selId == null) return;
-    await api(`/api/leads/${selId}/activities`, {
-      method: "POST",
-      body: JSON.stringify({ kind, note, dueAt }),
-    });
-    setNoteText("");
-    setFollowOpen(false);
-    setFollowAt("");
-    // A logged lead leaves the working list and lives in the dashboard
-    // ACTIVITY LOG from now on. Keep it open so the note is visible and a
-    // follow-up can still be added; it's already gone from the list behind it.
-    setRows((rs) => rs.filter((r) => r.id !== selId));
-    await refreshDetail();
-    flash(dueAt ? "Follow-up set ⏰ — moved to the activity log" : "Note added ✓ — moved to the activity log");
+  const deleteAction = () => {
+    if (!L) return;
+    if (!window.confirm(`Delete "${L.name}" permanently?
+
+This removes the lead from the app for good.`)) return;
+    act(
+      "delete",
+      async () => {
+        await api(`/api/leads/${selId}`, { method: "DELETE" });
+        dropCurrent();
+      },
+      "Lead deleted",
+    );
   };
 
   // Everything on this lead's page, top to bottom, as plain text — one click
@@ -425,7 +411,7 @@ function LeadsInner() {
 
     if (acts.length) {
       lines.push(
-        `ACTIVITY LOG`,
+        `CONTACT HISTORY`,
         ...acts.map(
           (a) =>
             `${a.kind} · ${timeAgo(a.createdAt)}${a.dueAt ? ` · due ${new Date(a.dueAt).toLocaleString("en-GB")}` : ""} — ${a.note}`,
@@ -1165,37 +1151,42 @@ ${CHATGPT_DEMO_LINE}`);
                 <div style={{ flex: 1 }} />
                 <div
                   onClick={contactedAction}
+                  title="Move this lead to the CONTACTED LIST on the dashboard"
                   style={{
-                    border: "1px solid var(--border-hover)",
+                    border: "1px solid var(--green-border)",
+                    background: "var(--green-bg)",
                     borderRadius: 6,
                     padding: "8px 16px",
                     fontSize: 12,
-                    color: "var(--sec)",
+                    fontWeight: 600,
+                    color: "var(--green)",
                     cursor: "pointer",
                   }}
                 >
-                  ✓ CONTACTED → DELETE
+                  {busy === "contacted" ? "SAVING…" : "✓ CONTACTED"}
+                </div>
+                <div
+                  onClick={deleteAction}
+                  title="Delete this lead permanently"
+                  style={{
+                    border: "1px solid #52302f",
+                    borderRadius: 6,
+                    padding: "8px 16px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#e0776f",
+                    cursor: "pointer",
+                  }}
+                >
+                  {busy === "delete" ? "DELETING…" : "🗑 DELETE"}
                 </div>
               </div>
 
               {currencyBar()}
-
-              <div className="tabs" style={{ marginTop: 18 }}>
-                {(
-                  [
-                    ["analysis", "ANALYSIS"],
-                    ["log", `LOG·${detail?.activities.length ?? 0}`],
-                  ] as [Tab, string][]
-                ).map(([k, label]) => (
-                  <div key={k} className={`tab${tab === k ? " on" : ""}`} onClick={() => setTab(k)}>
-                    {label}
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* WHATSAPP MESSAGE + ENGLISH TRANSLATION — first thing you see */}
-            {tab === "analysis" && (
+            {(
               <div className="cols" style={{ padding: "16px 24px 0" }}>
                 <div style={{ flex: 1.25, minWidth: 0 }}>{messageCard()}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1236,8 +1227,7 @@ ${CHATGPT_DEMO_LINE}`);
             )}
 
             {/* ANALYSIS */}
-            {tab === "analysis" &&
-              (A ? (
+            {A ? (
                 <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
                     <div className="card">
@@ -1319,10 +1309,10 @@ ${CHATGPT_DEMO_LINE}`);
                     </div>
                   </div>
                 </div>
-              ))}
+              )}
 
             {/* SITE_PLAN */}
-            {tab === "analysis" && A && (
+            {A && (
                 <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
                     <div className="card">
@@ -1369,93 +1359,8 @@ ${CHATGPT_DEMO_LINE}`);
             )}
 
             {/* LOG */}
-            {tab === "log" && (
-              <div style={{ padding: "16px 24px 22px" }}>
-                <div className="card" style={{ overflow: "hidden" }}>
-                  <div className="card-head">ACTIVITY LOG</div>
-                  {(detail?.activities ?? []).map((a) => (
-                    <div key={a.id} style={{ display: "flex", gap: 12, padding: "11px 13px", borderBottom: "1px solid var(--hairline)", alignItems: "baseline" }}>
-                      <span className="mono" style={{ fontSize: 10, fontWeight: 600, color: "var(--green)", width: 74, flex: "none" }}>
-                        {a.kind}
-                        {a.dueAt ? " ⏰" : ""}
-                      </span>
-                      <span style={{ flex: 1, fontSize: 12.5, color: "var(--body)", lineHeight: 1.5 }}>
-                        {a.note}
-                        {a.dueAt && (
-                          <span className="mono" style={{ color: "var(--amber)", fontSize: 10.5 }}>
-                            {" "}
-                            · due {new Date(a.dueAt).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        )}
-                      </span>
-                      <span className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", flex: "none" }}>
-                        {timeAgo(a.createdAt)}
-                      </span>
-                    </div>
-                  ))}
-                  {followOpen && (
-                    <div className="mono" style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "12px 13px 0", alignItems: "center", fontSize: 10.5 }}>
-                      <span style={{ color: "var(--amber)" }}>⏰ due</span>
-                      <input
-                        type="datetime-local"
-                        className="input in-panel mono"
-                        style={{ width: 200, padding: "6px 9px", fontSize: 11 }}
-                        value={followAt}
-                        onChange={(e) => setFollowAt(e.target.value)}
-                      />
-                      {["CALL", "WHATSAPP", "VISIT"].map((k) => (
-                        <span key={k} className={`chip in-panel${followKind === k ? " on" : ""}`} style={{ fontSize: 9.5 }} onClick={() => setFollowKind(k)}>
-                          {k}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "12px 13px" }}>
-                    <input
-                      className="input in-panel"
-                      style={{ flex: 1, minWidth: 160, fontSize: 12.5 }}
-                      placeholder="add note… (e.g. owner busy, call back Tue)"
-                      value={noteText}
-                      onChange={(e) => setNoteText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          if (followOpen && followAt) addActivity(followKind, new Date(followAt).toISOString());
-                          else addActivity("NOTE");
-                        }
-                      }}
-                    />
-                    <div
-                      className="btn-green-tint mono"
-                      style={{ padding: "9px 16px", fontSize: 11 }}
-                      onClick={() => {
-                        if (followOpen && followAt) addActivity(followKind, new Date(followAt).toISOString());
-                        else addActivity("NOTE");
-                      }}
-                    >
-                      ADD
-                    </div>
-                    <div
-                      className="mono"
-                      style={{
-                        border: `1px solid ${followOpen ? "var(--amber)" : "var(--border)"}`,
-                        borderRadius: 6,
-                        padding: "9px 12px",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "var(--amber)",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setFollowOpen((o) => !o)}
-                    >
-                      ⏰ FOLLOW-UP
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* OUTREACH */}
-            {tab === "analysis" && A && (
+            {A && (
                 <div className="cols" style={{ padding: "16px 24px 22px" }}>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
                     <div className="card">
@@ -1475,7 +1380,7 @@ ${CHATGPT_DEMO_LINE}`);
                 </div>
             )}
             {/* DATA */}
-            {tab === "analysis" && (
+            {(
               <div style={{ padding: "16px 24px 22px" }}>
                 <div className="card" style={{ overflow: "hidden" }}>
                   <div style={{ display: "flex", padding: "9px 13px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>

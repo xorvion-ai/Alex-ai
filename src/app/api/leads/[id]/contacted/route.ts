@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { db, leads } from "@/lib/db";
+import { activities, db, leads } from "@/lib/db";
 import { jsonError } from "@/lib/api";
 
-// Marking a lead Contacted permanently DELETES it (per Sumit, 2026-07-21: no
-// archive/history copy — a contacted lead is removed completely). Cascades to
-// its analyses + activities.
+// Marking a lead CONTACTED records the contact and moves it out of the working
+// list into the dashboard's CONTACTED LIST (per Sumit, 2026-08-24). It is no
+// longer a delete — DELETE is its own button now.
+//
+// The record is a row in `activities`, which is also what keeps the lead out of
+// the leads list (filterConditions excludes leads that have any activity).
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -17,8 +20,11 @@ export async function POST(
     const leadRows = await d.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId));
     if (!leadRows.length) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-    await d.delete(leads).where(eq(leads.id, leadId));
-    return NextResponse.json({ ok: true });
+    const rows = await d
+      .insert(activities)
+      .values({ leadId, kind: "CONTACTED", note: "Contacted" })
+      .returning();
+    return NextResponse.json({ ok: true, activity: rows[0] });
   } catch (e) {
     return jsonError(e);
   }
