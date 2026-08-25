@@ -60,6 +60,28 @@ export default function Dashboard() {
   const [logSearch, setLogSearch] = useState("");
   const [logLimit, setLogLimit] = useState(10);
 
+  // TRASH - leads deleted in the last hour (manually, or automatically
+  // when a web check found a website). Purged for good after that.
+  type Deleted = {
+    id: number;
+    name: string;
+    phone: string | null;
+    country: string | null;
+    category: string | null;
+    reason: "deleted" | "has_website";
+    foundSite: string | null;
+    expiresInMs: number;
+  };
+  const [deleted, setDeleted] = useState<Deleted[] | null>(null);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [restoring, setRestoring] = useState(0);
+
+  const loadDeleted = useCallback(() => {
+    api<{ deleted: Deleted[] }>("/api/trash")
+      .then((r) => setDeleted(r.deleted))
+      .catch(() => {});
+  }, []);
+
   // The batch lives in a module store so it keeps running when you leave this
   // page (see analyze-store.ts).
   const b = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
@@ -68,6 +90,12 @@ export default function Dashboard() {
   const reload = useCallback(() => {
     api<Dash>("/api/dashboard").then(setDash).catch(() => {});
   }, []);
+  useEffect(() => {
+    loadDeleted();
+    const t = setInterval(loadDeleted, 60000);
+    return () => clearInterval(t);
+  }, [loadDeleted]);
+
   useEffect(() => {
     reload();
     api<{ configured: boolean; places: number | null }>("/api/quota/console")
@@ -230,6 +258,89 @@ export default function Dashboard() {
 
       <div className="cols" style={{ marginTop: 14 }}>
         <div style={{ flex: 1.4, display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
+          <div className="card">
+            <div
+              className="mono hover-row"
+              onClick={() => {
+                setShowDeleted((v) => !v);
+                loadDeleted();
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 15px", cursor: "pointer" }}
+            >
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>
+                TRASH · {deleted?.length ?? 0}
+              </span>
+              <span style={{ fontSize: 9.5, color: "var(--faint)" }}>kept 1 hour, then gone for good</span>
+              <span style={{ flex: 1 }} />
+              <span style={{ fontSize: 10, color: "var(--muted)" }}>{showDeleted ? "\u25be" : "\u25b8"}</span>
+            </div>
+            {showDeleted &&
+              (deleted?.length ? (
+                deleted.map((x) => (
+                  <div
+                    key={x.id}
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 15px",
+                      borderTop: "1px solid var(--hairline)",
+                    }}
+                  >
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}>
+                        <Flag country={x.country} size={15} />
+                        {x.name}
+                      </div>
+                      <div className="mono" style={{ fontSize: 10.5, color: "var(--sec)" }}>
+                        {[x.phone, x.category].filter(Boolean).join(" \u00b7 ")}
+                        {x.reason === "has_website" ? " \u00b7 auto-deleted: has a website" : " \u00b7 deleted by you"}
+                        {x.foundSite ? " (" + x.foundSite + ")" : ""}
+                      </div>
+                    </div>
+                    <span className="mono" style={{ fontSize: 10, color: "var(--amber)", flex: "none" }}>
+                      {Math.max(1, Math.round(x.expiresInMs / 60000))}m left
+                    </span>
+                    <span
+                      className="mono"
+                      onClick={async () => {
+                        if (restoring) return;
+                        setRestoring(x.id);
+                        try {
+                          await api("/api/trash/" + x.id + "/restore", { method: "POST" });
+                          flash(x.name + " restored to your leads");
+                          loadDeleted();
+                          reload();
+                        } catch (e) {
+                          flash(e instanceof Error ? e.message : "restore failed");
+                        } finally {
+                          setRestoring(0);
+                        }
+                      }}
+                      style={{
+                        flex: "none",
+                        border: "1px solid var(--green-border)",
+                        background: "var(--green-bg)",
+                        color: "var(--green)",
+                        borderRadius: 5,
+                        padding: "4px 10px",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {restoring === x.id ? "\u2026" : "RESTORE"}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="mono" style={{ padding: "12px 15px", borderTop: "1px solid var(--hairline)", fontSize: 11, color: "var(--faint)" }}>
+                  nothing deleted in the last hour
+                </div>
+              ))}
+          </div>
+
           <div className="card">
             <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
               <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>

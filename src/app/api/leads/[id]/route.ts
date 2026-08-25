@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { activities, analyses, db, leads } from "@/lib/db";
+import { trashLead } from "@/lib/trash";
 import { jsonError } from "@/lib/api";
 
 export async function GET(
@@ -37,15 +38,20 @@ export async function GET(
   }
 }
 
-// Permanently delete a lead (no archive). Used when a lead is confirmed to have
-// a website. Cascades to its analyses + activities.
+// Delete a lead. A copy goes to the one-hour trash first (dashboard DELETED
+// LIST) so a mistake is recoverable; after an hour it is purged for good.
+// Cascades to its analyses + activities.
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    await db().delete(leads).where(eq(leads.id, Number(id)));
+    const leadId = Number(id);
+    const d = db();
+    const rows = await d.select().from(leads).where(eq(leads.id, leadId));
+    if (rows[0]) await trashLead(rows[0], "deleted");
+    await d.delete(leads).where(eq(leads.id, leadId));
     return NextResponse.json({ ok: true });
   } catch (e) {
     return jsonError(e);

@@ -10,6 +10,7 @@ import { canSpend, getUsage, guard, spend } from "@/lib/quota";
 import { getSettings } from "@/lib/settings";
 import { googlePlaceReviews, GoogleReview } from "@/lib/leadsource/google";
 import { verifyLead } from "@/lib/verify";
+import { trashLead } from "@/lib/trash";
 
 // Reviews are a nice-to-have: only spend Places quota on them while usage is
 // comfortably low, so sweeps always keep priority on the free tier.
@@ -76,6 +77,7 @@ export async function analyzeLead(leadId: number): Promise<AnalyzeOutcome> {
   // lead at all, so it is DELETED outright — no Gemini spend, no hidden bucket,
   // no confirmation prompt (Sumit's call, 2026-08-10).
   if (foundSite) {
+    await trashLead(lead, "has_website", foundSite);
     await d.delete(leads).where(eq(leads.id, leadId));
     return { score: lead.score ?? 0, dropped: true, foundSite };
   }

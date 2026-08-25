@@ -5,6 +5,7 @@
 import { eq } from "drizzle-orm";
 import { SOCIAL_HOSTS, VERIFY_IGNORE_HOSTS } from "@/lib/config";
 import { db, leads } from "@/lib/db";
+import { trashLead } from "@/lib/trash";
 import { normName } from "@/lib/dedupe";
 import { guard, spend } from "@/lib/quota";
 
@@ -139,6 +140,8 @@ export async function verifyLead(
   // (Sumit's call, 2026-08-10 — no hidden bucket, no confirmation). Pass
   // deleteWhenFound:false only when the caller wants to inspect it first.
   if (!verifiedNoWebsite && deleteWhenFound) {
+    const rows = await d.select().from(leads).where(eq(leads.id, leadId));
+    if (rows[0]) await trashLead(rows[0], "has_website", foundSite);
     await d.delete(leads).where(eq(leads.id, leadId));
     return { verifiedNoWebsite, foundSite, socials: [...socials], deleted: true };
   }

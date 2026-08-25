@@ -8,8 +8,8 @@ import { NormalizedLead } from "@/lib/leadsource/types";
 import { jsonError } from "@/lib/api";
 
 // No UI button calls this any more (the ⟳ REFRESH button was removed on
-// 2026-08-22) — kept as a hand-callable re-pull of a lead's source data, which
-// also deletes the lead if the business has since built a website.
+// 2026-08-22) — kept as a hand-callable re-pull of a lead's source data. It only
+// refreshes fields and reports `hasSiteNow`; deleting is never automatic here.
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
