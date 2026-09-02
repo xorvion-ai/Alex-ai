@@ -57,6 +57,32 @@ export default function Dashboard() {
 
   const [logRows, setLogRows] = useState<Dash["contacted"] | null>(null);
   const [logTotal, setLogTotal] = useState(0);
+  // Batch scope: which country / business type the ANALYZE button works through.
+  const [scopeCountry, setScopeCountry] = useState("");
+  const [scopeCategory, setScopeCategory] = useState("");
+  const [queue, setQueue] = useState<{
+    total: number;
+    byCountry: { country: string; n: number }[];
+    byCategory: { category: string; n: number }[];
+  } | null>(null);
+
+  const loadQueue = useCallback(() => {
+    const q = new URLSearchParams();
+    if (scopeCountry) q.set("country", scopeCountry);
+    if (scopeCategory) q.set("category", scopeCategory);
+    api<{
+      total: number;
+      byCountry: { country: string; n: number }[];
+      byCategory: { category: string; n: number }[];
+    }>(`/api/analyze/queue?${q}`)
+      .then(setQueue)
+      .catch(() => {});
+  }, [scopeCountry, scopeCategory]);
+
+  useEffect(() => {
+    loadQueue();
+  }, [loadQueue]);
+
   const [logSearch, setLogSearch] = useState("");
   const [logLimit, setLogLimit] = useState(10);
 
@@ -112,9 +138,12 @@ export default function Dashboard() {
   }, [b.toast, flash]);
   const wasRunning = useRef(false);
   useEffect(() => {
-    if (wasRunning.current && !b.running) reload();
+    if (wasRunning.current && !b.running) {
+      reload();
+      loadQueue();
+    }
     wasRunning.current = b.running;
-  }, [b.running, reload]);
+  }, [b.running, reload, loadQueue]);
 
   useEffect(() => {
     const q = new URLSearchParams({ limit: String(logLimit) });
@@ -133,7 +162,8 @@ export default function Dashboard() {
   const s = dash?.stats;
   // While a batch runs, the server's own "remaining" count is fresher than the
   // dashboard payload (which was fetched before the batch started).
-  const newCount = b.running || b.remaining != null ? (b.remaining ?? s?.newCount ?? 0) : (s?.newCount ?? 0);
+  const scoped = queue?.total ?? s?.newCount ?? 0;
+  const newCount = b.running ? (b.remaining ?? scoped) : scoped;
   const total = b.total || newCount;
   const pct = total ? Math.round((b.done / total) * 100) : 0;
 
@@ -145,13 +175,18 @@ export default function Dashboard() {
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const resetDays = Math.ceil((nextMonth.getTime() - now.getTime()) / 86400000);
 
+  const scopeLabel = [scopeCategory || null, scopeCountry ? `leads in ${scopeCountry}` : "new leads"]
+    .filter(Boolean)
+    .join(" ")
+    .replace("new leads", scopeCategory ? "leads" : "new leads");
+
   const anaText = b.running
     ? `Analyzing lead ${b.done + 1} of ${total} — ${b.msg || "scoring, profiling, drafting outreach…"} · keeps running while you browse`
     : newCount === 0
       ? "All leads analyzed — nothing waiting."
       : b.done > 0
         ? `Paused — ${newCount} leads still waiting for analysis.`
-        : `${newCount} new leads are waiting for deep analysis (score, profile, site plan, outreach drafts).`;
+        : `${newCount} ${scopeLabel} waiting for deep analysis (score, profile, site plan, outreach drafts).`;
   const anaBtn = b.running
     ? "■ PAUSE"
     : newCount === 0
@@ -430,8 +465,38 @@ export default function Dashboard() {
                 }}
               />
             </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+              <select
+                className="input in-panel mono"
+                value={scopeCountry}
+                onChange={(e) => setScopeCountry(e.target.value)}
+                disabled={b.running}
+                style={{ flex: 1, minWidth: 130, padding: "6px 8px", fontSize: 11 }}
+              >
+                <option value="">all countries</option>
+                {(queue?.byCountry ?? []).map((c) => (
+                  <option key={c.country} value={c.country === "\u2014" ? "" : c.country}>
+                    {c.country} ({c.n})
+                  </option>
+                ))}
+              </select>
+              <select
+                className="input in-panel mono"
+                value={scopeCategory}
+                onChange={(e) => setScopeCategory(e.target.value)}
+                disabled={b.running}
+                style={{ flex: 1, minWidth: 130, padding: "6px 8px", fontSize: 11 }}
+              >
+                <option value="">all business types</option>
+                {(queue?.byCategory ?? []).map((c) => (
+                  <option key={c.category} value={c.category === "\u2014" ? "" : c.category}>
+                    {c.category} ({c.n})
+                  </option>
+                ))}
+              </select>
+            </div>
             <div
-              onClick={() => batch.toggle(newCount)}
+              onClick={() => batch.toggle(newCount, { country: scopeCountry, category: scopeCategory })}
               className="mono"
               style={{
                 marginTop: 14,

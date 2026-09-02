@@ -16,8 +16,13 @@ const BATCH_DELAY_MS = 5000;
 const MAX_FAILS = 6;
 const BACKOFF_MS = [15000, 30000, 45000, 60000, 60000, 60000];
 
+/** The slice the batch is working through ("" = everything). */
+export type BatchScope = { country: string; category: string };
+
 export type AnalyzeState = {
   running: boolean;
+  /** what the running (or last) batch was narrowed to */
+  scope: BatchScope;
   total: number;
   done: number;
   msg: string;
@@ -30,6 +35,7 @@ export type AnalyzeState = {
 
 let state: AnalyzeState = {
   running: false,
+  scope: { country: "", category: "" },
   total: 0,
   done: 0,
   msg: "",
@@ -58,15 +64,22 @@ export function getSnapshot(): AnalyzeState {
 }
 
 export const batch = {
-  /** Start, or pause a running batch. `waiting` = leads not yet analyzed. */
-  async toggle(waiting: number) {
+  /**
+   * Start, or pause a running batch. `waiting` = leads not yet analyzed in the
+   * chosen scope; `scope` narrows the run to one country and/or business type.
+   */
+  async toggle(waiting: number, scope: BatchScope = { country: "", category: "" }) {
     if (state.running) {
       set({ running: false });
       return;
     }
     if (!waiting) return;
-    if (!state.total || state.done >= state.total) {
-      set({ total: waiting + state.done });
+    // A different slice starts its own count.
+    const sameScope =
+      state.scope.country === scope.country && state.scope.category === scope.category;
+    if (!sameScope) set({ scope, done: 0, total: 0, msg: "" });
+    if (!sameScope || !state.total || state.done >= state.total) {
+      set({ total: waiting + (sameScope ? state.done : 0) });
     }
     set({ running: true, retrying: 0 });
     // The loop reads the live module `state`, so a pause from any page is seen
@@ -78,7 +91,10 @@ export const batch = {
         const r = await api<{
           analyzed: { id: number; name: string; score: number; dropped?: boolean } | null;
           remaining: number;
-        }>("/api/analyze/step", { method: "POST" });
+        }>("/api/analyze/step", {
+          method: "POST",
+          body: JSON.stringify({ country: state.scope.country, category: state.scope.category }),
+        });
         fails = 0;
         if (!r.analyzed) {
           set({ running: false, msg: "", remaining: 0, retrying: 0 });

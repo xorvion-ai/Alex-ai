@@ -155,18 +155,59 @@ export async function analyzeLead(leadId: number): Promise<AnalyzeOutcome> {
 }
 
 /** Analyze the oldest un-analyzed lead. Returns remaining count. */
-export async function analyzeNextNew(): Promise<{
+/** Narrow the batch to one country and/or one business type. */
+export type BatchFilter = { country?: string | null; category?: string | null };
+
+/**
+ * Leads worth spending a Gemini call on: still new, not already known to have a
+ * website, and contactable (a lead with no phone shows up nowhere) — optionally
+ * narrowed to one country and/or business type.
+ */
+function batchWhere(f: BatchFilter = {}) {
+  const parts = [
+    eq(leads.status, "new"),
+    or(isNull(leads.verifiedNoWebsite), eq(leads.verifiedNoWebsite, true)),
+    sql`${leads.phone} is not null and ${leads.phone} <> ''`,
+  ];
+  if (f.country) parts.push(eq(leads.country, f.country));
+  if (f.category) parts.push(eq(leads.category, f.category));
+  return and(...parts);
+}
+
+/** What the batch would work through, split by country and by business type. */
+export async function batchQueue(f: BatchFilter = {}): Promise<{
+  total: number;
+  byCountry: { country: string; n: number }[];
+  byCategory: { category: string; n: number }[];
+}> {
+  const d = db();
+  const [{ n: total }] = await d
+    .select({ n: sql<number>`count(*)::int` })
+    .from(leads)
+    .where(batchWhere(f));
+  // The option lists ignore their own dimension, so picking a country still
+  // shows every country, while the type list narrows to that country.
+  const byCountry = await d
+    .select({ country: sql<string>`coalesce(${leads.country}, '—')`, n: sql<number>`count(*)::int` })
+    .from(leads)
+    .where(batchWhere({ category: f.category }))
+    .groupBy(sql`coalesce(${leads.country}, '—')`)
+    .orderBy(sql`count(*) desc`);
+  const byCategory = await d
+    .select({ category: sql<string>`coalesce(${leads.category}, '—')`, n: sql<number>`count(*)::int` })
+    .from(leads)
+    .where(batchWhere({ country: f.country }))
+    .groupBy(sql`coalesce(${leads.category}, '—')`)
+    .orderBy(sql`count(*) desc`);
+  return { total, byCountry, byCategory };
+}
+
+export async function analyzeNextNew(f: BatchFilter = {}): Promise<{
   analyzed: { id: number; name: string; score: number; dropped?: boolean; foundSite?: string } | null;
   remaining: number;
 }> {
   const d = db();
-  // Only leads worth spending a Gemini call on: still new, not already known to
-  // have a website, and contactable (a lead with no phone shows up nowhere).
-  const wanted = and(
-    eq(leads.status, "new"),
-    or(isNull(leads.verifiedNoWebsite), eq(leads.verifiedNoWebsite, true)),
-    sql`${leads.phone} is not null and ${leads.phone} <> ''`,
-  );
+  const wanted = batchWhere(f);
   const next = await d
     .select({ id: leads.id, name: leads.name })
     .from(leads)

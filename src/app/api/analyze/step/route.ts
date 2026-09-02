@@ -1,12 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { analyzeNextNew } from "@/lib/analyze";
 import { jsonError } from "@/lib/api";
 
 // One batch step = one lead analyzed. The client paces calls to stay inside
 // the Gemini free-tier rate limit and can pause/resume anytime.
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const result = await analyzeNextNew();
+    // Optional { country, category } narrows the batch to that slice.
+    const body = await req.json().catch(() => ({}));
+    const result = await analyzeNextNew({
+      country: typeof body.country === "string" && body.country ? body.country : null,
+      category: typeof body.category === "string" && body.category ? body.category : null,
+    });
     return NextResponse.json(result);
   } catch (e) {
     return jsonError(e);
