@@ -58,6 +58,51 @@ I've also attached a demo for you so you can see how it could look. 😊`,
 };
 
 /**
+ * The FIRST message, sent before the pitch above.
+ *
+ * A cold WhatsApp from an unknown number shows the recipient a Report/Block
+ * banner; a long sales pitch with a price is what gets that tapped, and enough
+ * taps ban the number. So the opener is two lines, no price, no attachment, and
+ * ends in a question — once they reply the banner is gone and the full pitch
+ * (and the demo image) can follow safely in the same chat.
+ */
+export const DEFAULT_OPENERS: Record<string, string> = {
+  Spain: `¡Hola, {name}! 👋 Soy Sumit, desarrollador web.
+
+Vi vuestro {category} en Google y me di cuenta de que aún no tenéis página web. ¿Os gustaría ver cómo podría quedar?`,
+
+  Mexico: `¡Hola, {name}! 👋 Soy Sumit, desarrollador web.
+
+Vi su {category} en Google y noté que todavía no tienen página web. ¿Les gustaría ver cómo podría quedar?`,
+
+  Brazil: `Olá, {name}! 👋 Sou Sumit, desenvolvedor web.
+
+Vi vocês no Google e percebi que ainda não têm um site. Gostariam de ver como poderia ficar?`,
+
+  "United States": `Hi {name}! 👋 I'm Sumit, a web developer.
+
+I found your {category} on Google and noticed you don't have a website yet. Would you like to see how one could look?`,
+
+  India: `Hi {name}! 👋 I'm Sumit, a web developer.
+
+I came across your {category} on Google and noticed you don't have a website yet. Would you like to see how one could look?`,
+};
+
+export const DEFAULT_OPENERS_EN: Record<string, string> = {
+  Spain: `Hi {name}! 👋 I'm Sumit, a web developer.
+
+I saw your {category} on Google and noticed you don't have a website yet. Would you like to see how one could look?`,
+
+  Mexico: `Hi {name}! 👋 I'm Sumit, a web developer.
+
+I saw your {category} on Google and noticed you don't have a website yet. Would you like to see how one could look?`,
+
+  Brazil: `Hi {name}! 👋 I'm Sumit, a web developer.
+
+I saw you on Google and noticed you don't have a website yet. Would you like to see how one could look?`,
+};
+
+/**
  * The English twin of each country template — what the translation box shows,
  * so it mirrors the message being sent instead of a separately written draft.
  * Countries whose template is already English simply reuse it.
@@ -98,9 +143,10 @@ export function templateEnFor(
   overrides: Record<string, string>,
   country: string | null | undefined,
   localTemplate: string | null,
+  defaults: Record<string, string> = DEFAULT_TEMPLATES_EN,
 ): string | null {
   if (!country) return null;
-  return overrides[country] ?? DEFAULT_TEMPLATES_EN[country] ?? localTemplate;
+  return overrides[country] ?? defaults[country] ?? localTemplate;
 }
 
 export type TemplateLead = {
@@ -218,7 +264,8 @@ function replaceNth(haystack: string, needle: string, nth: number, replacement: 
 export function templateFor(
   templates: Record<string, string>,
   country: string | null | undefined,
+  defaults: Record<string, string> = DEFAULT_TEMPLATES,
 ): string | null {
   if (!country) return null;
-  return templates[country] ?? DEFAULT_TEMPLATES[country] ?? null;
+  return templates[country] ?? defaults[country] ?? null;
 }

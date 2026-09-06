@@ -41,7 +41,12 @@ export async function POST(req: NextRequest) {
     if (typeof patch.fallbackLanguage === "string") allowed.fallbackLanguage = patch.fallbackLanguage;
     if (typeof patch.trialEndsAt === "string" && /^(\d{4}-\d{2}-\d{2})?$/.test(patch.trialEndsAt))
       allowed.trialEndsAt = patch.trialEndsAt;
-    for (const key of ["messageTemplates", "messageTemplatesEn"] as const) {
+    for (const key of [
+      "messageTemplates",
+      "messageTemplatesEn",
+      "messageOpeners",
+      "messageOpenersEn",
+    ] as const) {
       const raw = (patch as Record<string, unknown>)[key];
       if (raw && typeof raw === "object") {
         const clean: Record<string, string> = {};

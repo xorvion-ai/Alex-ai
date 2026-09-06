@@ -24,7 +24,15 @@ import {
 import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
 import { ANY_COUNTRY, CHATGPT_DEMO_LINE, countryName, currencyOf } from "@/lib/config";
-import { PLACEHOLDERS, renderTemplate, templateEnFor, templateFor, templatize } from "@/lib/messages";
+import {
+  DEFAULT_OPENERS,
+  DEFAULT_OPENERS_EN,
+  PLACEHOLDERS,
+  renderTemplate,
+  templateEnFor,
+  templateFor,
+  templatize,
+} from "@/lib/messages";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
 
@@ -86,6 +94,12 @@ function LeadsInner() {
   // editable draft for the lead on screen.
   const [templates, setTemplates] = useState<Record<string, string>>({});
   const [templatesEn, setTemplatesEn] = useState<Record<string, string>>({});
+  // The short first-touch opener is its own set of country templates; which of
+  // the two the box is editing is `stage`, and it stays put while you walk the
+  // list so a first-touch pass doesn't need re-picking on every lead.
+  const [openers, setOpeners] = useState<Record<string, string>>({});
+  const [openersEn, setOpenersEn] = useState<Record<string, string>>({});
+  const [stage, setStage] = useState<"opener" | "pitch">("opener");
   // Personal ChatGPT chat link — a setting, never in the repo.
   const [chatgptUrl, setChatgptUrl] = useState("");
   const [msgDraft, setMsgDraft] = useState("");
@@ -135,12 +149,16 @@ function LeadsInner() {
       settings: {
         messageTemplates?: Record<string, string>;
         messageTemplatesEn?: Record<string, string>;
+        messageOpeners?: Record<string, string>;
+        messageOpenersEn?: Record<string, string>;
         chatgptUrl?: string;
       };
     }>("/api/settings")
       .then((r) => {
         setTemplates(r.settings.messageTemplates ?? {});
         setTemplatesEn(r.settings.messageTemplatesEn ?? {});
+        setOpeners(r.settings.messageOpeners ?? {});
+        setOpenersEn(r.settings.messageOpenersEn ?? {});
         setChatgptUrl(r.settings.chatgptUrl ?? "");
       })
       .catch(() => {});
@@ -243,12 +261,19 @@ function LeadsInner() {
 
   // The message for this lead: its country's template filled with its own data,
   // falling back to the AI-written local draft when that country has none.
-  const countryTpl = L ? templateFor(templates, L.country) : null;
+  const isOpener = stage === "opener";
+  const tplMap = isOpener ? openers : templates;
+  const tplMapEn = isOpener ? openersEn : templatesEn;
+  const countryTpl = L
+    ? templateFor(tplMap, L.country, isOpener ? DEFAULT_OPENERS : undefined)
+    : null;
   const msgBase = L && countryTpl ? renderTemplate(countryTpl, L) : "";
   // The translation box mirrors the message being sent: the English twin of the
   // same country template, filled with the same lead. (TRANSLATE re-does it with
   // Gemini after an edit, or for a country with no twin yet.)
-  const countryTplEn = L ? templateEnFor(templatesEn, L.country, countryTpl) : null;
+  const countryTplEn = L
+    ? templateEnFor(tplMapEn, L.country, countryTpl, isOpener ? DEFAULT_OPENERS_EN : undefined)
+    : null;
   const enBase = L && countryTplEn ? renderTemplate(countryTplEn, L) : "";
 
   // Reset the editable draft whenever the lead (or its template) changes; an
@@ -269,7 +294,7 @@ function LeadsInner() {
   };
 
   const waHref = (text: string) =>
-    L && (L.phoneIntl || L.phone)
+    L && text.trim() && (L.phoneIntl || L.phone)
       ? `https://wa.me/${L.phoneIntl || L.phone!.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`
       : null;
 
@@ -279,17 +304,23 @@ function LeadsInner() {
     if (!L?.country || !msgDraft.trim() || msgSaving) return;
     setMsgSaving(true);
     try {
-      const next = { ...templates, [L.country]: templatize(msgDraft, L, countryTpl) };
+      const next = { ...tplMap, [L.country]: templatize(msgDraft, L, countryTpl) };
       const nextEn = enDraft.trim()
-        ? { ...templatesEn, [L.country]: templatize(enDraft, L, countryTplEn) }
-        : templatesEn;
+        ? { ...tplMapEn, [L.country]: templatize(enDraft, L, countryTplEn) }
+        : tplMapEn;
       await api("/api/settings", {
         method: "POST",
-        body: JSON.stringify({ messageTemplates: next, messageTemplatesEn: nextEn }),
+        body: JSON.stringify(
+          isOpener
+            ? { messageOpeners: next, messageOpenersEn: nextEn }
+            : { messageTemplates: next, messageTemplatesEn: nextEn },
+        ),
       });
-      setTemplates(next);
-      setTemplatesEn(nextEn);
-      flash(`Template set for ${L.country} — every lead there uses it now`);
+      (isOpener ? setOpeners : setTemplates)(next);
+      (isOpener ? setOpenersEn : setTemplatesEn)(nextEn);
+      flash(
+        `${isOpener ? "Opener" : "Full pitch"} set for ${L.country} — every lead there uses it now`,
+      );
     } catch (e) {
       flash(e instanceof Error ? e.message : "could not save the template");
     } finally {
@@ -556,10 +587,26 @@ This removes the lead from the app for good.`)) return;
                     <div className="card">
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "9px 13px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
                         <span className="mono" style={{ fontSize: 9.5, fontWeight: 600, color: "var(--sec)" }}>
-                          WHATSAPP MESSAGE ·{" "}
+                          WHATSAPP ·{" "}
                           {countryTpl
-                            ? `${L.country?.toUpperCase()} TEMPLATE`
-                            : `NO ${L.country?.toUpperCase() ?? "COUNTRY"} TEMPLATE YET — WRITE ONE AND PRESS SET`}
+                            ? L.country?.toUpperCase()
+                            : `NO ${L.country?.toUpperCase() ?? "COUNTRY"} ${isOpener ? "OPENER" : "PITCH"} YET — WRITE ONE AND PRESS SET`}
+                        </span>
+                        <span
+                          className={`chip in-panel${isOpener ? " on" : ""}`}
+                          onClick={() => setStage("opener")}
+                          title="The short first message — no price, no attachment, ends in a question"
+                          style={{ fontSize: 9.5 }}
+                        >
+                          ① OPENER
+                        </span>
+                        <span
+                          className={`chip in-panel${isOpener ? "" : " on"}`}
+                          onClick={() => setStage("pitch")}
+                          title="The full pitch with price and demo — send this only after they reply"
+                          style={{ fontSize: 9.5 }}
+                        >
+                          ② FULL PITCH
                         </span>
                         <div style={{ flex: 1 }} />
                         {msgDraft !== msgBase && (
@@ -580,7 +627,7 @@ This removes the lead from the app for good.`)) return;
                           className="input in-panel"
                           value={msgDraft}
                           onChange={(e) => setMsgDraft(e.target.value)}
-                          rows={12}
+                          rows={isOpener ? 5 : 12}
                           style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--body)", resize: "vertical", fontFamily: "var(--font-sg)" }}
                         />
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
@@ -597,7 +644,7 @@ This removes the lead from the app for good.`)) return;
                               pointerEvents: waHref(msgDraft) ? undefined : "none",
                             }}
                           >
-                            ➤ SEND ON WHATSAPP
+                            {isOpener ? "➤ SEND OPENER" : "➤ SEND FULL PITCH"}
                           </a>
                           <div
                             className="btn-outline mono"
@@ -605,10 +652,16 @@ This removes the lead from the app for good.`)) return;
                             title="Save this wording as the template for every lead in this country"
                             style={{ padding: "9px 14px", fontSize: 11, opacity: L.country && msgDraft.trim() ? 1 : 0.4 }}
                           >
-                            {msgSaving ? "SAVING…" : `SET AS ${L.country?.toUpperCase() ?? "COUNTRY"} TEMPLATE`}
+                            {msgSaving
+                              ? "SAVING…"
+                              : `SET AS ${L.country?.toUpperCase() ?? "COUNTRY"} ${isOpener ? "OPENER" : "PITCH"}`}
                           </div>
                         </div>
                         <div className="mono" style={{ fontSize: 9.5, color: "var(--faint)", marginTop: 9, lineHeight: 1.6 }}>
+                          {isOpener
+                            ? "send this first — short, no price, no image. a cold pitch from an unknown number gets reported, and reports ban the number. once they reply, switch to ② FULL PITCH in the same chat."
+                            : "the pitch with price and demo — send it only after they have replied."}
+                          <br />
                           edit freely — SEND uses what you see, and only this lead. SET saves the wording
                           for every {L.country ?? "country"} lead (your {PLACEHOLDERS.join(" ")} are kept
                           per lead).
