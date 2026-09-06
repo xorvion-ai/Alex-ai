@@ -49,6 +49,24 @@ export function socialLinks(l: { socials: string[] | null }): { kind: "facebook"
   return out;
 }
 
+/**
+ * The lead's Instagram handle, from whatever form the source stored:
+ * instagram.com/name, /p/..., ?igsh=... query junk and @ prefixes all reduce to
+ * "name". Null when there is no usable profile link (post/reel URLs included).
+ */
+export function instagramHandle(l: { socials: string[] | null }): string | null {
+  for (const raw of l.socials ?? []) {
+    const u = String(raw);
+    const m = u.match(/instagram\.com\/([^/?#]+)/i);
+    if (!m) continue;
+    const handle = decodeURIComponent(m[1]).replace(/^@/, "").trim();
+    // skip post / reel / explore links — they are not a person to DM
+    if (!handle || ["p", "reel", "reels", "explore", "stories", "tv"].includes(handle.toLowerCase())) continue;
+    return handle;
+  }
+  return null;
+}
+
 export function scoreColor(s: number | null | undefined): string {
   if (s == null) return "var(--muted)";
   return s >= 80 ? "#4ade80" : s >= 60 ? "#d9d9a0" : "#7a828c";

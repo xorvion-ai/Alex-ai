@@ -12,6 +12,7 @@ import {
   api,
   ApiError,
   categoryOf,
+  instagramHandle,
   LeadDto,
   mapsHref,
   socialLinks,
@@ -38,6 +39,7 @@ function buildParams(f: {
   ws: { none: boolean; social_only: boolean };
   minScore: number;
   verified: boolean;
+  igOnly: boolean;
 }): string {
   const p = new URLSearchParams();
   if (f.search) p.set("search", f.search);
@@ -49,6 +51,7 @@ function buildParams(f: {
   if (ws.length === 1) p.set("ws", ws[0]);
   if (f.minScore > 0) p.set("minScore", String(f.minScore));
   if (f.verified) p.set("verified", "1");
+  if (f.igOnly) p.set("instagram", "1");
   return p.toString();
 }
 
@@ -73,6 +76,7 @@ function LeadsInner() {
   const [ws, setWs] = useState({ none: true, social_only: true });
   const [minScore, setMinScore] = useState(0);
   const [verified, setVerified] = useState(false);
+  const [igOnly, setIgOnly] = useState(false);
   const [moreCats, setMoreCats] = useState(false);
   // FX: one fetch per page load (server caches for 12h), used by the CURRENCY card.
   const [inrPer, setInrPer] = useState<Record<string, number>>({});
@@ -89,7 +93,7 @@ function LeadsInner() {
   const [msgSaving, setMsgSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
 
-  const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified };
+  const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified, igOnly };
 
   // On phones the list and detail take turns, so auto-selecting the first lead
   // would drop the user straight into a detail view. 820px = the CSS breakpoint.
@@ -109,7 +113,7 @@ function LeadsInner() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [search, country, cityF, cats, source, ws, minScore, verified, selId],
+    [search, country, cityF, cats, source, ws, minScore, verified, igOnly, selId],
   );
 
   useEffect(() => {
@@ -172,7 +176,7 @@ function LeadsInner() {
     }, 250);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtersOpen, search, country, cityF, cats, source, ws, minScore, verified]);
+  }, [filtersOpen, search, country, cityF, cats, source, ws, minScore, verified, igOnly]);
 
   // debounced search
   useEffect(() => {
@@ -808,6 +812,14 @@ This removes the lead from the app for good.`)) return;
                   </span>
                   VERIFIED ✓
                 </span>
+                <span
+                  className={`chip in-panel${igOnly ? " on" : ""}`}
+                  onClick={() => setIgOnly((v) => !v)}
+                  title="Only leads that have an Instagram profile — the DM queue"
+                  style={{ fontSize: 9.5 }}
+                >
+                  INSTAGRAM ONLY
+                </span>
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -832,6 +844,7 @@ This removes the lead from the app for good.`)) return;
                     setWs({ none: true, social_only: true });
                     setMinScore(0);
                     setVerified(false);
+                    setIgOnly(false);
                   }}
                 >
                   RESET
@@ -1131,6 +1144,28 @@ ${CHATGPT_DEMO_LINE}`);
                     {sl.kind === "facebook" ? "FACEBOOK ↗" : "INSTAGRAM ↗"}
                   </a>
                 ))}
+                {instagramHandle(L) && (
+                  <a
+                    href={`https://ig.me/m/${instagramHandle(L)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => copy("ig", msgDraft)}
+                    title="Copies the message and opens the Instagram DM thread — paste, attach the mockup, send"
+                    style={{
+                      border: "1px solid var(--osm-bd)",
+                      background: copied === "ig" ? "var(--green-bg)" : "transparent",
+                      borderRadius: 6,
+                      padding: "8px 16px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: copied === "ig" ? "var(--green)" : "var(--osm)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {copied === "ig" ? "COPIED \u2014 PASTE IN DM" : "\u2709 INSTAGRAM DM"}
+                  </a>
+                )}
                 {L.phone && (
                   <a
                     href={`tel:${L.phone.replace(/\s/g, "")}`}

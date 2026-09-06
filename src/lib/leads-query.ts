@@ -14,6 +14,8 @@ export type LeadFilters = {
   includeNoContact?: boolean;
   /** include leads that already have a log entry (they live in the activity log) */
   includeLogged?: boolean;
+  /** only leads carrying an Instagram profile link (the DM queue) */
+  hasInstagram?: boolean;
   status?: "new" | "analyzed";
 };
 
@@ -43,6 +45,7 @@ export function parseFilters(params: URLSearchParams): LeadFilters {
   if (g("verified") === "1") f.verifiedOnly = true;
   if (g("noContact") === "1") f.includeNoContact = true;
   if (g("logged") === "1") f.includeLogged = true;
+  if (g("instagram") === "1") f.hasInstagram = true;
   const status = g("status");
   if (status === "new" || status === "analyzed") f.status = status;
   return f;
@@ -78,6 +81,8 @@ export function filterConditions(f: LeadFilters): SQL[] {
   // distinction left is "web-verified as having none" vs "not checked yet".
   if (f.verifiedOnly) conds.push(eq(leads.verifiedNoWebsite, true) as SQL);
   if (f.status) conds.push(eq(leads.status, f.status) as SQL);
+  // The Instagram DM queue: leads whose socials carry a profile link.
+  if (f.hasInstagram) conds.push(sql`${leads.socials}::text ilike '%instagram.com/%'`);
   // Only contactable leads by default — must have a phone (email isn't
   // collected, so it's the only reachable channel). Opt out with ?noContact=1.
   if (!f.includeNoContact) {
