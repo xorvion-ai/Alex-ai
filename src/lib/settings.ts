@@ -13,10 +13,6 @@ export type AppSettings = {
   messageTemplates: Record<string, string>;
   /** English twins of the above, shown in the translation box */
   messageTemplatesEn: Record<string, string>;
-  /** Per-country short first-touch openers that override DEFAULT_OPENERS */
-  messageOpeners: Record<string, string>;
-  /** English twins of the openers */
-  messageOpenersEn: Record<string, string>;
   /** Personal ChatGPT conversation opened by ASK CHATGPT ("" = button hidden) */
   chatgptUrl: string;
 };
@@ -30,8 +26,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   trialEndsAt: "2026-10-18",
   messageTemplates: {},
   messageTemplatesEn: {},
-  messageOpeners: {},
-  messageOpenersEn: {},
   chatgptUrl: "",
 };
 

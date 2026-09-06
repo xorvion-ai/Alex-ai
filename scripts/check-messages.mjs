@@ -6,7 +6,6 @@
 
 import assert from "node:assert/strict";
 import {
-  DEFAULT_OPENERS,
   DEFAULT_TEMPLATES,
   renderTemplate,
   templateFor,
@@ -80,20 +79,5 @@ assert.ok(naive.includes("{name}") && naive.includes("{rating}"), "naive fallbac
 assert.equal(templateFor({ India: "custom" }, "India"), "custom");
 assert.equal(templateFor({}, "India"), DEFAULT_TEMPLATES.India);
 assert.equal(templateFor({}, "Nowhere"), null);
-
-// 6. the openers are a second set of country templates: same placeholders, same
-//    SET behaviour, and short enough to stay a first touch (no price, no demo).
-const openerMsg = renderTemplate(DEFAULT_OPENERS.India, gym);
-assert.ok(openerMsg.includes("Steel Fitness Studio") && openerMsg.includes("your gym"), "opener filled");
-assert.ok(!openerMsg.includes("{"), "no leftover placeholders (opener)");
-for (const [country, text] of Object.entries(DEFAULT_OPENERS)) {
-  assert.ok(text.length < 260, `${country} opener stays short`);
-  assert.ok(!/[₹$€]|R\$|MX\$/.test(text), `${country} opener carries no price`);
-  assert.ok(text.trim().endsWith("?"), `${country} opener ends in a question`);
-}
-// the opener set is separate from the pitch set — SET on one must not touch the other
-assert.equal(templateFor({ India: "custom opener" }, "India", DEFAULT_OPENERS), "custom opener");
-assert.equal(templateFor({}, "India", DEFAULT_OPENERS), DEFAULT_OPENERS.India);
-assert.notEqual(DEFAULT_OPENERS.India, DEFAULT_TEMPLATES.India);
 
 console.log("messages: all checks passed");
