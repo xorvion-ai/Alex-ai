@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { activities, db, leads } from "@/lib/db";
+import { skipLead } from "@/lib/skip";
 import { jsonError } from "@/lib/api";
 
 // Marking a lead CONTACTED records the contact and moves it out of the working
@@ -17,13 +18,15 @@ export async function POST(
     const { id } = await params;
     const leadId = Number(id);
     const d = db();
-    const leadRows = await d.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId));
+    const leadRows = await d.select().from(leads).where(eq(leads.id, leadId));
     if (!leadRows.length) return NextResponse.json({ error: "not found" }, { status: 404 });
 
     const rows = await d
       .insert(activities)
       .values({ leadId, kind: "CONTACTED", note: "Contacted" })
       .returning();
+    // A later sweep of the same city finds this business again — don't pitch it twice.
+    await skipLead(leadRows[0], "contacted");
     return NextResponse.json({ ok: true, activity: rows[0] });
   } catch (e) {
     return jsonError(e);

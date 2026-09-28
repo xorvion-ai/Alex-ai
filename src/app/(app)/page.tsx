@@ -34,6 +34,9 @@ type Dash = {
   sweeps: {
     id: number;
     label: string;
+    city: string;
+    country: string | null;
+    categories: string[];
     when: string;
     found: number;
     added: number;
@@ -85,6 +88,9 @@ export default function Dashboard() {
 
   const [logSearch, setLogSearch] = useState("");
   const [logLimit, setLogLimit] = useState(10);
+  // Sweep history is a lookup ("did I already do Jaipur salons?"), so it filters
+  // on city, country and business type rather than paging.
+  const [sweepSearch, setSweepSearch] = useState("");
 
   // TRASH - leads deleted in the last hour (manually, or automatically
   // when a web check found a website). Purged for good after that.
@@ -158,6 +164,12 @@ export default function Dashboard() {
     }, 250);
     return () => clearTimeout(t);
   }, [logSearch, logLimit]);
+
+  const sweepRows = (dash?.sweeps ?? []).filter((sw) => {
+    const q = sweepSearch.trim().toLowerCase();
+    if (!q) return true;
+    return `${sw.city} ${sw.country ?? ""} ${(sw.categories ?? []).join(" ")}`.toLowerCase().includes(q);
+  });
 
   const s = dash?.stats;
   // While a batch runs, the server's own "remaining" count is fresher than the
@@ -550,9 +562,22 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Every sweep ever run — the record of which city and which business
+              types are already covered, so it is never trimmed. */}
           <div className="card">
-            <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)" }} className="mono">
-              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>RECENT SWEEPS</span>
+            <div style={{ padding: "11px 15px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }} className="mono">
+              <span style={{ fontSize: 10, fontWeight: 600, color: "var(--sec)" }}>
+                SWEEP HISTORY · {dash?.sweeps.length ?? 0}
+              </span>
+              <span style={{ fontSize: 9.5, color: "var(--faint)" }}>cities &amp; types already covered</span>
+              <span style={{ flex: 1 }} />
+              <input
+                className="input in-panel mono"
+                style={{ width: 120, padding: "5px 8px", fontSize: 10.5 }}
+                placeholder="/ city or type"
+                value={sweepSearch}
+                onChange={(e) => setSweepSearch(e.target.value)}
+              />
             </div>
             <div
               className="mono sweeps-grid"
@@ -563,34 +588,44 @@ export default function Dashboard() {
                 color: "var(--faint)",
               }}
             >
-              <span>QUERY</span>
+              <span>CITY · BUSINESS TYPES</span>
               <span>WHEN</span>
               <span>FOUND</span>
               <span>NEW</span>
               <span>REQUESTS</span>
             </div>
-            {(dash?.sweeps ?? []).map((sw) => (
-              <div
-                key={sw.id}
-                className="sweeps-grid"
-                style={{
-                  padding: "9px 15px",
-                  borderTop: "1px solid var(--hairline)",
-                  fontSize: 12,
-                  color: "var(--body)",
-                  alignItems: "center",
-                }}
-              >
-                <span className="sweep-q" style={{ fontWeight: 600 }}>{sw.label}</span>
-                <span style={{ color: "var(--sec)", fontSize: 11 }}>{timeAgo(sw.when)}</span>
-                <span className="mono">{sw.found}</span>
-                <span className="mono" style={{ color: "var(--green)" }}>{sw.added}</span>
-                <span className="mono" style={{ color: "var(--sec)" }}>{sw.requests}</span>
-              </div>
-            ))}
-            {dash && dash.sweeps.length === 0 && (
+            <div style={{ maxHeight: 360, overflowY: "auto" }}>
+              {sweepRows.map((sw) => (
+                <div
+                  key={sw.id}
+                  className="sweeps-grid"
+                  style={{
+                    padding: "9px 15px",
+                    borderTop: "1px solid var(--hairline)",
+                    fontSize: 12,
+                    color: "var(--body)",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 600 }}>
+                      <Flag country={sw.country} size={14} />
+                      {sw.city}
+                    </span>
+                    <span className="mono sweep-q" style={{ fontSize: 10, color: "var(--sec)" }}>
+                      {(sw.categories ?? []).join(", ") || sw.label}
+                    </span>
+                  </span>
+                  <span style={{ color: "var(--sec)", fontSize: 11 }}>{timeAgo(sw.when)}</span>
+                  <span className="mono">{sw.found}</span>
+                  <span className="mono" style={{ color: "var(--green)" }}>{sw.added}</span>
+                  <span className="mono" style={{ color: "var(--sec)" }}>{sw.requests}</span>
+                </div>
+              ))}
+            </div>
+            {dash && sweepRows.length === 0 && (
               <div className="mono" style={{ padding: "14px 15px", fontSize: 11, color: "var(--faint)" }}>
-                no sweeps yet — run one from Discover
+                {sweepSearch ? "no sweep matches this search" : "no sweeps yet — run one from Discover"}
               </div>
             )}
           </div>

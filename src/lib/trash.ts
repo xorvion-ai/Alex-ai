@@ -11,6 +11,7 @@
 
 import { lt, sql } from "drizzle-orm";
 import { contactedArchive, db, leads } from "@/lib/db";
+import { unskip } from "@/lib/skip";
 
 export const TRASH_TTL_MS = 60 * 60 * 1000;
 
@@ -129,6 +130,9 @@ export async function restoreFromTrash(trashId: number): Promise<{ restored: boo
     })
     .onConflictDoNothing({ target: [leads.source, leads.sourceId] });
 
+  // The delete put it on the never-again list; restoring takes it back off, or
+  // the next sweep would drop it again.
+  await unskip(lead.source, lead.sourceId);
   await d.delete(contactedArchive).where(sql`${contactedArchive.id} = ${trashId}`);
   return { restored: true, name: lead.name };
 }

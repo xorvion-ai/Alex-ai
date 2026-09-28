@@ -313,7 +313,7 @@ function LeadsInner() {
       flash("Analysis complete ✓");
     });
 
-  const contactedAction = () =>
+  const contactedAction = (doneMsg = "Moved to the contacted list ✓") =>
     act(
       "contacted",
       async () => {
@@ -321,7 +321,7 @@ function LeadsInner() {
         // The record keeps it out of the working list; move to the next lead.
         dropCurrent();
       },
-      "Moved to the contacted list ✓",
+      doneMsg,
     );
 
   const deleteAction = () => {
@@ -1044,13 +1044,16 @@ This removes the lead from the app for good.`)) return;
                     </span>
                     {chatgptUrl && <span
                       className="mono"
-                      title="Copy this lead + the demo-image request, and open your ChatGPT chat to paste it"
+                      title="Copy this lead + the demo-image request, open your ChatGPT chat, and mark the lead contacted"
                       onClick={() => {
                         copy("gpt", `${fullCopyText().trimEnd()}
 
 ${CHATGPT_DEMO_LINE}`);
+                        // opened synchronously or the browser blocks the popup
                         window.open(chatgptUrl, "_blank", "noopener");
-                        flash("Copied — paste it into the ChatGPT chat that just opened");
+                        // asking ChatGPT for the mockup means this lead is being
+                        // worked, so it moves to the CONTACTED LIST straight away
+                        contactedAction("Copied & marked contacted — paste it into ChatGPT");
                       }}
                       style={{
                         display: "inline-flex",
@@ -1185,7 +1188,7 @@ ${CHATGPT_DEMO_LINE}`);
                 )}
                 <div style={{ flex: 1 }} />
                 <div
-                  onClick={contactedAction}
+                  onClick={() => contactedAction()}
                   title="Move this lead to the CONTACTED LIST on the dashboard"
                   style={{
                     border: "1px solid var(--green-border)",

@@ -14,6 +14,7 @@ import { geocodeCity, normalizeOsmElement, overpassSearch } from "@/lib/leadsour
 import { normalizeTomtomPoi, tomtomPoiSearch } from "@/lib/leadsource/tomtom";
 import { NormalizedLead } from "@/lib/leadsource/types";
 import { QuotaExceededError } from "@/lib/quota";
+import { isSkipped, phoneKey } from "@/lib/skip";
 
 export type FeedItem = {
   name: string;
@@ -104,6 +105,8 @@ async function insertLead(
   ctx: { city: string; country: string | null },
 ): Promise<"added" | "updated" | "skipped"> {
   if (cand.websiteStatus === "has_site" || !cand.name) return "skipped";
+  // Already contacted or deleted once — never bring it back.
+  if (await isSkipped(cand.source, cand.sourceId, cand.phoneIntl ?? cand.phone)) return "skipped";
 
   const d = db();
   const existing = await d
@@ -138,7 +141,23 @@ async function insertLead(
     return "updated";
   }
 
-  // Cross-source dedup: same-ish name within ~150 m from the other source.
+  // Cross-source dedup, first pass: the same phone number is the same business,
+  // whatever the sources call it. Names differ between Google, TomTom and OSM
+  // ("Rose Clothing" vs "Rose Clothing Inc"), so name+distance alone let the
+  // same shop into the list twice.
+  const key = phoneKey(cand.phoneIntl ?? cand.phone);
+  if (key) {
+    const samePhone = await d
+      .select({ id: leads.id })
+      .from(leads)
+      .where(
+        sql`right(regexp_replace(coalesce(${leads.phoneIntl}, ${leads.phone}, ''), '[^0-9]', '', 'g'), 9) = ${key}`,
+      )
+      .limit(1);
+    if (samePhone.length) return "skipped";
+  }
+
+  // Cross-source dedup, second pass: same-ish name within ~150 m from the other source.
   if (cand.lat != null && cand.lng != null) {
     const nearby = await d
       .select({ id: leads.id, name: leads.name, source: leads.source })

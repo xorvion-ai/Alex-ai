@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { activities, analyses, db, leads } from "@/lib/db";
 import { trashLead } from "@/lib/trash";
+import { skipLead } from "@/lib/skip";
 import { jsonError } from "@/lib/api";
 
 export async function GET(
@@ -50,7 +51,11 @@ export async function DELETE(
     const leadId = Number(id);
     const d = db();
     const rows = await d.select().from(leads).where(eq(leads.id, leadId));
-    if (rows[0]) await trashLead(rows[0], "deleted");
+    if (rows[0]) {
+      await trashLead(rows[0], "deleted");
+      // and never let a later sweep of the same city re-add it
+      await skipLead(rows[0], "deleted");
+    }
     await d.delete(leads).where(eq(leads.id, leadId));
     return NextResponse.json({ ok: true });
   } catch (e) {

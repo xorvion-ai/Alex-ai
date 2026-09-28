@@ -134,6 +134,27 @@ export const contactedArchive = pgTable("contacted_archive", {
   archivedAt: timestamp("archived_at").notNull().defaultNow(),
 });
 
+// Businesses that must never come back: already contacted, or deleted on
+// purpose. Sweeping the same city finds the same places every time, so without
+// this a deleted lead reappears on the next sweep and a contacted one gets
+// pitched twice. Keyed by the source's own id, with enough of a snapshot to
+// still know who was contacted after the lead row is gone.
+export const skipped = pgTable(
+  "skipped",
+  {
+    id: serial("id").primaryKey(),
+    source: text("source").notNull(),
+    sourceId: text("source_id").notNull(),
+    name: text("name").notNull(),
+    phone: text("phone"),
+    country: text("country"),
+    category: text("category"),
+    reason: text("reason").$type<"contacted" | "deleted" | "has_website">().notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("skipped_source_uq").on(t.source, t.sourceId)],
+);
+
 export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
   value: jsonb("value").notNull(),

@@ -11,6 +11,7 @@ import { getSettings } from "@/lib/settings";
 import { googlePlaceReviews, GoogleReview } from "@/lib/leadsource/google";
 import { verifyLead } from "@/lib/verify";
 import { trashLead } from "@/lib/trash";
+import { skipLead } from "@/lib/skip";
 
 // Reviews are a nice-to-have: only spend Places quota on them while usage is
 // comfortably low, so sweeps always keep priority on the free tier.
@@ -78,6 +79,7 @@ export async function analyzeLead(leadId: number): Promise<AnalyzeOutcome> {
   // no confirmation prompt (Sumit's call, 2026-08-10).
   if (foundSite) {
     await trashLead(lead, "has_website", foundSite);
+    await skipLead(lead, "has_website");
     await d.delete(leads).where(eq(leads.id, leadId));
     return { score: lead.score ?? 0, dropped: true, foundSite };
   }
@@ -160,14 +162,18 @@ export type BatchFilter = { country?: string | null; category?: string | null };
 
 /**
  * Leads worth spending a Gemini call on: still new, not already known to have a
- * website, and contactable (a lead with no phone shows up nowhere) — optionally
- * narrowed to one country and/or business type.
+ * website, contactable (a lead with no phone shows up nowhere) and not already
+ * contacted — optionally narrowed to one country and/or business type.
+ *
+ * The contacted exclusion is the same one the leads list uses, so the counts in
+ * the ANALYZE selectors match what is actually in the list.
  */
 function batchWhere(f: BatchFilter = {}) {
   const parts = [
     eq(leads.status, "new"),
     or(isNull(leads.verifiedNoWebsite), eq(leads.verifiedNoWebsite, true)),
     sql`${leads.phone} is not null and ${leads.phone} <> ''`,
+    sql`not exists (select 1 from activities a where a.lead_id = ${leads.id})`,
   ];
   if (f.country) parts.push(eq(leads.country, f.country));
   if (f.category) parts.push(eq(leads.category, f.category));

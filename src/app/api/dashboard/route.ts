@@ -63,11 +63,13 @@ export async function GET() {
       .from(activities)
       .innerJoin(leads, eq(activities.leadId, leads.id));
 
+    // The whole sweep history, not the last five: it is the record of which city
+    // and which business types have already been covered, so it is never trimmed.
     const sweeps = await d
       .select()
       .from(searches)
       .orderBy(sql`${searches.createdAt} desc`)
-      .limit(5);
+      .limit(500);
 
     return NextResponse.json({
       stats: {
@@ -85,6 +87,9 @@ export async function GET() {
       sweeps: sweeps.map((s) => ({
         id: s.id,
         label: s.label,
+        city: s.city,
+        country: s.country,
+        categories: s.categories,
         when: s.createdAt,
         found: s.scanned,
         added: s.leadsAdded,
