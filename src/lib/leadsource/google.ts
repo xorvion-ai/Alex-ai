@@ -150,6 +150,60 @@ export async function googlePlaceReviews(placeId: string): Promise<GoogleReview[
     .filter((r: GoogleReview) => r.text);
 }
 
-export function isPermanentlyClosed(p: GooglePlace): boolean {
-  return p.businessStatus === "CLOSED_PERMANENTLY";
+/**
+ * Shut for good, or shut "for now" — neither is a lead. Google reports both in
+ * businessStatus; only OPERATIONAL is worth keeping. (This is the badge Maps
+ * shows as "Permanently closed" / "Temporarily closed", not today's hours.)
+ */
+export function isClosed(p: GooglePlace): boolean {
+  return p.businessStatus != null && p.businessStatus !== "OPERATIONAL";
+}
+
+/**
+ * What Google knows about a business we found somewhere else, looked up by its
+ * phone number (the one field OSM and TomTom get right).
+ *
+ * OSM in particular is years out of date: it happily lists a florist with no
+ * website that has had floridens.com on its Maps listing for ages, or one that
+ * closed last year. One search request per candidate buys the website verdict,
+ * the open/closed verdict, and the rating, reviews and real Maps link that an
+ * OSM row never has.
+ */
+async function searchOne(textQuery: string): Promise<GooglePlace | null> {
+  await guard("google_places");
+  const res = await fetch(`${BASE}/places:searchText`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey(),
+      "X-Goog-FieldMask": SEARCH_FIELDS,
+    },
+    body: JSON.stringify({ textQuery, pageSize: 1 }),
+  });
+  await spend("google_places");
+  if (!res.ok) return null;
+  const json = await res.json();
+  return json.places?.[0] ?? null;
+}
+
+export async function googleLookupBusiness(l: {
+  phone?: string | null;
+  name?: string | null;
+  near?: string | null;
+}): Promise<GooglePlace | null> {
+  // Places only resolves a phone in full international form: "+17473295821"
+  // matches, "7473295821" and "(747) 329-5821" return nothing.
+  const digits = (l.phone ?? "").replace(/\D/g, "");
+  if (digits.length >= 10) {
+    const hit = await searchOne(`+${digits}`);
+    if (hit) return hit;
+  }
+  // No phone match (OSM numbers often lack the country code) — fall back to the
+  // name where the lead says it is. The caller still has to prove it is the same
+  // business, by phone or by distance.
+  if (l.name) {
+    const q = [l.name, l.near].filter(Boolean).join(", ");
+    return searchOne(q);
+  }
+  return null;
 }

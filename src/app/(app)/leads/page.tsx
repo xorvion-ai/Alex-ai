@@ -23,7 +23,13 @@ import {
 } from "@/lib/client";
 import Flag from "@/components/Flag";
 import { CATEGORIES } from "@/lib/categories";
-import { ANY_COUNTRY, CHATGPT_DEMO_LINE, countryName, currencyOf } from "@/lib/config";
+import {
+  ANY_COUNTRY,
+  CHATGPT_DEMO_LINE,
+  countryName,
+  currencyOf,
+  isEnglishCountry,
+} from "@/lib/config";
 import { PLACEHOLDERS, renderTemplate, templateEnFor, templateFor, templatize } from "@/lib/messages";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
@@ -248,7 +254,12 @@ function LeadsInner() {
   // The translation box mirrors the message being sent: the English twin of the
   // same country template, filled with the same lead. (TRANSLATE re-does it with
   // Gemini after an edit, or for a country with no twin yet.)
-  const countryTplEn = L ? templateEnFor(templatesEn, L.country, countryTpl) : null;
+  // For an English-speaking country there is nothing to translate, so the box
+  // mirrors the message being sent instead of keeping a second copy that drifts
+  // (a stale saved twin was still quoting an old price while the message had a
+  // new one). Everywhere else it is the country's English twin.
+  const mirrorsMessage = isEnglishCountry(L?.country);
+  const countryTplEn = L && !mirrorsMessage ? templateEnFor(templatesEn, L.country, countryTpl) : null;
   const enBase = L && countryTplEn ? renderTemplate(countryTplEn, L) : "";
 
   // Reset the editable draft whenever the lead (or its template) changes; an
@@ -280,9 +291,13 @@ function LeadsInner() {
     setMsgSaving(true);
     try {
       const next = { ...templates, [L.country]: templatize(msgDraft, L, countryTpl) };
-      const nextEn = enDraft.trim()
-        ? { ...templatesEn, [L.country]: templatize(enDraft, L, countryTplEn) }
-        : templatesEn;
+      // An English-speaking country keeps no separate twin — saving one is what
+      // let the two boxes drift apart. Clear any twin saved before this.
+      const nextEn = mirrorsMessage
+        ? Object.fromEntries(Object.entries(templatesEn).filter(([c]) => c !== L.country))
+        : enDraft.trim()
+          ? { ...templatesEn, [L.country]: templatize(enDraft, L, countryTplEn) }
+          : templatesEn;
       await api("/api/settings", {
         method: "POST",
         body: JSON.stringify({ messageTemplates: next, messageTemplatesEn: nextEn }),
@@ -1249,14 +1264,17 @@ ${CHATGPT_DEMO_LINE}`);
                       <div style={{ padding: 13 }}>
                         <textarea
                           className="input in-panel"
-                          value={enDraft}
+                          value={mirrorsMessage ? msgDraft : enDraft}
                           onChange={(e) => setEnDraft(e.target.value)}
+                          readOnly={mirrorsMessage}
                           rows={12}
                           placeholder="press ↻ TRANSLATE to render the message above in English"
                           style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--body)", resize: "vertical", fontFamily: "var(--font-sg)" }}
                         />
                         <div className="mono" style={{ fontSize: 9.5, color: "var(--faint)", marginTop: 9, lineHeight: 1.6 }}>
-                          this is the same message, in English — SET saves both sides for the country
+                          {mirrorsMessage
+                            ? `${L.country} already speaks English — this mirrors the message box exactly, so the two can never disagree.`
+                            : "this is the same message, in English — SET saves both sides for the country"}
                         </div>
                       </div>
                     </div>

@@ -78,12 +78,17 @@ export function scoreLabel(s: number | null | undefined): string {
 }
 
 /**
- * Best Google Maps link for a lead. Google-sourced leads carry Google's own
- * place URL (opens the exact business card). For OSM/TomTom leads we search by
- * name + address instead of a bare `lat,lng` query — a coordinate-only query
- * just drops an empty pin with no business info, which is confusing. A name
- * search surfaces the real listing when Google has it, or clearly shows it
- * doesn't (which for a lead is a good sign — no Google presence).
+ * Best Google Maps link for a lead, most exact first:
+ *
+ *  1. Google's own place URL — opens that one business card. Carried by every
+ *     Google lead, and now by OSM/TomTom leads too once the sweep's cross-check
+ *     has matched them on Maps.
+ *  2. Its own coordinates. Searching the name + address returns a LIST of shops
+ *     zoomed out over the whole city, and often highlights the wrong one; the
+ *     coordinates are the one thing OSM and TomTom get exactly right, so the
+ *     link lands on the shop's doorstep (and opens its card when Google has a
+ *     listing at that point).
+ *  3. Name + address search, only when the lead has no coordinates at all.
  */
 export function mapsHref(l: {
   source: string;
@@ -96,7 +101,10 @@ export function mapsHref(l: {
   lat: number | null;
   lng: number | null;
 }): string | null {
-  if (l.source === "google" && l.mapsUri) return l.mapsUri;
+  if (l.mapsUri && /^https?:\/\/[^/]*(google\.|goo\.gl)/i.test(l.mapsUri)) return l.mapsUri;
+  if (l.lat != null && l.lng != null) {
+    return `https://www.google.com/maps/search/?api=1&query=${l.lat}%2C${l.lng}`;
+  }
   const where = l.address || [l.area, l.city, l.country].filter(Boolean).join(", ");
   const q = [l.name, where].filter(Boolean).join(", ").trim();
   if (q) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;

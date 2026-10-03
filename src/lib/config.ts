@@ -93,6 +93,25 @@ export const DIRECTORY_HOSTS = [
   "google.com",
   "g.page",
   "goo.gl",
+  // Free page builders and auto-generated profile pages. A shop whose entire
+  // web presence is one of these still needs a real site, so it stays a lead
+  // and the link is kept as a social/contact channel instead.
+  // ("sites.google.com" and "<name>.business.site" already match google.com.)
+  "business.site",
+  "wixsite.com",
+  "wix.com",
+  "blogspot.com",
+  "wordpress.com",
+  "weebly.com",
+  "jimdosite.com",
+  "webnode.com",
+  "carrd.co",
+  "mystrikingly.com",
+  "square.site",
+  "godaddysites.com",
+  "myshopify.com",
+  "glideapp.io",
+  "canva.site",
 ];
 
 // Hosts to ignore entirely when web-verifying (never count as "their website").
@@ -198,6 +217,12 @@ export function countryName(c: string): string {
 export function currencyOf(country: string | null | undefined): { cur: string; sym: string } {
   const row = country ? COUNTRY_TABLE.find((c) => c.name === country) : null;
   return row ? { cur: row.cur, sym: row.sym } : { cur: "INR", sym: "₹" };
+}
+
+/** Does this country already speak the message's language? Then there is no
+ *  "translation" to keep in step — the English box just mirrors the message. */
+export function isEnglishCountry(country: string | null | undefined): boolean {
+  return !!country && (LANGUAGE_HINTS[country] ?? "").startsWith("en");
 }
 
 export const LANGUAGE_HINTS: Record<string, string> = {

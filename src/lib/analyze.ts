@@ -8,7 +8,14 @@ import { GEMINI_MODEL, QUOTA_LIMITS } from "@/lib/config";
 import { analyses, db, leads } from "@/lib/db";
 import { canSpend, getUsage, guard, spend } from "@/lib/quota";
 import { getSettings } from "@/lib/settings";
-import { googlePlaceReviews, GoogleReview } from "@/lib/leadsource/google";
+import {
+  googleLookupBusiness,
+  googlePlaceReviews,
+  GoogleReview,
+  isClosed,
+  normalizeGooglePlace,
+} from "@/lib/leadsource/google";
+import { digitsPhone, isLiveWebsite, metresApart } from "@/lib/leadsource/types";
 import { verifyLead } from "@/lib/verify";
 import { trashLead } from "@/lib/trash";
 import { skipLead } from "@/lib/skip";
@@ -21,6 +28,72 @@ async function googleReviewsAllowed(): Promise<boolean> {
     used < QUOTA_LIMITS.google_places.limit * 0.7 &&
     (await canSpend("google_places"))
   );
+}
+
+/**
+ * What Google says about a non-Google lead today: should it still be a lead,
+ * and what did we learn about it?
+ *
+ *  drop  — Maps says temporarily/permanently closed, or it has a real, live
+ *          website. Either way it is not a prospect.
+ *  patch — fields worth keeping: rating, reviews, hours, and the exact Maps
+ *          link (an OSM row has none of those).
+ *
+ * Silent no-op when Places quota is tight or the lookup finds nothing.
+ */
+async function googleFreshness(lead: typeof leads.$inferSelect): Promise<{
+  drop: boolean;
+  site?: string | null;
+  status?: string;
+  patch?: Partial<typeof leads.$inferInsert>;
+}> {
+  const used = await getUsage("google_places");
+  if (used >= QUOTA_LIMITS.google_places.limit * 0.8 || !(await canSpend("google_places"))) {
+    return { drop: false };
+  }
+  const phone = lead.phoneIntl || lead.phone;
+  let p: Awaited<ReturnType<typeof googleLookupBusiness>> = null;
+  try {
+    p = await googleLookupBusiness({
+      phone,
+      name: lead.name,
+      near: lead.address ?? [lead.city, lead.country].filter(Boolean).join(", "),
+    });
+  } catch {
+    return { drop: false };
+  }
+  if (!p) return { drop: false };
+
+  // Same phone, or the same spot — a namesake in another suburb must never get
+  // this lead deleted.
+  const samePhone =
+    !!phone &&
+    digitsPhone(p.nationalPhoneNumber ?? p.internationalPhoneNumber)?.slice(-9) ===
+      digitsPhone(phone)?.slice(-9);
+  const apart = metresApart(lead, {
+    lat: p.location?.latitude ?? null,
+    lng: p.location?.longitude ?? null,
+  });
+  if (!samePhone && !(apart != null && apart <= 250)) return { drop: false };
+
+  if (isClosed(p)) return { drop: true, status: String(p.businessStatus).toLowerCase() };
+
+  const g = normalizeGooglePlace(p, null);
+  // instagram.com / facebook.com / sites.google.com are social_only — the lead
+  // stays. A real domain only counts when the link actually loads.
+  if (g.websiteStatus === "has_site" && (await isLiveWebsite(p.websiteUri))) {
+    return { drop: true, site: p.websiteUri };
+  }
+  return {
+    drop: false,
+    patch: {
+      rating: g.rating,
+      reviewCount: g.reviewCount,
+      hours: g.hours,
+      mapsUri: g.mapsUri,
+      lastRefreshedAt: new Date(),
+    },
+  };
 }
 
 const AnalysisSchema = z.object({
@@ -54,6 +127,29 @@ export async function analyzeLead(leadId: number): Promise<AnalyzeOutcome> {
   const rows = await d.select().from(leads).where(eq(leads.id, leadId));
   let lead = rows[0];
   if (!lead) throw new Error("Lead not found");
+
+  // Leads that came from OSM or TomTom are only as fresh as those datasets,
+  // which lag Google by years: a shop that closed or finally built a website is
+  // still listed there as a prospect. Ask Google about it before spending a
+  // Gemini call, so stale rows leave the list as they are worked. Quota-capped
+  // the same way as the sweep's cross-check.
+  if (lead.source !== "google") {
+    const verdict = await googleFreshness(lead);
+    if (verdict.drop) {
+      await trashLead(lead, "has_website", verdict.site ?? null);
+      await skipLead(lead, verdict.site ? "has_website" : "deleted");
+      await d.delete(leads).where(eq(leads.id, leadId));
+      return {
+        score: lead.score ?? 0,
+        dropped: true,
+        foundSite: verdict.site ?? `closed on Google Maps (${verdict.status})`,
+      };
+    }
+    if (verdict.patch) {
+      await d.update(leads).set(verdict.patch).where(eq(leads.id, leadId));
+      lead = { ...lead, ...verdict.patch };
+    }
+  }
 
   // Auto web-verification, folded into analysis so the operator never has to
   // click "Verify on web" per lead. Runs only the first time (verifiedNoWebsite

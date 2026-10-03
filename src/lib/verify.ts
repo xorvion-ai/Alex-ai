@@ -7,6 +7,7 @@ import { SOCIAL_HOSTS, VERIFY_IGNORE_HOSTS } from "@/lib/config";
 import { db, leads } from "@/lib/db";
 import { trashLead } from "@/lib/trash";
 import { normName } from "@/lib/dedupe";
+import { isLiveWebsite } from "@/lib/leadsource/types";
 import { guard, spend } from "@/lib/quota";
 
 type SearchResult = { url: string; title: string };
@@ -130,6 +131,12 @@ export async function verifyLead(
     // genuine no-website lead.
     if (!foundSite && looksLikeOwnSite(h, nameNorm, tokens)) foundSite = r.url;
   }
+
+  // A name-matching domain only counts if it actually loads. Dead and parked
+  // domains are common for small businesses that gave up on a site years ago —
+  // and they are exactly the people worth pitching, so deleting them would be
+  // the worst possible mistake.
+  if (foundSite && !(await isLiveWebsite(foundSite))) foundSite = null;
 
   const verifiedNoWebsite = !foundSite;
   const patch: { verifiedAt: Date; socials: string[]; verifiedNoWebsite?: boolean } = {

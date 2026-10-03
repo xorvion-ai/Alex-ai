@@ -1,19 +1,25 @@
 // Discovery engine — one "step" processes one query unit (client-driven chunks).
 
 import { and, between, eq, sql } from "drizzle-orm";
-import { countryName, GOOGLE_MAX_PAGES, LANGUAGE_HINTS } from "@/lib/config";
+import { countryName, GOOGLE_MAX_PAGES, LANGUAGE_HINTS, QUOTA_LIMITS } from "@/lib/config";
 import { getCategory } from "@/lib/categories";
 import { db, leads, searches, SweepQuery } from "@/lib/db";
 import { similarName } from "@/lib/dedupe";
 import {
+  googleLookupBusiness,
   googleTextSearchPage,
-  isPermanentlyClosed,
+  isClosed,
   normalizeGooglePlace,
 } from "@/lib/leadsource/google";
 import { geocodeCity, normalizeOsmElement, overpassSearch } from "@/lib/leadsource/osm";
 import { normalizeTomtomPoi, tomtomPoiSearch } from "@/lib/leadsource/tomtom";
-import { NormalizedLead } from "@/lib/leadsource/types";
-import { QuotaExceededError } from "@/lib/quota";
+import {
+  digitsPhone,
+  isLiveWebsite,
+  metresApart,
+  NormalizedLead,
+} from "@/lib/leadsource/types";
+import { canSpend, getUsage, QuotaExceededError } from "@/lib/quota";
 import { isSkipped, phoneKey } from "@/lib/skip";
 
 export type FeedItem = {
@@ -99,6 +105,98 @@ export async function createSweep(input: {
   };
 }
 
+/**
+ * Cross-check an OSM / TomTom candidate against Google Maps before it is
+ * allowed into the list, and fold in what Google knows.
+ *
+ * Returns null when the business should NOT become a lead — it has a real
+ * website, or Maps says it is temporarily or permanently closed.
+ *
+ * Costs one Places request per candidate, so it only runs while the free tier
+ * is comfortable; past that the candidate goes in unchecked exactly as before
+ * (the analysis pass still web-verifies it later).
+ */
+async function crossCheckOnGoogle(
+  cand: NormalizedLead,
+  ctx: { city: string; country: string | null },
+): Promise<NormalizedLead | null> {
+  const phone = cand.phoneIntl || cand.phone;
+  const used = await getUsage("google_places");
+  if (used >= QUOTA_LIMITS.google_places.limit * 0.8 || !(await canSpend("google_places"))) {
+    return cand;
+  }
+
+  let p: Awaited<ReturnType<typeof googleLookupBusiness>> = null;
+  try {
+    p = await googleLookupBusiness({
+      phone,
+      name: cand.name,
+      near: cand.address ?? [ctx.city, ctx.country].filter(Boolean).join(", "),
+    });
+  } catch {
+    return cand; // a failed lookup must not stop the sweep
+  }
+  if (!p) return cand;
+
+  // Prove it is the same business before trusting Google over the source: the
+  // same phone, or the same spot (a name search can easily land on a namesake
+  // in another suburb, and dropping a good lead over that is the worst error).
+  const samePhone =
+    !!phone &&
+    digitsPhone(p.nationalPhoneNumber ?? p.internationalPhoneNumber)?.slice(-9) ===
+      digitsPhone(phone)?.slice(-9);
+  const apart = metresApart(cand, {
+    lat: p.location?.latitude ?? null,
+    lng: p.location?.longitude ?? null,
+  });
+  if (!samePhone && !(apart != null && apart <= 250)) return cand;
+
+  if (isClosed(p)) return null;
+  const g = normalizeGooglePlace(p, null);
+  // An instagram.com / facebook.com "website" is social_only, so the lead
+  // stays. A real domain only disqualifies it if the link actually loads.
+  if (g.websiteStatus === "has_site" && (await isLiveWebsite(p.websiteUri))) return null;
+
+  // Keep the original source and id — this is enrichment, not a Google lead.
+  return {
+    ...cand,
+    rating: g.rating ?? cand.rating,
+    reviewCount: g.reviewCount ?? cand.reviewCount,
+    priceLevel: g.priceLevel ?? cand.priceLevel,
+    hours: g.hours ?? cand.hours,
+    address: cand.address ?? g.address,
+    area: cand.area ?? g.area,
+    lat: g.lat ?? cand.lat,
+    lng: g.lng ?? cand.lng,
+    // the real Maps link for this exact place, instead of a name search
+    mapsUri: g.mapsUri ?? cand.mapsUri,
+    websiteStatus: g.websiteStatus === "social_only" ? "social_only" : cand.websiteStatus,
+    socials: [...new Set([...cand.socials, ...g.socials])],
+  };
+}
+
+/** The candidate's columns, as stored. */
+function fields(c: NormalizedLead) {
+  return {
+    name: c.name,
+    category: c.category,
+    types: c.types,
+    address: c.address,
+    area: c.area,
+    lat: c.lat,
+    lng: c.lng,
+    phone: c.phone,
+    phoneIntl: c.phoneIntl,
+    rating: c.rating,
+    reviewCount: c.reviewCount,
+    priceLevel: c.priceLevel,
+    hours: c.hours,
+    mapsUri: c.mapsUri,
+    websiteStatus: c.websiteStatus as "none" | "social_only",
+    socials: c.socials,
+  };
+}
+
 /** Upsert one candidate. Returns whether it was newly added. */
 async function insertLead(
   cand: NormalizedLead,
@@ -114,29 +212,10 @@ async function insertLead(
     .from(leads)
     .where(and(eq(leads.source, cand.source), eq(leads.sourceId, cand.sourceId)));
 
-  const data = {
-    name: cand.name,
-    category: cand.category,
-    types: cand.types,
-    address: cand.address,
-    area: cand.area,
-    lat: cand.lat,
-    lng: cand.lng,
-    phone: cand.phone,
-    phoneIntl: cand.phoneIntl,
-    rating: cand.rating,
-    reviewCount: cand.reviewCount,
-    priceLevel: cand.priceLevel,
-    hours: cand.hours,
-    mapsUri: cand.mapsUri,
-    websiteStatus: cand.websiteStatus as "none" | "social_only",
-    socials: cand.socials,
-  };
-
   if (existing.length) {
     await d
       .update(leads)
-      .set({ ...data, lastRefreshedAt: new Date() })
+      .set({ ...fields(cand), lastRefreshedAt: new Date() })
       .where(eq(leads.id, existing[0].id));
     return "updated";
   }
@@ -173,10 +252,20 @@ async function insertLead(
     }
   }
 
+  // Last gate before it becomes a lead: ask Google about anything that did not
+  // come from Google. Runs here, after every free rejection above, so a request
+  // is only ever spent on a candidate that would otherwise be added.
+  if (cand.source !== "google") {
+    const checked = await crossCheckOnGoogle(cand, ctx);
+    if (!checked) return "skipped"; // closed, or it has a real website
+    cand = checked;
+  }
+
   await d.insert(leads).values({
     source: cand.source,
     sourceId: cand.sourceId,
-    ...data,
+    // rebuilt from `cand`, which the cross-check above may have enriched
+    ...fields(cand),
     city: ctx.city,
     country: ctx.country,
     languageHint: ctx.country ? (LANGUAGE_HINTS[ctx.country] ?? null) : null,
@@ -242,7 +331,8 @@ export async function stepSweep(
         requests++;
         for (const place of res.places) {
           scanned++;
-          if (isPermanentlyClosed(place)) continue;
+          // permanently OR temporarily closed — neither is worth pitching
+          if (isClosed(place)) continue;
           const cand = normalizeGooglePlace(place, q.categoryId);
           const outcome = await insertLead(cand, ctx);
           if (outcome === "added") {
