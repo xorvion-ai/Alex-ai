@@ -95,8 +95,29 @@ export function metresApart(
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+/**
+ * Tidy a phone number as a source actually stored it.
+ *
+ * OSM contributors type numbers into a text field, so values arrive as
+ * "3313463546.0" (entered as a number, trailing .0) or "33 1234 5678; 33 8765
+ * 4321" (several numbers in one tag). Stripping digits naively turned the first
+ * into 33134635460 — a real number with a spurious zero, which is what the CALL
+ * and WhatsApp buttons then dialled.
+ */
+export function cleanPhone(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  let s = String(raw).trim();
+  if (!s) return null;
+  // several numbers in one tag — keep the first
+  s = s.split(/[;,/]|\bor\b/i)[0].trim();
+  // "...546.0" / "...546.00" — a decimal point that was never a phone digit
+  s = s.replace(/\.0+$/, "");
+  return s || null;
+}
+
 export function digitsPhone(phone: string | null | undefined): string | null {
-  if (!phone) return null;
-  const d = phone.replace(/[^\d]/g, "");
+  const cleaned = cleanPhone(phone);
+  if (!cleaned) return null;
+  const d = cleaned.replace(/[^\d]/g, "");
   return d.length >= 7 ? d : null;
 }

@@ -1186,7 +1186,9 @@ ${CHATGPT_DEMO_LINE}`);
                 )}
                 {L.phone && (
                   <a
-                    href={`tel:${L.phone.replace(/\s/g, "")}`}
+                    // dial the international form when we have it — some sources
+                    // store the display number in a format that dials wrong
+                    href={`tel:${L.phoneIntl ? `+${L.phoneIntl}` : L.phone.replace(/\s/g, "")}`}
                     style={{
                       border: "1px solid var(--border-hover)",
                       borderRadius: 6,

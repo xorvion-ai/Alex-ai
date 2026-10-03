@@ -1,7 +1,13 @@
 // Discovery engine — one "step" processes one query unit (client-driven chunks).
 
 import { and, between, eq, sql } from "drizzle-orm";
-import { countryName, GOOGLE_MAX_PAGES, LANGUAGE_HINTS, QUOTA_LIMITS } from "@/lib/config";
+import {
+  countryName,
+  GOOGLE_MAX_PAGES,
+  LANGUAGE_HINTS,
+  QUOTA_LIMITS,
+  toInternational,
+} from "@/lib/config";
 import { getCategory } from "@/lib/categories";
 import { db, leads, searches, SweepQuery } from "@/lib/db";
 import { similarName } from "@/lib/dedupe";
@@ -176,7 +182,7 @@ async function crossCheckOnGoogle(
 }
 
 /** The candidate's columns, as stored. */
-function fields(c: NormalizedLead) {
+function fields(c: NormalizedLead, country: string | null) {
   return {
     name: c.name,
     category: c.category,
@@ -186,7 +192,8 @@ function fields(c: NormalizedLead) {
     lat: c.lat,
     lng: c.lng,
     phone: c.phone,
-    phoneIntl: c.phoneIntl,
+    // stored in full international form — wa.me and Places both need it
+    phoneIntl: toInternational(c.phoneIntl ?? c.phone, country),
     rating: c.rating,
     reviewCount: c.reviewCount,
     priceLevel: c.priceLevel,
@@ -215,7 +222,7 @@ async function insertLead(
   if (existing.length) {
     await d
       .update(leads)
-      .set({ ...fields(cand), lastRefreshedAt: new Date() })
+      .set({ ...fields(cand, ctx.country), lastRefreshedAt: new Date() })
       .where(eq(leads.id, existing[0].id));
     return "updated";
   }
@@ -272,7 +279,7 @@ async function insertLead(
       source: cand.source,
       sourceId: cand.sourceId,
       // rebuilt from `cand`, which the cross-check above may have enriched
-      ...fields(cand),
+      ...fields(cand, ctx.country),
       city: ctx.city,
       country: ctx.country,
       languageHint: ctx.country ? (LANGUAGE_HINTS[ctx.country] ?? null) : null,

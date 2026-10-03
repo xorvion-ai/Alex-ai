@@ -134,54 +134,54 @@ export const VERIFY_IGNORE_HOSTS = [
 // Countries Alex.ai sells into — Sumit's payout-supported markets. One table
 // feeds the dropdowns, the flags and the outreach language hints. There is no
 // "Global" option: a sweep always targets one country.
-export type CountryDef = { name: string; iso: string; lang: string; cur: string; sym: string };
+export type CountryDef = { name: string; iso: string; lang: string; cur: string; sym: string; dial: string };
 
 export const COUNTRY_TABLE: CountryDef[] = [
-  { name: "United States", iso: "US", lang: "en-US", cur: "USD", sym: "$" },
-  { name: "Australia", iso: "AU", lang: "en-AU", cur: "AUD", sym: "A$" },
-  { name: "Brazil", iso: "BR", lang: "pt-BR", cur: "BRL", sym: "R$" },
-  { name: "Canada", iso: "CA", lang: "en-CA", cur: "CAD", sym: "C$" },
-  { name: "Switzerland", iso: "CH", lang: "de-CH", cur: "CHF", sym: "CHF" },
-  { name: "Liechtenstein", iso: "LI", lang: "de-LI", cur: "CHF", sym: "CHF" },
-  { name: "Czech Republic", iso: "CZ", lang: "cs-CZ", cur: "CZK", sym: "Kč" },
-  { name: "Denmark", iso: "DK", lang: "da-DK", cur: "DKK", sym: "kr" },
-  { name: "Greenland", iso: "GL", lang: "da-GL", cur: "DKK", sym: "kr" },
-  { name: "Faroe Islands", iso: "FO", lang: "fo-FO", cur: "DKK", sym: "kr" },
-  { name: "Austria", iso: "AT", lang: "de-AT", cur: "EUR", sym: "€" },
-  { name: "Belgium", iso: "BE", lang: "nl-BE", cur: "EUR", sym: "€" },
-  { name: "Croatia", iso: "HR", lang: "hr-HR", cur: "EUR", sym: "€" },
-  { name: "Cyprus", iso: "CY", lang: "el-CY", cur: "EUR", sym: "€" },
-  { name: "Estonia", iso: "EE", lang: "et-EE", cur: "EUR", sym: "€" },
-  { name: "Finland", iso: "FI", lang: "fi-FI", cur: "EUR", sym: "€" },
-  { name: "France", iso: "FR", lang: "fr-FR", cur: "EUR", sym: "€" },
-  { name: "Germany", iso: "DE", lang: "de-DE", cur: "EUR", sym: "€" },
-  { name: "Greece", iso: "GR", lang: "el-GR", cur: "EUR", sym: "€" },
-  { name: "Ireland", iso: "IE", lang: "en-IE", cur: "EUR", sym: "€" },
-  { name: "Italy", iso: "IT", lang: "it-IT", cur: "EUR", sym: "€" },
-  { name: "Latvia", iso: "LV", lang: "lv-LV", cur: "EUR", sym: "€" },
-  { name: "Lithuania", iso: "LT", lang: "lt-LT", cur: "EUR", sym: "€" },
-  { name: "Luxembourg", iso: "LU", lang: "fr-LU", cur: "EUR", sym: "€" },
-  { name: "Malta", iso: "MT", lang: "mt-MT", cur: "EUR", sym: "€" },
-  { name: "Netherlands", iso: "NL", lang: "nl-NL", cur: "EUR", sym: "€" },
-  { name: "Portugal", iso: "PT", lang: "pt-PT", cur: "EUR", sym: "€" },
-  { name: "Slovakia", iso: "SK", lang: "sk-SK", cur: "EUR", sym: "€" },
-  { name: "Slovenia", iso: "SI", lang: "sl-SI", cur: "EUR", sym: "€" },
-  { name: "Spain", iso: "ES", lang: "es-ES", cur: "EUR", sym: "€" },
-  { name: "United Kingdom", iso: "GB", lang: "en-GB", cur: "GBP", sym: "£" },
-  { name: "Hong Kong", iso: "HK", lang: "zh-HK", cur: "HKD", sym: "HK$" },
-  { name: "Hungary", iso: "HU", lang: "hu-HU", cur: "HUF", sym: "Ft" },
-  { name: "Israel", iso: "IL", lang: "he-IL", cur: "ILS", sym: "₪" },
-  { name: "Japan", iso: "JP", lang: "ja-JP", cur: "JPY", sym: "¥" },
-  { name: "Mexico", iso: "MX", lang: "es-MX", cur: "MXN", sym: "MX$" },
-  { name: "Norway", iso: "NO", lang: "nb-NO", cur: "NOK", sym: "kr" },
-  { name: "New Zealand", iso: "NZ", lang: "en-NZ", cur: "NZD", sym: "NZ$" },
-  { name: "Philippines", iso: "PH", lang: "fil-PH", cur: "PHP", sym: "₱" },
-  { name: "Poland", iso: "PL", lang: "pl-PL", cur: "PLN", sym: "zł" },
-  { name: "Sweden", iso: "SE", lang: "sv-SE", cur: "SEK", sym: "kr" },
-  { name: "Singapore", iso: "SG", lang: "en-SG", cur: "SGD", sym: "S$" },
-  { name: "Thailand", iso: "TH", lang: "th-TH", cur: "THB", sym: "฿" },
-  { name: "Taiwan", iso: "TW", lang: "zh-TW", cur: "TWD", sym: "NT$" },
-  { name: "India", iso: "IN", lang: "hi-IN", cur: "INR", sym: "₹" },
+  { name: "United States", iso: "US", lang: "en-US", cur: "USD", sym: "$" , dial: "1" },
+  { name: "Australia", iso: "AU", lang: "en-AU", cur: "AUD", sym: "A$" , dial: "61" },
+  { name: "Brazil", iso: "BR", lang: "pt-BR", cur: "BRL", sym: "R$" , dial: "55" },
+  { name: "Canada", iso: "CA", lang: "en-CA", cur: "CAD", sym: "C$" , dial: "1" },
+  { name: "Switzerland", iso: "CH", lang: "de-CH", cur: "CHF", sym: "CHF" , dial: "41" },
+  { name: "Liechtenstein", iso: "LI", lang: "de-LI", cur: "CHF", sym: "CHF" , dial: "423" },
+  { name: "Czech Republic", iso: "CZ", lang: "cs-CZ", cur: "CZK", sym: "Kč" , dial: "420" },
+  { name: "Denmark", iso: "DK", lang: "da-DK", cur: "DKK", sym: "kr" , dial: "45" },
+  { name: "Greenland", iso: "GL", lang: "da-GL", cur: "DKK", sym: "kr" , dial: "299" },
+  { name: "Faroe Islands", iso: "FO", lang: "fo-FO", cur: "DKK", sym: "kr" , dial: "298" },
+  { name: "Austria", iso: "AT", lang: "de-AT", cur: "EUR", sym: "€" , dial: "43" },
+  { name: "Belgium", iso: "BE", lang: "nl-BE", cur: "EUR", sym: "€" , dial: "32" },
+  { name: "Croatia", iso: "HR", lang: "hr-HR", cur: "EUR", sym: "€" , dial: "385" },
+  { name: "Cyprus", iso: "CY", lang: "el-CY", cur: "EUR", sym: "€" , dial: "357" },
+  { name: "Estonia", iso: "EE", lang: "et-EE", cur: "EUR", sym: "€" , dial: "372" },
+  { name: "Finland", iso: "FI", lang: "fi-FI", cur: "EUR", sym: "€" , dial: "358" },
+  { name: "France", iso: "FR", lang: "fr-FR", cur: "EUR", sym: "€" , dial: "33" },
+  { name: "Germany", iso: "DE", lang: "de-DE", cur: "EUR", sym: "€" , dial: "49" },
+  { name: "Greece", iso: "GR", lang: "el-GR", cur: "EUR", sym: "€" , dial: "30" },
+  { name: "Ireland", iso: "IE", lang: "en-IE", cur: "EUR", sym: "€" , dial: "353" },
+  { name: "Italy", iso: "IT", lang: "it-IT", cur: "EUR", sym: "€" , dial: "39" },
+  { name: "Latvia", iso: "LV", lang: "lv-LV", cur: "EUR", sym: "€" , dial: "371" },
+  { name: "Lithuania", iso: "LT", lang: "lt-LT", cur: "EUR", sym: "€" , dial: "370" },
+  { name: "Luxembourg", iso: "LU", lang: "fr-LU", cur: "EUR", sym: "€" , dial: "352" },
+  { name: "Malta", iso: "MT", lang: "mt-MT", cur: "EUR", sym: "€" , dial: "356" },
+  { name: "Netherlands", iso: "NL", lang: "nl-NL", cur: "EUR", sym: "€" , dial: "31" },
+  { name: "Portugal", iso: "PT", lang: "pt-PT", cur: "EUR", sym: "€" , dial: "351" },
+  { name: "Slovakia", iso: "SK", lang: "sk-SK", cur: "EUR", sym: "€" , dial: "421" },
+  { name: "Slovenia", iso: "SI", lang: "sl-SI", cur: "EUR", sym: "€" , dial: "386" },
+  { name: "Spain", iso: "ES", lang: "es-ES", cur: "EUR", sym: "€" , dial: "34" },
+  { name: "United Kingdom", iso: "GB", lang: "en-GB", cur: "GBP", sym: "£" , dial: "44" },
+  { name: "Hong Kong", iso: "HK", lang: "zh-HK", cur: "HKD", sym: "HK$" , dial: "852" },
+  { name: "Hungary", iso: "HU", lang: "hu-HU", cur: "HUF", sym: "Ft" , dial: "36" },
+  { name: "Israel", iso: "IL", lang: "he-IL", cur: "ILS", sym: "₪" , dial: "972" },
+  { name: "Japan", iso: "JP", lang: "ja-JP", cur: "JPY", sym: "¥" , dial: "81" },
+  { name: "Mexico", iso: "MX", lang: "es-MX", cur: "MXN", sym: "MX$" , dial: "52" },
+  { name: "Norway", iso: "NO", lang: "nb-NO", cur: "NOK", sym: "kr" , dial: "47" },
+  { name: "New Zealand", iso: "NZ", lang: "en-NZ", cur: "NZD", sym: "NZ$" , dial: "64" },
+  { name: "Philippines", iso: "PH", lang: "fil-PH", cur: "PHP", sym: "₱" , dial: "63" },
+  { name: "Poland", iso: "PL", lang: "pl-PL", cur: "PLN", sym: "zł" , dial: "48" },
+  { name: "Sweden", iso: "SE", lang: "sv-SE", cur: "SEK", sym: "kr" , dial: "46" },
+  { name: "Singapore", iso: "SG", lang: "en-SG", cur: "SGD", sym: "S$" , dial: "65" },
+  { name: "Thailand", iso: "TH", lang: "th-TH", cur: "THB", sym: "฿" , dial: "66" },
+  { name: "Taiwan", iso: "TW", lang: "zh-TW", cur: "TWD", sym: "NT$" , dial: "886" },
+  { name: "India", iso: "IN", lang: "hi-IN", cur: "INR", sym: "₹" , dial: "91" },
 ];
 
 /** Dropdown values, e.g. "🇺🇸 United States". */
@@ -222,6 +222,54 @@ export function countryName(c: string): string {
 export function currencyOf(country: string | null | undefined): { cur: string; sym: string } {
   const row = country ? COUNTRY_TABLE.find((c) => c.name === country) : null;
   return row ? { cur: row.cur, sym: row.sym } : { cur: "INR", sym: "₹" };
+}
+
+/** Country name → international dialling code, e.g. "Mexico" → "52". */
+export const DIAL_CODES: Record<string, string> = Object.fromEntries(
+  COUNTRY_TABLE.map((c) => [c.name, c.dial]),
+);
+
+/**
+ * A phone in full international form, which is the only form wa.me accepts and
+ * the only one Google Places resolves.
+ *
+ * Sources hand back national numbers constantly — OSM almost always, Google
+ * whenever it only has `nationalPhoneNumber`. `wa.me/3313463546` opens nothing;
+ * `wa.me/523313463546` opens the chat. Returns the digits unchanged when they
+ * already carry the country code, or when the country is unknown.
+ */
+/**
+ * How many digits a *national* number has, per market. Only countries listed
+ * here get a dialling code added, and only when the length matches exactly —
+ * guessing is worse than leaving the number alone. Brazil's 8-digit landlines,
+ * for instance, are missing their area code, so no prefix can save them.
+ */
+const NATIONAL_LEN: Record<string, number[]> = {
+  "United States": [10], Canada: [10], Mexico: [10], Brazil: [10, 11],
+  Spain: [9], Portugal: [9], Australia: [9], "New Zealand": [9],
+  "United Kingdom": [10], India: [10], Ireland: [9], Germany: [10, 11],
+  France: [9], Netherlands: [9], Belgium: [9], Italy: [9, 10],
+  Poland: [9], Sweden: [9], Norway: [8], Denmark: [8], Finland: [9],
+  Switzerland: [9], Austria: [10], Japan: [10], Singapore: [8],
+  "Hong Kong": [8], Philippines: [10], Israel: [9], Greece: [10],
+};
+
+export function toInternational(
+  digits: string | null | undefined,
+  country: string | null | undefined,
+): string | null {
+  if (!digits) return null;
+  const d = digits.replace(/\D/g, "");
+  if (!d) return null;
+  const code = country ? DIAL_CODES[country] : null;
+  if (!code) return d;
+  // already international
+  if (d.startsWith(code) && d.length > code.length + 6) return d;
+  // a national number often carries a trunk "0"; Italy is the exception that keeps it
+  const national = country === "Italy" ? d : d.replace(/^0+/, "");
+  const lengths = country ? NATIONAL_LEN[country] : undefined;
+  if (!lengths?.includes(national.length)) return d; // unsure — leave it as found
+  return code + national;
 }
 
 /** Does this country already speak the message's language? Then there is no
