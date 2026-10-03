@@ -27,6 +27,11 @@ export const QUOTA_LIMITS: Record<
   // single SKU's 1,000 free tier → zero billing even with UPI autopay active.
   // Daily quota caps are NOT adjustable on this account, so this app-side cap is
   // the no-bill guarantee.
+  // Raised to 3000 for one session on 2026-10-03 to spend free-trial credit on a
+  // backlog clean-up and three sweeps, then put back here. Raising it is safe
+  // ONLY while the account says "Free trial account" (it cannot charge a card;
+  // usage past the free calls draws from the credit and stops when that runs
+  // out). After an Upgrade, raising it spends real money.
   google_places: { limit: 1000, period: "month", label: "PLACES" },
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
   tomtom: { limit: 2500, period: "day", label: "TOMTOM" },

@@ -261,16 +261,25 @@ async function insertLead(
     cand = checked;
   }
 
-  await d.insert(leads).values({
-    source: cand.source,
-    sourceId: cand.sourceId,
-    // rebuilt from `cand`, which the cross-check above may have enriched
-    ...fields(cand),
-    city: ctx.city,
-    country: ctx.country,
-    languageHint: ctx.country ? (LANGUAGE_HINTS[ctx.country] ?? null) : null,
-  });
-  return "added";
+  // The existence check above happened before the Google cross-check, which
+  // takes seconds — long enough for a second run of the same query (a retry, or
+  // another tab stepping the same sweep) to insert this row in between. Losing
+  // that race is normal and must not abort the whole query, so the conflict is
+  // absorbed and reported as "already had it".
+  const inserted = await d
+    .insert(leads)
+    .values({
+      source: cand.source,
+      sourceId: cand.sourceId,
+      // rebuilt from `cand`, which the cross-check above may have enriched
+      ...fields(cand),
+      city: ctx.city,
+      country: ctx.country,
+      languageHint: ctx.country ? (LANGUAGE_HINTS[ctx.country] ?? null) : null,
+    })
+    .onConflictDoNothing({ target: [leads.source, leads.sourceId] })
+    .returning({ id: leads.id });
+  return inserted.length ? "added" : "skipped";
 }
 
 export async function stepSweep(
