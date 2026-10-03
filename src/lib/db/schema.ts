@@ -47,6 +47,9 @@ export const leads = pgTable(
     lng: doublePrecision("lng"),
     phone: text("phone"),
     phoneIntl: text("phone_intl"),
+    // a second number the source listed (international digits) — some shops
+    // publish two lines and answer only one
+    phoneAlt: text("phone_alt"),
     rating: doublePrecision("rating"),
     reviewCount: integer("review_count"),
     priceLevel: text("price_level"),

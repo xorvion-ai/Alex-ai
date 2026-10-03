@@ -181,6 +181,8 @@ export type LeadDto = {
   lng: number | null;
   phone: string | null;
   phoneIntl: string | null;
+  /** a second number the listing carried, if any */
+  phoneAlt: string | null;
   rating: number | null;
   reviewCount: number | null;
   priceLevel: string | null;

@@ -194,6 +194,7 @@ function fields(c: NormalizedLead, country: string | null) {
     phone: c.phone,
     // stored in full international form — wa.me and Places both need it
     phoneIntl: toInternational(c.phoneIntl ?? c.phone, country),
+    phoneAlt: toInternational(c.phoneAlt, country),
     rating: c.rating,
     reviewCount: c.reviewCount,
     priceLevel: c.priceLevel,

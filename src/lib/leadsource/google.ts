@@ -81,6 +81,7 @@ export function normalizeGooglePlace(p: GooglePlace, categoryId: string | null):
     lng: p.location?.longitude ?? null,
     phone: p.nationalPhoneNumber ?? p.internationalPhoneNumber ?? null,
     phoneIntl: digitsPhone(p.internationalPhoneNumber ?? p.nationalPhoneNumber),
+    phoneAlt: null,
     rating: p.rating ?? null,
     reviewCount: p.userRatingCount ?? null,
     priceLevel: p.priceLevel ? (PRICE[p.priceLevel] ?? null) : null,

@@ -12,6 +12,8 @@ export type NormalizedLead = {
   lng: number | null;
   phone: string | null;
   phoneIntl: string | null;
+  /** a second number the source listed, if any (international digits) */
+  phoneAlt: string | null;
   rating: number | null;
   reviewCount: number | null;
   priceLevel: string | null;
@@ -105,14 +107,21 @@ export function metresApart(
  * and WhatsApp buttons then dialled.
  */
 export function cleanPhone(raw: string | null | undefined): string | null {
-  if (raw == null) return null;
-  let s = String(raw).trim();
-  if (!s) return null;
-  // several numbers in one tag — keep the first
-  s = s.split(/[;,/]|\bor\b/i)[0].trim();
-  // "...546.0" / "...546.00" — a decimal point that was never a phone digit
-  s = s.replace(/\.0+$/, "");
-  return s || null;
+  return splitPhones(raw)[0] ?? null;
+}
+
+/**
+ * Every number in one tag, cleaned. A shop that lists two lines —
+ * "+1-647-648-2787;+1-647-606-8843" — has two ways to reach it, and the second
+ * is worth keeping rather than discarding: the owner often answers one and not
+ * the other.
+ */
+export function splitPhones(raw: string | null | undefined): string[] {
+  if (raw == null) return [];
+  return String(raw)
+    .split(/[;,/]|\bor\b/i)
+    .map((s) => s.trim().replace(/\.0+$/, "")) // "...546.0" — entered as a number
+    .filter((s) => s.replace(/\D/g, "").length >= 7);
 }
 
 export function digitsPhone(phone: string | null | undefined): string | null {

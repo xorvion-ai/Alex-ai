@@ -3,7 +3,7 @@
 
 import { DIRECTORY_HOSTS, OSM_MAX_ELEMENTS, SOCIAL_HOSTS } from "@/lib/config";
 import { Category } from "@/lib/categories";
-import { classifyWebsite, cleanCategory, cleanPhone, digitsPhone, NormalizedLead } from "./types";
+import { classifyWebsite, cleanCategory, digitsPhone, NormalizedLead, splitPhones } from "./types";
 
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
 // Public Overpass servers get busy — try each in turn per query.
@@ -133,7 +133,8 @@ export function normalizeOsmElement(
   const sourceId = `${el.type}/${el.id}`;
   // OSM phone tags are free text — cleanPhone() drops the "entered as a number"
   // trailing .0 and keeps only the first of several numbers.
-  const phone = cleanPhone(tags.phone || tags["contact:phone"] || tags["contact:mobile"]);
+  const numbers = splitPhones(tags.phone || tags["contact:phone"] || tags["contact:mobile"]);
+  const phone = numbers[0] ?? null;
 
   const addrParts = [
     tags["addr:housenumber"],
@@ -158,6 +159,7 @@ export function normalizeOsmElement(
     lng,
     phone,
     phoneIntl: digitsPhone(phone),
+    phoneAlt: digitsPhone(numbers[1]),
     rating: null,
     reviewCount: null,
     priceLevel: null,

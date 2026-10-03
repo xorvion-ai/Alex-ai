@@ -84,6 +84,7 @@ export function normalizeTomtomPoi(
     lng,
     phone,
     phoneIntl: digitsPhone(phone),
+    phoneAlt: null,
     rating: null,
     reviewCount: null,
     priceLevel: null,

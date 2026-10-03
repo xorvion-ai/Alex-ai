@@ -1142,6 +1142,30 @@ ${CHATGPT_DEMO_LINE}`);
                     WHATSAPP
                   </a>
                 )}
+                {/* Some shops publish two lines and answer only one — the second
+                    number gets its own button rather than being thrown away. */}
+                {L.phoneAlt && (
+                  <a
+                    href={`https://wa.me/${L.phoneAlt}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`Second number on this listing: +${L.phoneAlt}`}
+                    style={{
+                      border: "1px solid var(--green-border)",
+                      background: "transparent",
+                      borderRadius: 6,
+                      padding: "8px 16px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--green)",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-sg)",
+                    }}
+                  >
+                    WHATSAPP 2
+                  </a>
+                )}
                 {socialLinks(L).map((sl) => (
                   <a
                     key={sl.kind}
