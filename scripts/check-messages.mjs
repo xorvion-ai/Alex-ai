@@ -7,6 +7,7 @@
 import assert from "node:assert/strict";
 import {
   DEFAULT_TEMPLATES,
+  friendlyName,
   renderTemplate,
   templateFor,
   templatize,
@@ -79,5 +80,30 @@ assert.ok(naive.includes("{name}") && naive.includes("{rating}"), "naive fallbac
 assert.equal(templateFor({ India: "custom" }, "India"), "custom");
 assert.equal(templateFor({}, "India"), DEFAULT_TEMPLATES.India);
 assert.equal(templateFor({}, "Nowhere"), null);
+
+// 6. the Portugal bug: a lead called "Casa do Fumo, Unipessoal Lda." had its
+//    message edited to the short "Casa do Fumo" before SET. SET looked only for
+//    the full legal name, missed it, and saved "Casa do Fumo" into the country
+//    template — so every Portuguese lead was greeted as Casa do Fumo.
+assert.equal(friendlyName("Casa do Fumo, Unipessoal Lda."), "Casa do Fumo");
+assert.equal(friendlyName("Pastelería Madrid S.A. de C.V."), "Pastelería Madrid");
+assert.equal(friendlyName("Aroma de Mel - Papelaria, Unipessoal Lda"), "Aroma de Mel - Papelaria");
+assert.equal(friendlyName("Santos & Filhas Lda"), "Santos & Filhas");
+assert.equal(friendlyName("Flores de Maria"), "Flores de Maria", "a real 'de' is kept");
+assert.equal(friendlyName("Kids"), "Kids");
+
+const fumo = { name: "Casa do Fumo, Unipessoal Lda.", rating: null, reviewCount: null, category: "gift shop", types: [], city: "Lisboa", country: "Portugal" };
+const crisalia = { ...fumo, name: "Papelaria Crisália" };
+const ptBase = "Olá, equipa da {name}! 👋 Sou o Sumit.\n\nPreço: 70 € — pagamento único.";
+// edited with the SHORT name, exactly as it happened
+const ptEdited = "Olá, equipa da Casa do Fumo! 👋 Sou o Sumit.\n\nPreço: 70 € — pagamento único.";
+const ptTpl = templatize(ptEdited, fumo, ptBase);
+assert.ok(ptTpl.includes("{name}"), "the short name became {name}");
+assert.ok(!ptTpl.includes("Casa do Fumo"), "no business name left in the template");
+assert.ok(renderTemplate(ptTpl, crisalia).includes("equipa da Papelaria Crisália"), "the next lead gets its own name");
+// and with the FULL name, it still works
+assert.ok(!templatize(ptEdited.replace("Casa do Fumo", fumo.name), fumo, ptBase).includes("Casa do Fumo"));
+// the greeting uses the friendly name, not the legal one
+assert.ok(renderTemplate(ptBase, fumo).includes("equipa da Casa do Fumo!"), "rendered without 'Unipessoal Lda.'");
 
 console.log("messages: all checks passed");

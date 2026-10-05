@@ -92,15 +92,54 @@ Price: R$ 99 — one-time payment, pay after the site is delivered.
 I've also attached a demo so you can see how it could look. 😊`,
 };
 
-/** English twin for a country: an override, the default, or the local template
- *  itself when that template is already written in English. */
+/**
+ * English twin for a country: a saved override or a built-in default, else
+ * null — and the box then offers TRANSLATE.
+ *
+ * It used to fall back to the local template itself, which was only right for
+ * English-speaking countries. For Portugal it put Portuguese under the label
+ * "English · what the message says". English countries now mirror the message
+ * box directly (see isEnglishCountry), so the fallback has no job left.
+ */
 export function templateEnFor(
   overrides: Record<string, string>,
   country: string | null | undefined,
-  localTemplate: string | null,
 ): string | null {
   if (!country) return null;
-  return overrides[country] ?? DEFAULT_TEMPLATES_EN[country] ?? localTemplate;
+  return overrides[country] ?? DEFAULT_TEMPLATES_EN[country] ?? null;
+}
+
+/**
+ * Words that are a company's legal form, not its name. Nobody greets a shop as
+ * "Casa do Fumo, Unipessoal Lda." — and when the message was edited to the
+ * short name, SET could not find the full one, so "Casa do Fumo" was saved into
+ * the Portugal template as fixed text and every Portuguese lead got it.
+ * Matched with dots and slashes removed, so "S.A.", "Lda." and "S/A" all count.
+ */
+const LEGAL_FORMS = new Set([
+  "unipessoal", "lda", "ltda", "eireli", "epp", "mei", // PT / BR
+  "sa", "sl", "slu", "cv", // ES / MX ("S.A. de C.V.")
+  "srl", "spa", "snc", // IT
+  "gmbh", "ug", "kg", "ag", // DE
+  "sarl", "sas", "eurl", // FR
+  "llc", "inc", "corp", "co", "ltd", "limited", "plc", // US / UK
+]);
+
+/** "Casa do Fumo, Unipessoal Lda." → "Casa do Fumo" — the name you'd say aloud. */
+export function friendlyName(name: string): string {
+  const words = name.trim().split(/\s+/);
+  const norm = (w: string | undefined) => (w ?? "").toLowerCase().replace(/[.,/]/g, "");
+  while (words.length > 1) {
+    const last = norm(words[words.length - 1]);
+    // the "de" inside "S.A. de C.V." goes only when a legal form sits before it
+    if (LEGAL_FORMS.has(last) || (last === "de" && LEGAL_FORMS.has(norm(words[words.length - 2])))) {
+      words.pop();
+      continue;
+    }
+    break;
+  }
+  const out = words.join(" ").replace(/[\s,.\-–]+$/, "").trim();
+  return out || name.trim();
 }
 
 export type TemplateLead = {
@@ -119,7 +158,8 @@ function values(lead: TemplateLead): Record<string, string> {
     lead.types?.find((t) => t && t !== "any") ??
     "business";
   return {
-    "{name}": lead.name,
+    // the name as you'd greet them — legal form dropped (see friendlyName)
+    "{name}": friendlyName(lead.name),
     "{rating}": lead.rating != null ? String(lead.rating) : "",
     "{reviews}": lead.reviewCount != null ? String(lead.reviewCount) : "",
     "{category}": category,
@@ -150,6 +190,21 @@ export function renderTemplate(tpl: string, lead: TemplateLead): string {
  * replacing the name everywhere and the first occurrence of each other value.
  */
 export function templatize(text: string, lead: TemplateLead, fromTemplate?: string | null): string {
+  // Whether the edit used the full legal name or the short one, it is the same
+  // business: fold the full form onto the short one before matching.
+  const full = lead.name.trim();
+  const short = friendlyName(lead.name);
+  const normalised = full !== short ? text.split(full).join(short) : text;
+
+  const out = templatizeExact(normalised, lead, fromTemplate);
+
+  // Last line of defence: a business name must never survive into a template.
+  // If any copy of it is still there, it is this lead's name, so it becomes
+  // {name} — exactly what the no-template path already does for the name.
+  return short.length >= 2 ? out.split(short).join("{name}") : out;
+}
+
+function templatizeExact(text: string, lead: TemplateLead, fromTemplate?: string | null): string {
   const vals = Object.entries(values(lead)).filter(([, v]) => v.length >= 2);
   if (!fromTemplate) {
     let out = text;

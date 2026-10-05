@@ -259,7 +259,7 @@ function LeadsInner() {
   // (a stale saved twin was still quoting an old price while the message had a
   // new one). Everywhere else it is the country's English twin.
   const mirrorsMessage = isEnglishCountry(L?.country);
-  const countryTplEn = L && !mirrorsMessage ? templateEnFor(templatesEn, L.country, countryTpl) : null;
+  const countryTplEn = L && !mirrorsMessage ? templateEnFor(templatesEn, L.country) : null;
   const enBase = L && countryTplEn ? renderTemplate(countryTplEn, L) : "";
 
   // Reset the editable draft whenever the lead (or its template) changes; an
