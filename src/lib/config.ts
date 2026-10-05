@@ -27,12 +27,20 @@ export const QUOTA_LIMITS: Record<
   // single SKU's 1,000 free tier → zero billing even with UPI autopay active.
   // Daily quota caps are NOT adjustable on this account, so this app-side cap is
   // the no-bill guarantee.
-  // Raised to 3000 for one session on 2026-10-03 to spend free-trial credit on a
-  // backlog clean-up and three sweeps, then put back here. Raising it is safe
-  // ONLY while the account says "Free trial account" (it cannot charge a card;
-  // usage past the free calls draws from the credit and stops when that runs
-  // out). After an Upgrade, raising it spends real money.
-  google_places: { limit: 1000, period: "month", label: "PLACES" },
+  // 2026-10-05: raised to 5,000 (effective stop 4,500 at the 90% hard-stop).
+  //
+  // Evidence it is safe, all from Sumit's own console: the account is a FREE
+  // TRIAL account, which has no authority to charge a card; Transactions reads
+  // "You don't have any transactions for this billing period" for Aug, Sep and
+  // Oct; the ₹1 budget alert reads "₹0.00 / ₹1.00 — No credits used" after
+  // 1,686 requests this month. So those 1,686 were inside the free allowance,
+  // which means the SKU in play has a 5,000/month free tier (Pro), not the
+  // 1,000 (Enterprise) this cap used to assume.
+  //
+  // The ₹1 budget alert is the tripwire: Google emails the instant anything
+  // becomes billable. ⚠ Put this back to 1000 when the trial ends (18 Oct 2026)
+  // or if the account is ever upgraded to paid.
+  google_places: { limit: 5000, period: "month", label: "PLACES" },
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
   tomtom: { limit: 2500, period: "day", label: "TOMTOM" },
   tavily: { limit: 1000, period: "month", label: "TAVILY" },
