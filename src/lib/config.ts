@@ -17,7 +17,13 @@ export type Provider = "google_places" | "gemini" | "tomtom" | "tavily" | "fx" |
 // (no card) — both capped below their limits.
 export const QUOTA_LIMITS: Record<
   Provider,
-  { limit: number; period: "month" | "day"; label: string }
+  {
+    limit: number;
+    period: "month" | "day";
+    label: string;
+    /** an absolute stop, overriding the global hardStop percentage */
+    stopAt?: number;
+  }
 > = {
   // Google Maps Platform free tier is PER-SKU per month, and the FIELDS a
   // request asks for decide its SKU. Alex.ai asks for phone, website, rating and
@@ -29,12 +35,14 @@ export const QUOTA_LIMITS: Record<
   // → ₹0.00 charged, ₹0.00 savings, "No credits used", and no transaction in any
   // billing period. An earlier guess of 1,000/month was simply wrong.
   //
-  // All Places SKUs are pooled into this one counter and the Guardian hard-stops
-  // at 90% = 6,300, leaving 700 requests of margin below the free tier — so the
-  // bill stays ₹0 even with UPI autopay attached.
+  // All Places SKUs are pooled into this one counter. It stops at an absolute
+  // 6,800 rather than the global 90% (which would be 6,300): Sumit asked for the
+  // most of the free tier, and 200 requests is still a safe margin because the
+  // Guardian checks before EVERY request, so a sweep can overshoot by one call
+  // at most. The bill stays ₹0 even with UPI autopay attached.
   // The ₹1 budget alert on the account is the tripwire: Google emails the
   // instant anything becomes billable. Nothing has, in three months.
-  google_places: { limit: 7000, period: "month", label: "PLACES" },
+  google_places: { limit: 7000, stopAt: 6800, period: "month", label: "PLACES" },
   gemini: { limit: 1000, period: "day", label: "GEMINI" },
   tomtom: { limit: 2500, period: "day", label: "TOMTOM" },
   tavily: { limit: 1000, period: "month", label: "TAVILY" },

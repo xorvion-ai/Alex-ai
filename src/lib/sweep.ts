@@ -5,7 +5,6 @@ import {
   countryName,
   GOOGLE_MAX_PAGES,
   LANGUAGE_HINTS,
-  QUOTA_LIMITS,
   toInternational,
 } from "@/lib/config";
 import { getCategory } from "@/lib/categories";
@@ -25,7 +24,7 @@ import {
   metresApart,
   NormalizedLead,
 } from "@/lib/leadsource/types";
-import { canSpend, getUsage, QuotaExceededError } from "@/lib/quota";
+import { canSpend, QuotaExceededError } from "@/lib/quota";
 import { isSkipped, phoneKey } from "@/lib/skip";
 
 export type FeedItem = {
@@ -127,8 +126,9 @@ async function crossCheckOnGoogle(
   ctx: { city: string; country: string | null },
 ): Promise<NormalizedLead | null> {
   const phone = cand.phoneIntl || cand.phone;
-  const used = await getUsage("google_places");
-  if (used >= QUOTA_LIMITS.google_places.limit * 0.8 || !(await canSpend("google_places"))) {
+  // Runs right up to the Guardian's stop. Quitting earlier (it used to stop at
+  // 80%) only meant the last stretch of a month's sweeps came in unverified.
+  if (!(await canSpend("google_places", 2))) {
     return cand;
   }
 

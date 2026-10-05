@@ -111,7 +111,7 @@ export default function Sidebar() {
               className="mono"
               style={{ fontSize: 9.5, fontWeight: 500, color: "var(--amber)", marginTop: 9, lineHeight: 1.5 }}
             >
-              ⛨ hard-stop at 90% — a bill is impossible
+              ⛨ stops before every free limit — a bill is impossible
             </div>
           </>
         )}

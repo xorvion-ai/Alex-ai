@@ -7,7 +7,7 @@ import CountryDropdown from "@/components/CountryDropdown";
 import { useToast } from "@/components/useToast";
 import { api } from "@/lib/client";
 import { CATEGORIES } from "@/lib/categories";
-import { DEFAULT_COUNTRY } from "@/lib/config";
+import { DEFAULT_COUNTRY, Provider, QUOTA_LIMITS } from "@/lib/config";
 
 const LANGS = ["Hindi", "Spanish", "Portuguese", "French", "German"];
 const DEFAULT_CAT_CHOICES = CATEGORIES.map((c) => c.id).filter((c) => c !== "any");
@@ -15,6 +15,13 @@ const DEFAULT_CAT_CHOICES = CATEGORIES.map((c) => c.id).filter((c) => c !== "any
 export default function SettingsPage() {
   const { flash, node: toastNode } = useToast();
   const [hardStop, setHardStop] = useState(90);
+  // "7,000 / month · stops at 6,800" — the free limit and where the Guardian
+  // actually stops, which is either a fixed number or the slider's percentage.
+  const capText = (p: Provider) => {
+    const q = QUOTA_LIMITS[p];
+    const stop = q.stopAt ?? Math.floor((q.limit * hardStop) / 100);
+    return `${q.limit.toLocaleString("en-US")} / ${q.period} · stops at ${stop.toLocaleString("en-US")}`;
+  };
   const [defaultCountry, setDefaultCountry] = useState(DEFAULT_COUNTRY);
   const [defaultCategories, setDefaultCategories] = useState<string[]>([]);
   const [fallbackLanguage, setFallbackLanguage] = useState("Hindi");
@@ -155,11 +162,14 @@ export default function SettingsPage() {
             onChange={(e) => setHardStop(Number(e.target.value))}
           />
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
-            {capRow("google places cap", "1,000 / month")}
-            {capRow("gemini cap", "1,000 / day")}
-            {capRow("tomtom cap", "2,500 / day")}
-            {capRow("tavily cap", "1,000 / month")}
-            {capRow("currency rates cap", "1,000 / month")}
+            {/* Read from QUOTA_LIMITS, never typed in — these used to be hard-coded
+                and went stale the moment a limit changed (Places read 1,000 long
+                after it became 7,000). */}
+            {capRow("google places cap", capText("google_places"))}
+            {capRow("gemini cap", capText("gemini"))}
+            {capRow("tomtom cap", capText("tomtom"))}
+            {capRow("tavily cap", capText("tavily"))}
+            {capRow("currency rates cap", capText("fx"))}
             {capRow("osm", "polite rate-limit only", true)}
           </div>
           <div className="mono" style={{ fontSize: 10, fontWeight: 500, color: "var(--amber)", marginTop: 12, lineHeight: 1.5 }}>

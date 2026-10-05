@@ -47,8 +47,9 @@ async function googleFreshness(lead: typeof leads.$inferSelect): Promise<{
   status?: string;
   patch?: Partial<typeof leads.$inferInsert>;
 }> {
-  const used = await getUsage("google_places");
-  if (used >= QUOTA_LIMITS.google_places.limit * 0.8 || !(await canSpend("google_places"))) {
+  // Runs right up to the Guardian's stop. Quitting earlier (it used to stop at
+  // 80%) only meant the last stretch of a month's sweeps came in unverified.
+  if (!(await canSpend("google_places", 2))) {
     return { drop: false };
   }
   const phone = lead.phoneIntl || lead.phone;

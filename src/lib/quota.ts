@@ -34,10 +34,17 @@ export class QuotaExceededError extends Error {
   }
 }
 
+/** The call count at which the Guardian stops a provider. */
+export async function capFor(provider: Provider): Promise<number> {
+  const q = QUOTA_LIMITS[provider];
+  if (q.stopAt != null) return q.stopAt;
+  const s = await getSettings();
+  return Math.floor(q.limit * s.hardStop);
+}
+
 /** True if `n` more calls stay under the hard-stop threshold. */
 export async function canSpend(provider: Provider, n = 1): Promise<boolean> {
-  const s = await getSettings();
-  const cap = Math.floor(QUOTA_LIMITS[provider].limit * s.hardStop);
+  const cap = await capFor(provider);
   const used = await getUsage(provider);
   return used + n <= cap;
 }
@@ -63,6 +70,8 @@ export type QuotaSnapshot = {
   label: string;
   used: number;
   limit: number;
+  /** where the Guardian stops it */
+  stopAt: number;
   period: "month" | "day";
 }[];
 
@@ -74,6 +83,7 @@ export async function getQuotaSnapshot(): Promise<QuotaSnapshot> {
       label: QUOTA_LIMITS[p].label,
       used: await getUsage(p),
       limit: QUOTA_LIMITS[p].limit,
+      stopAt: await capFor(p),
       period: QUOTA_LIMITS[p].period,
     })),
   );
