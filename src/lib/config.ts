@@ -69,7 +69,23 @@ export const SOCIAL_HOSTS = [
   "wa.me",
   "whatsapp.com",
   "api.whatsapp.com",
+  // Link-in-bio pages. A business whose Maps listing points at one of these has
+  // a list of links, not a website — exactly the shop worth pitching. Linktree
+  // is only the best known; the rest are its direct equivalents.
   "linktr.ee",
+  "linktree.com",
+  "beacons.ai",
+  "bio.link",
+  "taplink.cc",
+  "lnk.bio",
+  "solo.to",
+  "campsite.bio",
+  "heylink.me",
+  "allmylinks.com",
+  "milkshake.app",
+  "shorby.com",
+  "many.link",
+  "linkpop.com",
   "t.me",
   "telegram.me",
   "twitter.com",
