@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { activities, db, leads } from "@/lib/db";
 import { skipLead } from "@/lib/skip";
 import { jsonError } from "@/lib/api";
@@ -20,6 +20,16 @@ export async function POST(
     const d = db();
     const leadRows = await d.select().from(leads).where(eq(leads.id, leadId));
     if (!leadRows.length) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+    // Contacting is a state, not an event to log twice. ASK CHATGPT marks the
+    // lead contacted too, so ASK CHATGPT then ✓ CONTACTED used to add a second
+    // row — and the lead showed up twice in the CONTACTED LIST.
+    const already = await d
+      .select()
+      .from(activities)
+      .where(and(eq(activities.leadId, leadId), eq(activities.kind, "CONTACTED")))
+      .limit(1);
+    if (already.length) return NextResponse.json({ ok: true, activity: already[0], already: true });
 
     const rows = await d
       .insert(activities)
