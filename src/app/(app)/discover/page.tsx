@@ -42,8 +42,13 @@ export default function DiscoverPage() {
     : s.doneState === "done"
       ? `✓ COMPLETE — ${s.prog?.added ?? 0} NEW LEADS`
       : s.doneState === "stopped"
-        ? "■ STOPPED"
+        ? s.resumable
+          ? "■ PAUSED — PRESS RESUME"
+          : "■ STOPPED"
         : "IDLE";
+  // A stopped sweep with queries left can be carried on instead of restarted.
+  const canResume =
+    !s.running && s.doneState === "stopped" && !!s.searchId && !!s.prog && s.prog.cursor < s.prog.total;
   const stateColor =
     s.running || s.doneState === "done"
       ? "var(--green)"
@@ -141,14 +146,36 @@ export default function DiscoverPage() {
           </div>
         </div>
 
+        {canResume && (
+          <div
+            onClick={() => sweep.resume()}
+            className="mono"
+            title="Carry on this sweep from where it stopped — nothing already done is scanned or paid for again"
+            style={{
+              marginTop: 22,
+              textAlign: "center",
+              background: "var(--green)",
+              color: "var(--deep)",
+              border: "1px solid var(--green-border)",
+              borderRadius: 6,
+              padding: "12px 0",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              letterSpacing: 1,
+            }}
+          >
+            ▶ RESUME SWEEP ({s.prog!.cursor}/{s.prog!.total} done)
+          </div>
+        )}
         <div
           onClick={() => sweep.toggle()}
           className="mono"
           style={{
-            marginTop: 22,
+            marginTop: canResume ? 8 : 22,
             textAlign: "center",
-            background: s.running ? "var(--panel)" : "var(--green)",
-            color: s.running ? "var(--green)" : "var(--deep)",
+            background: s.running || canResume ? "var(--panel)" : "var(--green)",
+            color: s.running || canResume ? "var(--green)" : "var(--deep)",
             border: "1px solid var(--green-border)",
             borderRadius: 6,
             padding: "12px 0",

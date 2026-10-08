@@ -31,7 +31,7 @@ export async function tomtomPoiSearch(
   const url =
     `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(queryText)}.json` +
     `?key=${apiKey()}&lat=${lat}&lon=${lon}&radius=${radius}&limit=100`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
   await spend("tomtom");
   if (!res.ok) {
     const body = await res.text();
@@ -45,6 +45,7 @@ export async function tomtomPlaceById(entityId: string): Promise<TomtomResult | 
   await guard("tomtom");
   const res = await fetch(
     `https://api.tomtom.com/search/2/place.json?entityId=${encodeURIComponent(entityId)}&key=${apiKey()}`,
+    { signal: AbortSignal.timeout(20_000) },
   );
   await spend("tomtom");
   if (!res.ok) return null;

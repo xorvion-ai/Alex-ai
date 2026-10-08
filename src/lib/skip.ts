@@ -8,7 +8,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db, leads, skipped } from "@/lib/db";
 
-export type SkipReason = "contacted" | "deleted" | "has_website";
+export type SkipReason = "contacted" | "deleted" | "has_website" | "closed";
 
 type LeadRow = typeof leads.$inferSelect;
 

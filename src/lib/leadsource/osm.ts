@@ -13,6 +13,7 @@ const OVERPASS_SERVERS = [
   "https://overpass.private.coffee/api/interpreter",
 ];
 const USER_AGENT = "Alex.ai-lead-finder/1.0 (single-user personal tool)";
+const OVERPASS_TIMEOUT_MS = 50_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -24,7 +25,10 @@ export async function geocodeCity(
 ): Promise<BBox | null> {
   const q = country ? `${city}, ${country}` : city;
   const url = `${NOMINATIM}?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`;
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT },
+    signal: AbortSignal.timeout(15_000),
+  });
   await sleep(1100); // Nominatim policy: max 1 request/second
   if (!res.ok) return null;
   const json = (await res.json()) as { boundingbox?: string[] }[];
@@ -58,6 +62,9 @@ export async function overpassSearch(
     try {
       const res = await fetch(server, {
         method: "POST",
+        // a mirror that hangs hands over to the next one instead of holding the
+        // step open — the query itself asks Overpass for at most 45s of work
+        signal: AbortSignal.timeout(OVERPASS_TIMEOUT_MS),
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           "User-Agent": USER_AGENT,
@@ -86,6 +93,9 @@ export async function overpassById(sourceId: string): Promise<OsmElement | null>
     try {
       const res = await fetch(server, {
         method: "POST",
+        // a mirror that hangs hands over to the next one instead of holding the
+        // step open — the query itself asks Overpass for at most 45s of work
+        signal: AbortSignal.timeout(OVERPASS_TIMEOUT_MS),
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           "User-Agent": USER_AGENT,

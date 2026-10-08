@@ -96,6 +96,11 @@ export const searches = pgTable("searches", {
   queries: jsonb("queries").$type<SweepQuery[]>().notNull(),
   bbox: jsonb("bbox").$type<[number, number, number, number] | null>(), // s,w,n,e for OSM
   cursor: integer("cursor").notNull().default(0),
+  // failed tries at the CURRENT cursor; reset when the cursor moves
+  attempts: integer("attempts").notNull().default(0),
+  // how far into the current query's results the last step got, so a query
+  // too big for one step is carried on rather than started again
+  itemOffset: integer("item_offset").notNull().default(0),
   requestsUsed: integer("requests_used").notNull().default(0),
   scanned: integer("scanned").notNull().default(0),
   leadsAdded: integer("leads_added").notNull().default(0),
@@ -152,7 +157,7 @@ export const skipped = pgTable(
     phone: text("phone"),
     country: text("country"),
     category: text("category"),
-    reason: text("reason").$type<"contacted" | "deleted" | "has_website">().notNull(),
+    reason: text("reason").$type<"contacted" | "deleted" | "has_website" | "closed">().notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [uniqueIndex("skipped_source_uq").on(t.source, t.sourceId)],

@@ -25,7 +25,12 @@ import {
   NormalizedLead,
 } from "@/lib/leadsource/types";
 import { canSpend, QuotaExceededError } from "@/lib/quota";
-import { isSkipped, phoneKey } from "@/lib/skip";
+import { isSkipped, phoneKey, skipLead } from "@/lib/skip";
+
+/** How long one step works through candidates before handing back. */
+const STEP_BUDGET_MS = 60_000;
+/** How many times a failing query is retried before the sweep moves on. */
+const MAX_ATTEMPTS = 3;
 
 export type FeedItem = {
   name: string;
@@ -44,6 +49,8 @@ export type SweepProgress = {
   added: number;
   quotaBlocked?: boolean;
   error?: string;
+  /** this step ran out of time and the next one continues the same query */
+  partial?: boolean;
 };
 
 export async function createSweep(input: {
@@ -60,6 +67,14 @@ export async function createSweep(input: {
 
   const cname = countryName(input.country);
   let warning: string | undefined;
+
+  // A sweep whose tab was closed mid-run stays "running" forever — 25 of them
+  // had piled up, some for 76 days. Nothing drives a sweep but its own page, so
+  // one that has not moved for half an hour is not running; say so.
+  await db()
+    .update(searches)
+    .set({ status: "stopped" })
+    .where(and(eq(searches.status, "running"), sql`${searches.updatedAt} < now() - interval '30 minutes'`));
 
   // OSM and TomTom both need a bounding box (from free Nominatim geocoding)
   let bbox: [number, number, number, number] | null = null;
@@ -114,8 +129,8 @@ export async function createSweep(input: {
  * Cross-check an OSM / TomTom candidate against Google Maps before it is
  * allowed into the list, and fold in what Google knows.
  *
- * Returns null when the business should NOT become a lead — it has a real
- * website, or Maps says it is temporarily or permanently closed.
+ * Returns `{ reject }` when the business should NOT become a lead — it has a
+ * real website, or Maps says it is temporarily or permanently closed.
  *
  * Costs one Places request per candidate, so it only runs while the free tier
  * is comfortable; past that the candidate goes in unchecked exactly as before
@@ -124,7 +139,7 @@ export async function createSweep(input: {
 async function crossCheckOnGoogle(
   cand: NormalizedLead,
   ctx: { city: string; country: string | null },
-): Promise<NormalizedLead | null> {
+): Promise<NormalizedLead | { reject: "closed" | "has_website" }> {
   const phone = cand.phoneIntl || cand.phone;
   // Runs right up to the Guardian's stop. Quitting earlier (it used to stop at
   // 80%) only meant the last stretch of a month's sweeps came in unverified.
@@ -157,11 +172,13 @@ async function crossCheckOnGoogle(
   });
   if (!samePhone && !(apart != null && apart <= 250)) return cand;
 
-  if (isClosed(p)) return null;
+  if (isClosed(p)) return { reject: "closed" };
   const g = normalizeGooglePlace(p, null);
   // An instagram.com / facebook.com "website" is social_only, so the lead
   // stays. A real domain only disqualifies it if the link actually loads.
-  if (g.websiteStatus === "has_site" && (await isLiveWebsite(p.websiteUri))) return null;
+  if (g.websiteStatus === "has_site" && (await isLiveWebsite(p.websiteUri))) {
+    return { reject: "has_website" };
+  }
 
   // Keep the original source and id — this is enrichment, not a Google lead.
   return {
@@ -265,7 +282,13 @@ async function insertLead(
   // is only ever spent on a candidate that would otherwise be added.
   if (cand.source !== "google") {
     const checked = await crossCheckOnGoogle(cand, ctx);
-    if (!checked) return "skipped"; // closed, or it has a real website
+    if ("reject" in checked) {
+      // Remember the verdict. Without this, a rejected shop was checked again —
+      // a Places lookup and a website test — on every re-run of the query and
+      // every later sweep of the same city; with it, it is one indexed lookup.
+      await skipLead({ ...cand, country: ctx.country }, checked.reject);
+      return "skipped";
+    }
     cand = checked;
   }
 
@@ -327,6 +350,31 @@ export async function stepSweep(
   let quotaBlocked = false;
   let error: string | undefined;
 
+  // OSM and TomTom queries can return hundreds of shops, and every NEW one
+  // costs a Maps lookup and a website check, so one query used to run for
+  // minutes until the platform killed the step. The cursor never moved, the
+  // page gave up, and the sweep had to be started again from zero.
+  //
+  // Now such a query works for at most STEP_BUDGET_MS, records exactly which
+  // result it reached (itemOffset), and the next step carries on from there —
+  // every step moves forward, so it cannot loop. Google queries are exempt:
+  // they are small (≤60 results), skip the cross-check, and re-running one
+  // would pay for the search again.
+  const startAt = s.itemOffset;
+  let nextOffset = 0;
+  let partial = false;
+  let deadline = Infinity;
+  const startClock = () => {
+    deadline = Date.now() + STEP_BUDGET_MS;
+  };
+  /** Stop before result `i` if time is up — but always do at least one. */
+  const outOfTime = (i: number) => {
+    if (i === startAt || Date.now() < deadline) return false;
+    partial = true;
+    nextOffset = i;
+    return true;
+  };
+
   const pushFeed = (lead: NormalizedLead) => {
     feed.push({
       name: lead.name,
@@ -368,7 +416,10 @@ export async function stepSweep(
           : `${cat.label}${s.keyword ? ` ${s.keyword}` : ""}`;
       const results = await tomtomPoiSearch(queryText, s.bbox);
       requests++;
-      for (const r of results) {
+      startClock();
+      for (let i = startAt; i < results.length; i++) {
+        if (outOfTime(i)) break;
+        const r = results[i];
         const cand = normalizeTomtomPoi(r, q.categoryId);
         if (!cand) continue;
         scanned++;
@@ -381,7 +432,10 @@ export async function stepSweep(
     } else {
       if (!s.bbox) throw new Error("Missing map bounding box");
       const elements = await overpassSearch(cat, s.bbox);
-      for (const el of elements) {
+      startClock();
+      for (let i = startAt; i < elements.length; i++) {
+        if (outOfTime(i)) break;
+        const el = elements[i];
         const cand = normalizeOsmElement(el, q.categoryId);
         if (!cand) continue;
         scanned++;
@@ -407,18 +461,38 @@ export async function stepSweep(
     }
   }
 
-  const cursor = s.cursor + 1;
+  // Where the cursor goes next:
+  //  - out of time  → stay, the next step continues this query
+  //  - a failure (a busy Overpass mirror, a timeout) → stay and RETRY, up to
+  //    MAX_ATTEMPTS. It used to move straight on, which is how a sweep quietly
+  //    lost whole queries ("all Overpass servers busy" and the next one ran).
+  //  - after MAX_ATTEMPTS failures → move on, and say the query was skipped.
+  const failed = !!error && !quotaBlocked;
+  const attempts = failed ? s.attempts + 1 : 0;
+  const giveUp = failed && attempts >= MAX_ATTEMPTS;
+  const advance = !quotaBlocked && !partial && (!failed || giveUp);
+  const cursor = advance ? s.cursor + 1 : s.cursor;
   const status: "running" | "stopped" | "complete" = quotaBlocked
     ? "stopped"
     : cursor >= s.queries.length
       ? "complete"
       : "running";
+  if (failed) {
+    error = giveUp
+      ? `${q.source}/${q.categoryId} skipped after ${MAX_ATTEMPTS} tries — ${error}`
+      : `${error} — retrying (${attempts}/${MAX_ATTEMPTS})`;
+  }
 
   await d
     .update(searches)
     .set({
       cursor,
+      attempts: advance ? 0 : attempts,
+      // where the next step picks this query back up: the result reached, or
+      // the top of the next query. A failed step keeps the last good offset.
+      itemOffset: advance ? 0 : partial ? nextOffset : s.itemOffset,
       requestsUsed: s.requestsUsed + requests,
+      // each pass scans only results the last one didn't reach, so this adds up
       scanned: s.scanned + scanned,
       leadsAdded: s.leadsAdded + added,
       status,
@@ -437,9 +511,23 @@ export async function stepSweep(
       added: s.leadsAdded + added,
       quotaBlocked,
       error,
+      partial,
     },
     newLeads: feed,
   };
+}
+
+export async function resumeSweep(searchId: number): Promise<void> {
+  await db()
+    .update(searches)
+    .set({ status: "running", attempts: 0, updatedAt: new Date() })
+    .where(
+      and(
+        eq(searches.id, searchId),
+        eq(searches.status, "stopped"),
+        sql`${searches.cursor} < jsonb_array_length(${searches.queries}::jsonb)`,
+      ),
+    );
 }
 
 export async function stopSweep(searchId: number): Promise<void> {

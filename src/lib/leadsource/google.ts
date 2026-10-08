@@ -6,6 +6,9 @@ import { guard, spend } from "@/lib/quota";
 import { classifyWebsite, cleanCategory, digitsPhone, NormalizedLead } from "./types";
 
 const BASE = "https://places.googleapis.com/v1";
+// Places normally answers in well under a second; a call that hangs must fail
+// fast so the sweep can retry, rather than holding a step open until it is killed.
+const GOOGLE_TIMEOUT_MS = 20_000;
 
 const SEARCH_FIELDS = [
   "places.id",
@@ -99,6 +102,7 @@ export async function googleTextSearchPage(
   await guard("google_places");
   const res = await fetch(`${BASE}/places:searchText`, {
     method: "POST",
+    signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
     headers: {
       "Content-Type": "application/json",
       "X-Goog-Api-Key": apiKey(),
@@ -122,6 +126,7 @@ export async function googleTextSearchPage(
 export async function googlePlaceDetails(placeId: string): Promise<GooglePlace> {
   await guard("google_places");
   const res = await fetch(`${BASE}/places/${placeId}`, {
+    signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
     headers: { "X-Goog-Api-Key": apiKey(), "X-Goog-FieldMask": DETAIL_FIELDS },
   });
   await spend("google_places");
@@ -137,6 +142,7 @@ export type GoogleReview = { rating: number; text: string; when: string };
 export async function googlePlaceReviews(placeId: string): Promise<GoogleReview[]> {
   await guard("google_places");
   const res = await fetch(`${BASE}/places/${placeId}`, {
+    signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
     headers: { "X-Goog-Api-Key": apiKey(), "X-Goog-FieldMask": "reviews" },
   });
   await spend("google_places");
@@ -174,6 +180,7 @@ async function searchOne(textQuery: string): Promise<GooglePlace | null> {
   await guard("google_places");
   const res = await fetch(`${BASE}/places:searchText`, {
     method: "POST",
+    signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
     headers: {
       "Content-Type": "application/json",
       "X-Goog-Api-Key": apiKey(),

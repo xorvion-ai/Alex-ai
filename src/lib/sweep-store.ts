@@ -25,6 +25,7 @@ export type Progress = {
   added: number;
   quotaBlocked?: boolean;
   error?: string;
+  partial?: boolean;
 };
 
 export type SweepState = {
@@ -40,6 +41,8 @@ export type SweepState = {
   feed: FeedItem[];
   prog: Progress | null;
   searchId: number | null;
+  /** the last sweep stopped on errors, not by STOP — RESUME can carry it on */
+  resumable: boolean;
   settingsLoaded: boolean;
   // A one-shot message for the page to surface as a toast (seq de-dupes it).
   toast: { msg: string; seq: number } | null;
@@ -58,6 +61,7 @@ let state: SweepState = {
   feed: [],
   prog: null,
   searchId: null,
+  resumable: false,
   settingsLoaded: false,
   toast: null,
 };
@@ -137,7 +141,7 @@ export const sweep = {
     // STOP
     if (state.running) {
       const id = state.searchId;
-      set({ running: false, doneState: "stopped" });
+      set({ running: false, doneState: "stopped", resumable: false });
       if (id)
         api("/api/sweep/stop", { method: "POST", body: JSON.stringify({ searchId: id }) }).catch(
           () => {},
@@ -155,7 +159,7 @@ export const sweep = {
       toast("pick at least one lead source");
       return;
     }
-    set({ feed: [], prog: null, doneState: "idle", running: true, searchId: null });
+    set({ feed: [], prog: null, doneState: "idle", running: true, searchId: null, resumable: false });
     try {
       const start = await api<{ id: number; total: number; warning?: string }>("/api/sweep", {
         method: "POST",
@@ -169,32 +173,87 @@ export const sweep = {
       });
       if (start.warning) toast(start.warning);
       set({ searchId: start.id });
-      // The loop reads the live module `state`, so a STOP (or unmount) elsewhere
-      // is seen on the next iteration. It is NOT tied to any component.
-      while (state.running) {
-        const r = await api<{ progress: Progress; newLeads: FeedItem[] }>("/api/sweep/step", {
-          method: "POST",
-          body: JSON.stringify({ searchId: start.id }),
-        });
-        const patch: Partial<SweepState> = { prog: r.progress };
-        if (r.newLeads.length)
-          patch.feed = [...r.newLeads.slice().reverse(), ...state.feed].slice(0, 200);
-        set(patch);
-        if (r.progress.error) toast(r.progress.error);
-        if (r.progress.status !== "running") {
-          set({
-            running: false,
-            doneState: r.progress.status === "complete" ? "done" : "stopped",
-          });
-          if (r.progress.quotaBlocked) toast("⛨ Quota Guardian stopped the sweep");
-          break;
-        }
-        await new Promise((res) => setTimeout(res, 350));
-      }
+      await drive(start.id);
     } catch (e) {
       set({ running: false, doneState: "stopped" });
       if (e instanceof ApiError && e.quotaBlocked) toast("⛨ Quota Guardian stopped the sweep");
       else toast(e instanceof Error ? e.message : "sweep failed");
     }
   },
+
+  /** Pick a stopped sweep back up where it left off, instead of starting over. */
+  async resume() {
+    const id = state.searchId;
+    if (!id || state.running) return;
+    set({ running: true, doneState: "idle", resumable: false });
+    try {
+      await api("/api/sweep/resume", { method: "POST", body: JSON.stringify({ searchId: id }) });
+    } catch (e) {
+      set({ running: false, doneState: "stopped", resumable: true });
+      toast(e instanceof Error ? e.message : "could not resume");
+      return;
+    }
+    await drive(id);
+  },
 };
+
+// How long to wait before each retry of a step that failed outright — a network
+// blip, or the server being busy. Six tries spread over ~3 minutes.
+const BACKOFF_MS = [3_000, 8_000, 15_000, 30_000, 45_000, 60_000];
+
+/**
+ * Step a sweep until it finishes, stops, or fails for good.
+ *
+ * It used to give up on the FIRST failed step: one network blip and the sweep
+ * stopped, and the only way on was START, which began a brand-new sweep from
+ * zero and paid again for every Google query already done. Now a failed step
+ * is retried with backoff, and if it still fails the sweep is left resumable —
+ * RESUME continues the same sweep, on the same query.
+ *
+ * The loop reads the live module `state`, so a STOP (or unmount) elsewhere is
+ * seen on the next iteration. It is NOT tied to any component.
+ */
+async function drive(searchId: number) {
+  let fails = 0;
+  while (state.running) {
+    let r: { progress: Progress; newLeads: FeedItem[] };
+    try {
+      r = await api<{ progress: Progress; newLeads: FeedItem[] }>("/api/sweep/step", {
+        method: "POST",
+        body: JSON.stringify({ searchId }),
+      });
+    } catch (e) {
+      if (e instanceof ApiError && e.quotaBlocked) {
+        set({ running: false, doneState: "stopped" });
+        toast("⛨ Quota Guardian stopped the sweep");
+        return;
+      }
+      if (fails >= BACKOFF_MS.length) {
+        set({ running: false, doneState: "stopped", resumable: true });
+        toast("sweep paused — the server kept failing. Press RESUME to carry on where it stopped.");
+        return;
+      }
+      const wait = BACKOFF_MS[fails++];
+      toast(`step failed — retrying in ${Math.round(wait / 1000)}s (${fails}/${BACKOFF_MS.length})`);
+      await new Promise((res) => setTimeout(res, wait));
+      continue;
+    }
+    fails = 0;
+
+    const patch: Partial<SweepState> = { prog: r.progress };
+    if (r.newLeads.length)
+      patch.feed = [...r.newLeads.slice().reverse(), ...state.feed].slice(0, 200);
+    set(patch);
+    if (r.progress.error) toast(r.progress.error);
+    if (r.progress.status !== "running") {
+      set({
+        running: false,
+        doneState: r.progress.status === "complete" ? "done" : "stopped",
+      });
+      if (r.progress.quotaBlocked) toast("⛨ Quota Guardian stopped the sweep");
+      return;
+    }
+    // a partial step means more of the same query is waiting — go straight on
+    await new Promise((res) => setTimeout(res, r.progress.partial ? 0 : 350));
+  }
+}
