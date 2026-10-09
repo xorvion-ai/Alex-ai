@@ -11,6 +11,7 @@ import {
   AnalysisDto,
   api,
   ApiError,
+  aiChatName,
   categoryOf,
   instagramHandle,
   LeadDto,
@@ -1059,16 +1060,16 @@ This removes the lead from the app for good.`)) return;
                     </span>
                     {chatgptUrl && <span
                       className="mono"
-                      title="Copy this lead + the demo-image request, open your ChatGPT chat, and mark the lead contacted"
+                      title={`Copy this lead + the demo-image request, open your ${aiChatName(chatgptUrl)} chat, and mark the lead contacted`}
                       onClick={() => {
                         copy("gpt", `${fullCopyText().trimEnd()}
 
 ${CHATGPT_DEMO_LINE}`);
                         // opened synchronously or the browser blocks the popup
                         window.open(chatgptUrl, "_blank", "noopener");
-                        // asking ChatGPT for the mockup means this lead is being
+                        // asking the AI for the mockup means this lead is being
                         // worked, so it moves to the CONTACTED LIST straight away
-                        contactedAction("Copied & marked contacted — paste it into ChatGPT");
+                        contactedAction(`Copied & marked contacted — paste it into ${aiChatName(chatgptUrl)}`);
                       }}
                       style={{
                         display: "inline-flex",
@@ -1086,12 +1087,15 @@ ${CHATGPT_DEMO_LINE}`);
                         userSelect: "none",
                       }}
                     >
+                      {/* a picture: the button exists to get the demo-website image */}
                       <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style={{ flex: "none" }}>
-                        <g stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
-                          <path d="M12 3.5v17M20.4 7.75L3.6 16.25M3.6 7.75l16.8 8.5" />
+                        <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="16" rx="2" />
+                          <circle cx="8.5" cy="9.5" r="1.6" />
+                          <path d="M21 16l-5-5-9 9" />
                         </g>
                       </svg>
-                      {copied === "gpt" ? "COPIED ✓" : "ASK CHATGPT"}
+                      {copied === "gpt" ? "COPIED ✓" : "MAKE IMAGE"}
                     </span>}
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--sec)", marginTop: 4 }}>
