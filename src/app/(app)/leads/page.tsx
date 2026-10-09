@@ -11,7 +11,6 @@ import {
   AnalysisDto,
   api,
   ApiError,
-  aiChatName,
   categoryOf,
   instagramHandle,
   LeadDto,
@@ -1060,16 +1059,16 @@ This removes the lead from the app for good.`)) return;
                     </span>
                     {chatgptUrl && <span
                       className="mono"
-                      title={`Copy this lead + the demo-image request, open your ${aiChatName(chatgptUrl)} chat, and mark the lead contacted`}
+                      title="Copy this lead + the demo-image request, open your ChatGPT chat, and mark the lead contacted"
                       onClick={() => {
                         copy("gpt", `${fullCopyText().trimEnd()}
 
 ${CHATGPT_DEMO_LINE}`);
                         // opened synchronously or the browser blocks the popup
                         window.open(chatgptUrl, "_blank", "noopener");
-                        // asking the AI for the mockup means this lead is being
+                        // asking ChatGPT for the mockup means this lead is being
                         // worked, so it moves to the CONTACTED LIST straight away
-                        contactedAction(`Copied & marked contacted — paste it into ${aiChatName(chatgptUrl)}`);
+                        contactedAction("Copied & marked contacted — paste it into ChatGPT");
                       }}
                       style={{
                         display: "inline-flex",

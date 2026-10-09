@@ -235,8 +235,3 @@ export type QuotaDto = {
   limit: number;
   period: "month" | "day";
 }[];
-
-/** The assistant an "ask the AI" chat link opens — names the button after it. */
-export function aiChatName(url: string): "Gemini" | "ChatGPT" {
-  return /^https:\/\/gemini\.google\.com\//.test(url) ? "Gemini" : "ChatGPT";
-}

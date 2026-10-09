@@ -53,9 +53,7 @@ export async function POST(req: NextRequest) {
     }
     if (typeof patch.chatgptUrl === "string") {
       const u = patch.chatgptUrl.trim();
-      // The "ask the AI for a mockup" chat — ChatGPT or Gemini. (Stored under
-      // the old name chatgptUrl; renaming it would orphan the saved link.)
-      if (!u || /^https:\/\/(chatgpt\.com|chat\.openai\.com|gemini\.google\.com)\//.test(u)) allowed.chatgptUrl = u;
+      if (!u || /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//.test(u)) allowed.chatgptUrl = u;
     }
     const merged = await saveSettings(allowed);
     return NextResponse.json({ settings: merged });
