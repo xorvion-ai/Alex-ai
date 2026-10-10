@@ -8,6 +8,7 @@ import fs from "node:fs";
 
 const PATTERNS = [
   [/chatgpt\.com\/c\/[0-9a-f-]{8,}/i, "a private ChatGPT conversation link"],
+  [/gemini\.google\.com\/app\/[0-9a-f]{8,}/i, "a private Gemini conversation link"],
   [/chat\.openai\.com\/c\/[0-9a-f-]{8,}/i, "a private ChatGPT conversation link"],
   [/sumitchoudhary\d*@|sumit@[a-z]+\.[a-z]+/i, "a personal email address"],
   [/sumitchoudhary\d*-org|project-\d{8}-[0-9a-f-]+/i, "a Google Cloud account/project id"],

@@ -254,11 +254,11 @@ export default function SettingsPage() {
             )}
           </div>
           <div className="lbl" style={{ fontSize: 9, margin: "14px 0 4px" }}>
-            CHATGPT CHAT LINK (for the MAKE IMAGE button — kept private, never in the repo)
+            IMAGE CHAT LINK — Gemini or ChatGPT (for the MAKE IMAGE button; kept private, never in the repo)
           </div>
           <input
             className="input in-panel mono"
-            placeholder="https://chatgpt.com/c/…"
+            placeholder="https://gemini.google.com/app/…"
             value={chatgptUrl}
             onChange={(e) => setChatgptUrl(e.target.value)}
             style={{ padding: "7px 9px", fontSize: 11.5 }}

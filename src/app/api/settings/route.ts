@@ -53,7 +53,17 @@ export async function POST(req: NextRequest) {
     }
     if (typeof patch.chatgptUrl === "string") {
       const u = patch.chatgptUrl.trim();
-      if (!u || /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//.test(u)) allowed.chatgptUrl = u;
+      // The chat MAKE IMAGE opens — Gemini or ChatGPT. (Still stored as
+      // chatgptUrl; renaming the key would orphan the saved link.)
+      if (u && !/^https:\/\/(gemini\.google\.com|chatgpt\.com|chat\.openai\.com)\//.test(u)) {
+        // Say so. A link that isn't accepted used to be dropped silently, so
+        // SAVE showed "saved" and a refresh brought the old link back.
+        return NextResponse.json(
+          { error: "That link isn't saved — use a Gemini (gemini.google.com) or ChatGPT (chatgpt.com) chat link." },
+          { status: 400 },
+        );
+      }
+      allowed.chatgptUrl = u;
     }
     const merged = await saveSettings(allowed);
     return NextResponse.json({ settings: merged });

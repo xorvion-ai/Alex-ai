@@ -235,3 +235,8 @@ export type QuotaDto = {
   limit: number;
   period: "month" | "day";
 }[];
+
+/** Which assistant the MAKE IMAGE chat link opens, for its hover text and toast. */
+export function chatName(url: string): "Gemini" | "ChatGPT" {
+  return url.startsWith("https://gemini.google.com/") ? "Gemini" : "ChatGPT";
+}
