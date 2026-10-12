@@ -31,11 +31,37 @@ import {
   currencyOf,
   isEnglishCountry,
 } from "@/lib/config";
-import { PLACEHOLDERS, renderTemplate, templateEnFor, templateFor, templatize } from "@/lib/messages";
+import { friendlyName, PLACEHOLDERS, renderTemplate, templateEnFor, templateFor, templatize } from "@/lib/messages";
 
 type Detail = { lead: LeadDto; analysis: AnalysisDto | null; activities: ActivityDto[] };
 
 const FILTER_CATS = CATEGORIES.map((c) => c.id).slice(0, 5);
+
+// Links that point at something the business posted or joined, not at the
+// business: a Facebook group post, an Instagram reel. Not what a mockup needs.
+const NOT_A_PROFILE = /\/(groups|posts|p|reels?|stories|story|photos?|watch|events|share)(\/|$)/i;
+
+/**
+ * One clean link per network for the image brief: the business's own profile,
+ * never a post or a group, with tracking cut off — "?igshid=…&utm_source=qr"
+ * says nothing about the brand and only clutters the prompt.
+ */
+function briefSocials(socials: string[] | null): string[] {
+  const best: Partial<Record<"INSTAGRAM" | "FACEBOOK", string>> = {};
+  for (const raw of socials ?? []) {
+    const u = String(raw).trim();
+    const kind = /instagram\.com|instagr\.am/i.test(u)
+      ? "INSTAGRAM"
+      : /facebook\.com|fb\.com|fb\.me/i.test(u)
+        ? "FACEBOOK"
+        : null;
+    if (!kind || best[kind] || NOT_A_PROFILE.test(u)) continue;
+    const url = /^https?:\/\//i.test(u) ? u : `https://${u.replace(/^\/+/, "")}`;
+    // profile.php?id=… IS the profile, so its query has to stay
+    best[kind] = /profile\.php/i.test(url) ? url : url.split(/[?#]/)[0].replace(/\/+$/, "");
+  }
+  return Object.entries(best).map(([k, v]) => `${k}: ${v}`);
+}
 
 function buildParams(f: {
   search: string;
@@ -439,6 +465,38 @@ This removes the lead from the app for good.`)) return;
       );
     }
     return lines.filter((l, i, arr) => !(l === "" && arr[i - 1] === "")).join("\n");
+  };
+
+  // What MAKE IMAGE hands the image chat: only what a website mockup needs to
+  // show — who the business is, where, how to reach it, what it does — and none
+  // of Alex.ai's own working notes (score, currency, call script, raw data),
+  // which only distract the image model. The demo-image request goes last.
+  const imageBriefText = () => {
+    if (!L) return "";
+    const place = [L.city, L.country].filter(Boolean).join(", ");
+    const lines: (string | false | null | undefined)[] = [
+      `BUSINESS NAME: ${friendlyName(L.name)}`,
+      categoryOf(L) && `BUSINESS TYPE: ${categoryOf(L)}`,
+      L.address && `ADDRESS: ${L.address}`,
+      place && `CITY / COUNTRY: ${place}`,
+      L.phone && `PHONE: ${L.phone}`,
+      L.rating != null && L.rating > 0 && `RATING: ★ ${L.rating}${L.reviewCount ? ` (${L.reviewCount} reviews)` : ""}`,
+      L.hours && `OPENING HOURS: ${L.hours}`,
+      ...briefSocials(L.socials),
+    ];
+    if (A) {
+      lines.push(
+        ``,
+        `ABOUT THE BUSINESS`,
+        A.businessProfile,
+        ``,
+        `WHAT THE WEBSITE SHOULD SHOW`,
+        A.sitePlan.contentAngle,
+        `Pages: ${A.sitePlan.suggestedPages.join(", ")}`,
+      );
+    }
+    lines.push(``, CHATGPT_DEMO_LINE);
+    return lines.filter((l): l is string => typeof l === "string").join("\n");
   };
 
   const planCopyText = () =>
@@ -1060,11 +1118,9 @@ This removes the lead from the app for good.`)) return;
                     </span>
                     {chatgptUrl && <span
                       className="mono"
-                      title={`Copy this lead + the demo-image request, open your ${chatName(chatgptUrl)} chat, and mark the lead contacted`}
+                      title={`Copy the business details + the demo-image request, open your ${chatName(chatgptUrl)} chat, and mark the lead contacted`}
                       onClick={() => {
-                        copy("gpt", `${fullCopyText().trimEnd()}
-
-${CHATGPT_DEMO_LINE}`);
+                        copy("gpt", imageBriefText());
                         // opened synchronously or the browser blocks the popup
                         window.open(chatgptUrl, "_blank", "noopener");
                         // asking for the mockup means this lead is being worked,
