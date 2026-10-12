@@ -381,97 +381,11 @@ This removes the lead from the app for good.`)) return;
     );
   };
 
-  // Everything on this lead's page, top to bottom, as plain text — one click
-  // next to the name copies the lot (header, analysis, currency, site plan,
-  // outreach, raw data, activity log).
-  const fullCopyText = () => {
-    if (!L) return "";
-    const { cur } = currencyOf(L.country);
-    const rate = cur === "INR" ? 1 : inrPer[cur];
-    const acts = detail?.activities ?? [];
-    const lines: string[] = [
-      `${L.name}${L.country ? ` (${L.country})` : ""}`,
-      `LEAD_${String(L.id).padStart(4, "0")} · ${L.status.toUpperCase()} · source: ${L.source} · refreshed ${timeAgo(L.lastRefreshedAt)}${L.verifiedNoWebsite ? " · VERIFIED_NO_WEBSITE" : ""}`,
-      [categoryOf(L), L.address, L.rating ? `★ ${L.rating} (${L.reviewCount})` : null, L.priceLevel]
-        .filter(Boolean)
-        .join(" · "),
-      `SCORE: ${L.score ?? "—"} (${scoreLabel(L.score)})`,
-      ``,
-      `CONTACT`,
-      `phone: ${L.phone ?? "—"}`,
-      `whatsapp: ${L.phoneIntl || L.phone ? `https://wa.me/${L.phoneIntl || L.phone!.replace(/\D/g, "")}` : "—"} (${whatsappStatus(L).label})`,
-      ...socialLinks(L).map((sl) => `${sl.kind}: ${sl.url}`),
-      mapsHref(L) ? `maps: ${mapsHref(L)}` : "",
-      ``,
-    ];
-
-    if (A) {
-      lines.push(
-        `LEAD_SCORE — WHY ${A.score}`,
-        A.reasoning,
-        `— ${A.model} · ${timeAgo(A.createdAt)}`,
-        ``,
-        `BUSINESS_PROFILE`,
-        A.businessProfile,
-        ``,
-        `SIGNALS`,
-        `rating: ${L.rating ? `${L.rating} ★` : "n/a"} · reviews: ${L.reviewCount ?? "n/a"} · website: ${L.websiteStatus} · verified: ${
-          L.verifiedNoWebsite == null ? "not checked" : L.verifiedNoWebsite ? "no_website" : "site found"
-        }`,
-        `best call window: ${A.outreach.bestCallWindow}`,
-        ``,
-      );
-    } else {
-      lines.push(`(not analyzed yet)`, ``);
-    }
-
-    lines.push(
-      `CURRENCY · ${cur}`,
-      rate ? `1 ${cur} = ₹${rate.toFixed(cur === "INR" ? 2 : rate < 1 ? 4 : 2)} (live market rate)` : `rate unavailable`,
-      ``,
-    );
-
-    if (A) {
-      lines.push(
-        `CONTENT ANGLE`,
-        A.sitePlan.contentAngle,
-        ``,
-        `SELLING POINTS`,
-        ...A.sitePlan.sellingPoints.map((x) => `- ${x}`),
-        ``,
-        `SUGGESTED PAGES: ${A.sitePlan.suggestedPages.join(", ")}`,
-        ``,
-        `WHATSAPP · ENGLISH`,
-        A.outreach.whatsappEn,
-        ``,
-        `WHATSAPP · ${A.outreach.localLanguageLabel}`,
-        A.outreach.whatsappLocal,
-        ``,
-        `PHONE CALL SCRIPT`,
-        ...A.outreach.callScript.map((c, i) => `${String(i + 1).padStart(2, "0")}. ${c}`),
-        ``,
-      );
-    }
-
-    lines.push(`RAW LEAD DATA`, ...dataPairs.map(([k, v]) => `${k}: ${v}`), ``);
-
-    if (acts.length) {
-      lines.push(
-        `CONTACT HISTORY`,
-        ...acts.map(
-          (a) =>
-            `${a.kind} · ${timeAgo(a.createdAt)}${a.dueAt ? ` · due ${new Date(a.dueAt).toLocaleString("en-GB")}` : ""} — ${a.note}`,
-        ),
-      );
-    }
-    return lines.filter((l, i, arr) => !(l === "" && arr[i - 1] === "")).join("\n");
-  };
-
-  // What MAKE IMAGE hands the image chat: only what a website mockup needs to
-  // show — who the business is, where, how to reach it, what it does — and none
-  // of Alex.ai's own working notes (score, currency, call script, raw data),
-  // which only distract the image model. The demo-image request goes last.
-  const imageBriefText = () => {
+  // The lead as a business brief: who the business is, where, how to reach it,
+  // what it does — and none of Alex.ai's own working notes (score, currency,
+  // call script, raw data). COPY copies it; MAKE IMAGE copies it with the
+  // demo-image request added last, for the image chat.
+  const businessBrief = (withImageRequest: boolean) => {
     if (!L) return "";
     const place = [L.city, L.country].filter(Boolean).join(", ");
     const lines: (string | false | null | undefined)[] = [
@@ -495,7 +409,7 @@ This removes the lead from the app for good.`)) return;
         `Pages: ${A.sitePlan.suggestedPages.join(", ")}`,
       );
     }
-    lines.push(``, CHATGPT_DEMO_LINE);
+    if (withImageRequest) lines.push(``, CHATGPT_DEMO_LINE);
     return lines.filter((l): l is string => typeof l === "string").join("\n");
   };
 
@@ -1099,8 +1013,8 @@ This removes the lead from the app for good.`)) return;
                     <span className="lead-name">{L.name}</span>
                     <span
                       className="mono"
-                      title="Copy this lead — everything on the page, top to bottom"
-                      onClick={() => copy("all", fullCopyText())}
+                      title="Copy the business details — name, address, phone, what it does"
+                      onClick={() => copy("all", businessBrief(false))}
                       style={{
                         flex: "none",
                         border: `1px solid ${copied === "all" ? "var(--green-border)" : "var(--border-hover)"}`,
@@ -1114,13 +1028,13 @@ This removes the lead from the app for good.`)) return;
                         userSelect: "none",
                       }}
                     >
-                      {copied === "all" ? "COPIED ✓" : "⧉ COPY ALL"}
+                      {copied === "all" ? "COPIED ✓" : "⧉ COPY"}
                     </span>
                     {chatgptUrl && <span
                       className="mono"
                       title={`Copy the business details + the demo-image request, open your ${chatName(chatgptUrl)} chat, and mark the lead contacted`}
                       onClick={() => {
-                        copy("gpt", imageBriefText());
+                        copy("gpt", businessBrief(true));
                         // opened synchronously or the browser blocks the popup
                         window.open(chatgptUrl, "_blank", "noopener");
                         // asking for the mockup means this lead is being worked,
