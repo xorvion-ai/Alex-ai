@@ -10,7 +10,7 @@ export const PLACEHOLDERS = ["{name}", "{rating}", "{reviews}", "{category}", "{
 
 /** Defaults. Sumit's own Spain text is the reference; the others mirror it. */
 export const DEFAULT_TEMPLATES: Record<string, string> = {
-  Spain: `¡Hola, equipo de {name}! 👋 Soy Sumit, Web Designer.
+  Spain: `¡Hola, equipo de {name}! 👋 Soy Sumit, diseñador web.
 
 He visto vuestro {category} y vuestra increíble valoración de {rating}⭐ con {reviews} reseñas. ✨ Me encanta el concepto de {name}.
 
@@ -20,7 +20,7 @@ Precio: 20 € — pago único, después de entregar la web.
 
 También os he adjuntado una demo para que podáis ver cómo podría quedar. 😊`,
 
-  Mexico: `¡Hola, equipo de {name}! 👋 Soy Sumit, Web Designer.
+  Mexico: `¡Hola, equipo de {name}! 👋 Soy Sumit, diseñador web.
 
 Vi su {category} y su excelente calificación de {rating}⭐ con {reviews} reseñas. 📸 Noté que todavía no cuentan con una página web.
 
@@ -30,7 +30,7 @@ Precio: MX$450 — pago único, pagar después de que la página web sea entrega
 
 También les adjunto una demo para que puedan ver cómo podría quedar. 😊`,
 
-  Brazil: `Olá, equipe da {name}! 👋 Sou Sumit, Web Designer.
+  Brazil: `Olá, equipe da {name}! 👋 Sou Sumit, web designer.
 
 Vi a {name} e percebi que vocês ainda não têm um site. Posso criar um site profissional para mostrar os serviços de {category}, o atendimento e o contato, ajudando mais pessoas a encontrarem e entrarem em contato com vocês.
 
