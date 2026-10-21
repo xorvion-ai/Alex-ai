@@ -10,7 +10,7 @@ export const PLACEHOLDERS = ["{name}", "{rating}", "{reviews}", "{category}", "{
 
 /** Defaults. Sumit's own Spain text is the reference; the others mirror it. */
 export const DEFAULT_TEMPLATES: Record<string, string> = {
-  Spain: `¡Hola, equipo de {name}! 👋 Soy Sumit, Software Developer.
+  Spain: `¡Hola, equipo de {name}! 👋 Soy Sumit, Web Designer.
 
 He visto vuestro {category} y vuestra increíble valoración de {rating}⭐ con {reviews} reseñas. ✨ Me encanta el concepto de {name}.
 
@@ -20,7 +20,7 @@ Precio: 20 € — pago único, después de entregar la web.
 
 También os he adjuntado una demo para que podáis ver cómo podría quedar. 😊`,
 
-  Mexico: `¡Hola, equipo de {name}! 👋 Soy Sumit, Software Developer.
+  Mexico: `¡Hola, equipo de {name}! 👋 Soy Sumit, Web Designer.
 
 Vi su {category} y su excelente calificación de {rating}⭐ con {reviews} reseñas. 📸 Noté que todavía no cuentan con una página web.
 
@@ -30,7 +30,7 @@ Precio: MX$450 — pago único, pagar después de que la página web sea entrega
 
 También les adjunto una demo para que puedan ver cómo podría quedar. 😊`,
 
-  Brazil: `Olá, equipe da {name}! 👋 Sou Sumit, Software Developer.
+  Brazil: `Olá, equipe da {name}! 👋 Sou Sumit, Web Designer.
 
 Vi a {name} e percebi que vocês ainda não têm um site. Posso criar um site profissional para mostrar os serviços de {category}, o atendimento e o contato, ajudando mais pessoas a encontrarem e entrarem em contato com vocês.
 
@@ -38,7 +38,7 @@ Preço: R$ 99 — pagamento único, pagar depois que o site for entregue.
 
 Também anexei uma demonstração para você ver como poderia ficar. 😊`,
 
-  "United States": `Hi {name} team! 👋 I'm Sumit, a Software Developer.
+  "United States": `Hi {name} team! 👋 I'm Sumit, a Web Designer.
 
 I came across your business and noticed you have a strong presence on social media but don't have an official website yet. I can create a professional website to showcase your equipment, products, and services, helping more {city} customers find and contact you online.
 
@@ -46,7 +46,7 @@ Price: $30 — one-time payment, pay after the website is delivered.
 
 I've also attached a demo for you so you can see how it could look. 😊`,
 
-  India: `Hi {name} team! 👋 I'm Sumit, a Software Developer.
+  India: `Hi {name} team! 👋 I'm Sumit, a Web Designer.
 
 I came across your {category} and was really impressed by your {rating}⭐ rating with {reviews} reviews. 💪 I noticed you don't have a website yet.
 
@@ -63,7 +63,7 @@ I've also attached a demo for you so you can see how it could look. 😊`,
  * Countries whose template is already English simply reuse it.
  */
 export const DEFAULT_TEMPLATES_EN: Record<string, string> = {
-  Spain: `Hi {name} team! 👋 I'm Sumit, Software Developer.
+  Spain: `Hi {name} team! 👋 I'm Sumit, Web Designer.
 
 I saw your {category} and your amazing {rating}⭐ rating with {reviews} reviews. ✨ I love the concept of {name}.
 
@@ -73,7 +73,7 @@ Price: 20 € — one-time payment, after the website is delivered.
 
 I've also attached a demo so you can see how it could look. 😊`,
 
-  Mexico: `Hi {name} team! 👋 I'm Sumit, Software Developer.
+  Mexico: `Hi {name} team! 👋 I'm Sumit, Web Designer.
 
 I saw your {category} and your excellent {rating}⭐ rating with {reviews} reviews. 📸 I noticed you don't have a website yet.
 
@@ -83,7 +83,7 @@ Price: MX$450 — one-time payment, pay after the website is delivered.
 
 I've also attached a demo so you can see how it could look. 😊`,
 
-  Brazil: `Hi {name} team! 👋 I'm Sumit, Software Developer.
+  Brazil: `Hi {name} team! 👋 I'm Sumit, Web Designer.
 
 I saw {name} and noticed you don't have a website yet. I can build a professional site to show your {category} services, your service and your contact details, helping more people find and reach you.
 

@@ -195,7 +195,7 @@ export async function analyzeLead(leadId: number): Promise<AnalyzeOutcome> {
 
   const s = await getSettings();
   const prompt = [
-    "You are the analysis engine of Alex.ai, a tool that finds small businesses with no website so the operator (a solo web developer) can sell them a simple, affordable website.",
+    "You are the analysis engine of Alex.ai, a tool that finds small businesses with no website so the operator (a solo web designer) can sell them a simple, affordable website.",
     "Analyze this business and produce the structured result.",
     "",
     "Scoring guide: high rating + many reviews + no web presence = strong (80-100). Decent but moderate signals = 60-79. Weak activity, low rating, or unlikely to see value = below 60. OSM/TomTom leads without ratings: judge from category, address completeness, phone presence; cap at 75 unless other signals are strong.",
